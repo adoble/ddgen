@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.linkedProjects": [
+        ".\\examples\\si468x-pac\\Cargo.toml"
+    ]
+}
