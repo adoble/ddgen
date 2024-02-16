@@ -20,8 +20,8 @@ use crate::types::PowerUpState;
 const OPCODE: u8 = 0xB8;
 
 pub struct DabSetFreqList<'a, SPI, CS> {
-    spi: &'a SPI,
-    cs: &'a CS,
+    spi: &'a mut SPI,
+    cs: &'a mut CS,
 }
 
 impl<'a, SPI, CS> DabSetFreqList<'a, SPI, CS>
@@ -29,7 +29,7 @@ where
     SPI: SpiBus,
     CS: OutputPin,
 {
-    pub fn new(spi: &'a SPI, cs: &'a CS) -> Self {
+    pub fn new(spi: &'a mut SPI, cs: &'a mut CS) -> Self {
         Self {
             //_marker: core::marker::PhantomData,
             spi,
@@ -72,11 +72,11 @@ where
     SPI: SpiBus,
     CS: OutputPin,
 {
-    fn cs(&self) -> &'a CS {
+    fn cs(&mut self) -> &mut CS {
         self.cs
     }
 
-    fn spi(&self) -> &'a SPI {
+    fn spi(&mut self) -> &mut SPI {
         self.spi
     }
 }

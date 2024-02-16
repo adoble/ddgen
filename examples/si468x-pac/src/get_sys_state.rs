@@ -49,8 +49,8 @@ pub struct GetSysState<'a, SPI, CS> {
     // Need this so that the compile accepts the generic SPI type
     // even though the struct has no data entries that use it.
     //_marker: core::marker::PhantomData<SPI>,
-    spi: &'a SPI,
-    cs: &'a CS,
+    spi: &'a mut SPI,
+    cs: &'a mut CS,
 }
 
 // impl<SPI, CS> Command<SPI, CS, GetSysStateRequest, 2, GetSysStateResponse, 6>
@@ -66,7 +66,7 @@ where
     SPI: SpiBus,
     CS: OutputPin,
 {
-    pub fn new(spi: &'a SPI, cs: &'a CS) -> Self {
+    pub fn new(spi: &'a mut SPI, cs: &'a mut CS) -> Self {
         GetSysState {
             //_marker: core::marker::PhantomData,
             spi,
@@ -107,11 +107,11 @@ where
     SPI: SpiBus,
     CS: OutputPin,
 {
-    fn cs(&self) -> &'a CS {
+    fn cs(&mut self) -> &mut CS {
         self.cs
     }
 
-    fn spi(&self) -> &'a SPI {
+    fn spi(&mut self) -> &mut SPI {
         self.spi
     }
 }

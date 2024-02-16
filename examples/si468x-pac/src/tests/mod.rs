@@ -66,7 +66,7 @@ fn integration_test_spi() {
     // Need to clone the parameters as Si486x takes ownership which cause problems later with
     // spi.done() and cs.done()
     let mut device = Si468xPac::new(spi.clone(), cs.clone());
-    let response = device.get_sys_state.send(|req| req.arg1 = 0x00).unwrap();
+    let response = device.get_sys_state().send(|req| req.arg1 = 0x00).unwrap();
 
     assert_eq!(
         response,

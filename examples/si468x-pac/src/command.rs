@@ -30,7 +30,7 @@ where
     // }
 
     //fn send<F>(&mut self, f: F) -> Result<CommandResponse<RESPONSE, RESPONSE_SIZE>, DeviceError>
-    fn send<F>(&self, f: F) -> Result<RESPONSE, DeviceError>
+    fn send<F>(&mut self, f: F) -> Result<RESPONSE, DeviceError>
     where
         // F: FnOnce(&mut CommandRequest<REQUEST_SIZE>), //-> &mut GetSysStateRequest,
         F: FnOnce(&mut REQUEST), //-> &mut GetSysStateRequest,
@@ -60,9 +60,9 @@ where
         Ok(response)
     }
 
-    fn cs(&self) -> &CS;
+    fn cs(&mut self) -> &mut CS;
 
-    fn spi(&self) -> &SPI;
+    fn spi(&mut self) -> &mut SPI;
 }
 
 pub trait CommandRequest<const REQUEST_SIZE: usize> {
