@@ -1,0 +1,125 @@
+# Test defintion for the si486x radio
+# Covers a limited number of commands
+#  Implication from the data sheet is that CS (SSB) is held low for the 
+# send duration of the command and all args. 
+# CS is also held low for the duration of all bytes in the response
+# 
+
+# TODO ABNF description of this (see https://github.com/toml-lang/toml/blob/1.0.0/toml.abnf) 
+version = "0.0.1"
+
+[device]
+endian    = "le" # or little_endian, be, big_endianname      = "Si468x"
+word_size = 8    ## word size. Default is 8. Other sizes not currently supported 
+
+[struct.header]
+# Word size can be derived here from the highest value of "words"
+cts     = { bits = "7" }
+err_cmd = { bits = "6" }
+dacqint = { bits = "5", description = "Digital radio link change interrupt indicator." }
+dsrvint = { bits = "4", description = "An enabled data component of one of the digital services requires attention." }
+stcint  = { bits = "0", description = "Seek / tune complete" }
+# Alternatives
+# stcint  = { bits = "[0]", description = "Seek / tune complete" }
+# stcint  = { bits = "0[0]", description = "Seek / tune complete" }
+
+devntint = { bits = "1[5]", description = "Digital radio event change interrupt indicator." }
+
+pup_state        = { bits = "3[6..7]", enum = "power_up_state" }
+dsp_err          = { bits = "3[4]", description = "The DSP has encountered a frame overrun." }
+repo_fatal_error = { bits = "3[3]" }
+cmdo_fatal_error = { bits = "3[2]" }
+arb_error        = { bits = "3[1]" }
+error_nr         = { bits = "3[0]" }
+# rsvd_stat: Reserved for future use 
+
+# Maybe easier for the user to have a definition such as 
+# cts = 7  
+# Meaning word 0, bit 7. 
+# To be able to parse both the simple form and the compley struct see
+# "Handling a value that can take on more than one type" in Software Tools wiki
+# file:///C:/Users/T440s/Dropbox/SoftwareTools/SoftwareTools.html#Handling%20a%20value%20that%20can%20take%20on%20more%20than%20one%20type
+
+
+[commands.GET_SYS_STATE]
+opcode        = 0x09
+words_request = 1    # TO DO This is the size of the request in words (as specified by word_size) and excluding the opcode 
+# This can be derived from the number of parameters + opcode 
+word_response = 6 # TOO DO Ditto for response
+# This can be derived from max "word" value
+description = """GET_SYS_STATE reports basic system state information such as which mode is active; FM, DAB, etc. The
+command is complete when the CTS bit (and optional interrupt) is set. The ERR bit (and optional interrupt) is set if
+an invalid argument is sent. Note that only a single interrupt occurs if both the CTS and ERR bits are set. The
+command may only be sent in powerup mode. Note: GET_SYS_STATE command is not supported in firmware
+revision A0A."""
+
+[commands.GET_SYS_STATE.params] ## or parameters
+arg1 = { default = 0x00, bits = "0..7" } ## or {dummy = true}
+# Alternative with opcode explicit and literals
+# opcode = "0[0x09]"   ## Use of a literal 
+# arg1 = { bits = "1[0x00]" } ## or {dummy = true}
+
+[commands.GET_SYS_STATE.response]
+header = { struct = "header" }
+image  = { words = "4", bits = "0..7", enum = "active_processing_image" }
+dummy  = { words = 5, dummy = true }                                      # TODO A better way?
+# NOTE / TODO: Could go further with simple bits being specfied as:
+#   cts = 7
+
+[enum.active_processing_image]
+bootloader            = 0
+fmhd                  = 1
+dab                   = 2
+tdmb_or_data_only_dab = 3
+fmhd_demod            = 4
+amhd                  = 5
+amhd_demod            = 6
+dab_demod             = 7
+
+[enum.power_up_state]
+reset              = 0
+bootloader_running = 2
+app_running        = 3
+# variant 1 is reserved
+
+[commands.DAB_TUNE_FREQ]
+opcode        = 0xB0
+words_request = 5    # TODO can we not derived this as this is less error prone? If dummy fields are used at the  end of the packet then these can be explicity stated. 
+# Can be derived from "words" max value
+words_response = 4 # Can be derived from "words" max value
+description = """DAB_TUNE_FREQ sets the DAB Receiver to tune to a frequency between 168.16 MHz and 239.20 MHz defined
+by the table through DAB_SET_FREQ_LIST."""
+
+[commands.DAB_TUNE_FREQ.params]
+injection           = { bits = "0[0..1]", enum = "injection" }
+freq_index          = "1[]"                                    # Uses all 8 bits
+antenna_capacitance = "3[]..4[]"                               # 16 bit value range 0-128. Bits not specified so use whole word
+
+[commands.DAB_TUNE_FREQ.response]
+header = { struct = "header" }
+
+
+[enum.injection]
+automatic = 0
+low_side  = 1
+high_side = 2
+
+[commands.DAB_SET_FREQ_LIST]
+words_response = 4 #  Can be derived from opcode = 0xB8
+words_request = { max = 97, min = 3 } # 48 u16 frequencies and number_frequencies as u8. Can be derived from params 
+description = """DAB_SET_FREQ_LIST command sets the DAB frequency table. The frequencies are in units of 1 kHz. The table
+can be populated with a single entry or a regional list (for example 5 or 6 entries]. It is recommended to make the
+list regional to increase scanning speed. The command is complete when the CTS bit (and optional interrupt) is
+set. The ERR bit (and optional interrupt) is set if an invalid argument is sent. Note that only a single interrupt occurs
+if both the CTS and ERR bits are set. The command may only be sent in powerup mode"""
+
+[commands.DAB_SET_FREQ_LIST.params]
+number_frequencies = { bits = "0[0..7]" }
+#frequencies        = { words = "3.*", bits = "0..15", max = 48, count = "number_frequencies" } # Bits value implies that the value is spread over two bytes. This is a litte tricky to derive
+frequencies = { bits = "3[]..4[];0[0..7]<=48" }
+# Altaernative to above 
+# frequencies = { bits = "3[]..4[];0[]<49" }
+
+
+[commands.DAB_SET_FREQ_LIST.response]
+header = { struct = "header" }
