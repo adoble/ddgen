@@ -1,1 +1,3 @@
-workspace = { members = ["examples/si468x-pac", "generate"], resolver = "2" }
+[workspace]
+members  = ["generator", "xtask"]
+resolver = "2"

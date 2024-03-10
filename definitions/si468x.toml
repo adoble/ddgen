@@ -5,40 +5,56 @@
 # CS is also held low for the duration of all bytes in the response
 # 
 
-# TODO ABNF descritipn of this (see https://github.com/toml-lang/toml/blob/1.0.0/toml.abnf) 
+# TODO ABNF description of this (see https://github.com/toml-lang/toml/blob/1.0.0/toml.abnf) 
 version = "0.0.1"
 
 [device]
-name      = "Si468x"
-word_size = 8        ## word size  
-msb_first = true
+name      = "si486x"
+endian    = "le"     # or little_endian, be, big_endianname      = "Si468x"
+word_size = 8        ## word size. Default is 8. Other sizes not currently supported 
+
+[struct.header.fields]
+cts     = { bits = "7" }
+err_cmd = { bits = "6" }
+dacqint = { bits = "5", description = "Digital radio link change interrupt indicator." }
+dsrvint = { bits = "4", description = "An enabled data component of one of the digital services requires attention." }
+stcint  = { bits = "0", description = "Seek / tune complete" }
+
+devntint = { bits = "1[5]", description = "Digital radio event change interrupt indicator." }
+
+pup_state        = { bits = "3[6..7]", enum = "power_up_state" }
+dsp_err          = { bits = "3[4]", description = "The DSP has encountered a frame overrun." }
+repo_fatal_error = { bits = "3[3]" }
+cmdo_fatal_error = { bits = "3[2]" }
+arb_error        = { bits = "3[1]" }
+error_nr         = { bits = "3[0]" }
+# rsvd_stat: Reserved for future use 
+
+# Maybe easier for the user to have a definition such as 
+# cts = 7  
+# Meaning word 0, bit 7. 
+# To be able to parse both the simple form and the compley struct see
+# "Handling a value that can take on more than one type" in Software Tools wiki
+# file:///C:/Users/T440s/Dropbox/SoftwareTools/SoftwareTools.html#Handling%20a%20value%20that%20can%20take%20on%20more%20than%20one%20type
 
 
 [commands.GET_SYS_STATE]
 opcode = 0x09
-words_request = 1 # This is the size of the request in words (as specified by word_size) and excluding the opcode 
-word_response = 6 # Ditto for response, 
+# The sizes of the requests and the reponses are soley determined for the fields and their bit specifications
+# This can be derived from max "word" value
 description = """GET_SYS_STATE reports basic system state information such as which mode is active; FM, DAB, etc. The
 command is complete when the CTS bit (and optional interrupt) is set. The ERR bit (and optional interrupt) is set if
 an invalid argument is sent. Note that only a single interrupt occurs if both the CTS and ERR bits are set. The
 command may only be sent in powerup mode. Note: GET_SYS_STATE command is not supported in firmware
 revision A0A."""
 
-[commands.GET_SYS_STATE.params] ## or parameters
-arg1 = { default = 0x00 }
+[commands.GET_SYS_STATE.request] ## or parameters
+arg1 = { bits = "1[0x00]" }
 
 [commands.GET_SYS_STATE.response]
-cts       = { words = "0", bits = "7" }
-err_cmd   = { words = "0", bits = "6" }
-pup_state = { words = "3", bits = "6..7", enum = "power_up_state" }
-# rsvd_stat: Reserved for future use 
-repo_fatal_error = { words = "3", bits = "3" }
-cmdo_fatal_error = { words = "3", bits = "2" }
-arb_error        = { words = "3", bits = "1" }
-error_nr         = { words = "3", bits = "0" }
-image            = { words = "4", bits = "0..7", enum = "active_processing_image" }
-# NOTE / TODO: Could go further with simple bits being specfied as:
-#   cts = 7
+header = { struct = "header" }
+image  = { bits = "4[0..7]", enum = "active_processing_image" }
+dummy  = { bits = "5[]" }
 
 [enum.active_processing_image]
 bootloader            = 0
@@ -58,18 +74,16 @@ app_running        = 3
 
 [commands.DAB_TUNE_FREQ]
 opcode = 0xB0
-words_request = 5
-words_response = 4
 description = """DAB_TUNE_FREQ sets the DAB Receiver to tune to a frequency between 168.16 MHz and 239.20 MHz defined
 by the table through DAB_SET_FREQ_LIST."""
 
-[commands.DAB_TUNE_FREQ.params]
-injection           = { words = "0", bits = "0..1", enum = "injection" }
-freq_index          = { words = "1" }                                    # Uses all 8 bits
-antenna_capacitance = { words = "3..4" }                                 # 16 bit value range 0-128
+[commands.DAB_TUNE_FREQ.request]
+injection           = { bits = "0[0..1]", enum = "injection" }
+freq_index          = { bits = "1[]" }                         # Uses all 8 bits
+antenna_capacitance = { bits = "3[]..4[]" }                    # 16 bit value range 0-128. Bits not specified so use whole word
 
 [commands.DAB_TUNE_FREQ.response]
-header = { struct = "status_header" }
+header = { struct = "header" }
 
 
 [enum.injection]
@@ -77,36 +91,19 @@ automatic = 0
 low_side  = 1
 high_side = 2
 
-[struct.status_header]
-cts              = { words = "0", bits = "7", description = "Clear to send" }
-err_cmd          = { words = "0", bits = "6", description = "Command error" }
-dacqint          = { words = "0", bits = "5", description = "Digital radio link change interrupt indicator." }
-dsrvint          = { words = "0", bits = "4", description = "An enabled data component of one of the digital services requires attention." }
-stcint           = { words = "0", bits = "0", description = "Seek / tune complete" }
-devntint         = { words = "1", bits = "5", description = "Digital radio event change interrupt indicator." }                              # ??
-pup_state        = { words = "3", bits = "6..7", enum = "power_up_state", description = "Indicates the powerup state of the system" }
-dsp_err          = { words = "3", bits = "4", description = "The DSP has encountered a frame overrun." }
-repo_fatal_error = { words = "3", bits = "3", description = "Control interface has dropped data during a reply read" }
-cmdo_fatal_error = { words = "3", bits = "2", description = "Dropped data during a command write" }
-arb_error        = { words = "3", bits = "1", description = "Arbiter error has occurred" }
-error_nr         = { words = "3", bits = "0", description = "Non-recoverable error has occurred" }
-
 [commands.DAB_SET_FREQ_LIST]
 opcode = 0xB8
-words_request = { max = 97, min = 3 } # 48 u16 frequencies and number_frequencies as u8
-words_response = 4
 description = """DAB_SET_FREQ_LIST command sets the DAB frequency table. The frequencies are in units of 1 kHz. The table
-can be populated with a single entry or a regional list (for example 5 or 6 entries). It is recommended to make the
+can be populated with a single entry or a regional list (for example 5 or 6 entries]. It is recommended to make the
 list regional to increase scanning speed. The command is complete when the CTS bit (and optional interrupt) is
 set. The ERR bit (and optional interrupt) is set if an invalid argument is sent. Note that only a single interrupt occurs
 if both the CTS and ERR bits are set. The command may only be sent in powerup mode"""
 
-[commands.DAB_SET_FREQ_LIST.params]
-number_frequencies = { words = "0", bits = "0..7" }
-frequency          = { words = "3.*", bits = "0..15" } # Bits value implies that the value is spread over two bytes
+[commands.DAB_SET_FREQ_LIST.request]
+number_frequencies = { bits = "0[0..7]" }
+#frequencies        = { words = "3.*", bits = "0..15", max = 48, count = "number_frequencies" } # Bits value implies that the value is spread over two bytes. This is a litte tricky to derive
+frequencies = { bits = "3[]..4[];(0[0..7])<=48" }
+
 
 [commands.DAB_SET_FREQ_LIST.response]
-header = { struct = "status_header" }
-
-
-# As the status block is often repeated, an possible enhanvement would be to have this as a "template"
+header = { struct = "header" }
