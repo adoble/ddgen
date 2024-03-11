@@ -109,10 +109,10 @@ mod tests {
         //                   12345678 9012345678901 2345678901234567
         //                             1         2          3
 
-        let ranges = ContentSpans::from(content);
+        let spans = ContentSpans::from(content);
 
         let search_range = Span { start: 12, end: 20 };
-        let location = ranges.location(search_range).unwrap();
+        let location = spans.location(search_range).unwrap();
 
         assert_eq!(
             location,
@@ -122,6 +122,33 @@ mod tests {
                 end_column: 12
             }
         );
+    }
+
+    #[test]
+    fn test_location_not_found() {
+        let content = "This is\nsome content\nwith many lines.";
+        //                   12345678 9012345678901 2345678901234567
+        //                             1         2          3
+
+        let spans = ContentSpans::from(content);
+
+        let search_range = Span { start: 30, end: 39 };
+        assert!(spans.location(search_range).is_none());
+
+        let search_range = Span { start: 40, end: 50 };
+        assert!(spans.location(search_range).is_none());
+    }
+
+    #[test]
+    fn test_location_spans_lines() {
+        let content = "This is\nsome content\nwith many lines.";
+        //                   12345678 9012345678901 2345678901234567
+        //                             1         2          3
+
+        let spans = ContentSpans::from(content);
+
+        let search_range = Span { start: 18, end: 24 };
+        assert!(spans.location(search_range).is_none());
     }
 
     #[test]
