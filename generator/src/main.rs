@@ -8,7 +8,7 @@ use clap::Parser;
 use crossterm::style::Stylize;
 use std::{collections::HashMap, io::Read};
 
-use crate::definition::Definition;
+use crate::{definition::Definition, error_reporting::error_report};
 
 mod access;
 mod bit_range;
@@ -17,6 +17,7 @@ mod command;
 mod common_structure;
 mod definition;
 mod doc_comment;
+mod error_reporting;
 mod field;
 mod output;
 
@@ -81,8 +82,9 @@ fn main() {
             println!("{}", "Finished generation!".green());
         }
         Err(err) => {
-            let span = err.span();
-            println!("{} {:?}", err.message().red(), span)
+            error_report(contents.as_str(), err.message(), err.span())
+            // let span = err.span();
+            // println!("{} {:?}", err.message().red(), span)
         }
     }
 }
