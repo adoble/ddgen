@@ -33,12 +33,12 @@ fn gen(definition: &str) -> Result<(), anyhow::Error> {
     let _p = xshell::pushd(root_dir())?;
     println!("Generating for definition {}", definition);
 
-    // Generate the driver for the specified definition file under <root>/example/<device name>
-    cmd!("cargo run --bin generator --   ./definitions/{definition}.toml ./example").run()?;
+    // Generate the driver for the specified definition file under <root>/generated/<device name>
+    cmd!("cargo run --bin generator --   ./definitions/{definition}.toml ./generated").run()?;
 
     // Need to add the generated project to the workspace members
     // ASSUMING that the device name and the definition name are the same
-    let member = format!("example/{definition}");
+    let member = format!("generated/{definition}");
     //add_workspace_member(&member)?;
 
     Ok(())
@@ -62,13 +62,13 @@ fn gen_with_tests(definition: &str) -> Result<(), anyhow::Error> {
     // Again using an unwrap as certain that this works.
     let test_code_path = test_code_path.to_str().unwrap();
 
-    // Generate the driver for the specified definition file under <root>/example/<device name>
-    cmd!("cargo run --bin ddgen --  --tests {test_code_path} ./definitions/{definition}.toml ./example")
+    // Generate the driver for the specified definition file under <root>/generated/<device name>
+    cmd!("cargo run --bin ddgen --  --tests {test_code_path} ./definitions/{definition}.toml ./generated")
         .run()?;
 
     // Need to add the generated project to the workspace members
     // ASSUMING that the device name and the definition name are the same
-    let member = format!("example/{definition}");
+    let member = format!("generated/{definition}");
     add_workspace_member(&member)?;
 
     Ok(())
