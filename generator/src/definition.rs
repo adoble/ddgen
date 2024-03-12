@@ -71,10 +71,10 @@ impl Definition {
         out_path: &Path,
         tests_path: &Option<PathBuf>,
     ) -> anyhow::Result<()> {
-        // println!("{}", "Generating code ...".bold());
+        println!("{}", "Generating code ...".bold());
 
-        // let source_path_buf = self.generate_package_structure(out_path)?;
-        // let source_path = &source_path_buf.as_path();
+        let source_path_buf = self.generate_package_structure(out_path)?;
+        let source_path = &source_path_buf.as_path();
 
         // let _tokens = rust::Tokens::new();
 
@@ -99,26 +99,25 @@ impl Definition {
     }
 
     fn generate_package_structure(&self, out_path: &Path) -> anyhow::Result<PathBuf> {
-        // let mut source_path_buf = PathBuf::from(out_path);
-        // source_path_buf.push(self.device.name.as_str().to_lowercase());
-        // source_path_buf.push("src");
+        let mut source_path_buf = PathBuf::from(out_path);
+        source_path_buf.push(self.device.name.as_str().to_lowercase());
+        source_path_buf.push("src");
 
-        // fs::create_dir_all(&source_path_buf)
-        //     .with_context(|| "Unable to create output directory")?;
+        fs::create_dir_all(&source_path_buf)
+            .with_context(|| "Unable to create output directory")?;
 
-        // let package_root = source_path_buf.parent().unwrap();
+        let package_root = source_path_buf.parent().unwrap();
 
-        // // Create a Cargo.toml file
-        // let cargo_toml_str = cargo_gen::generate(self.device.name.as_str(), &self.version);
-        // let mut cargo_toml_path: PathBuf = package_root.to_path_buf();
-        // cargo_toml_path.push("Cargo.toml");
+        // Create a Cargo.toml file
+        let cargo_toml_str = cargo_gen::generate(self.device.name.as_str(), &self.version);
+        let mut cargo_toml_path: PathBuf = package_root.to_path_buf();
+        cargo_toml_path.push("Cargo.toml");
 
-        // let mut file = std::fs::File::create(cargo_toml_path).expect("create Cargo.toml failed");
-        // file.write_all(cargo_toml_str.as_bytes())
-        //     .expect("write Cargo.toml failed");
+        let mut file = std::fs::File::create(cargo_toml_path).expect("create Cargo.toml failed");
+        file.write_all(cargo_toml_str.as_bytes())
+            .expect("write Cargo.toml failed");
 
-        // Ok(source_path_buf)
-        todo!()
+        Ok(source_path_buf)
     }
 
     fn generate_lib(&self, out_path: &Path, tests: bool) -> anyhow::Result<()> {

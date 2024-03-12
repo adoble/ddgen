@@ -1,3 +1,5 @@
+use std::default;
+
 /// Generates a `Cargo.toml` file for the generated driver
 use serde::Serialize;
 
@@ -17,9 +19,16 @@ struct Package {
 #[derive(Serialize)]
 struct Dependencies {
     #[serde(rename = "embedded-hal")]
-    embedded_hal: String,
+    embedded_hal: Dependency,
     #[serde(rename = "embedded-hal-mock")]
-    embedded_hal_mock: String,
+    embedded_hal_mock: Dependency,
+}
+
+#[derive(Serialize)]
+struct Dependency {
+    version: semver::Version,
+
+    features: Option<Vec<String>>,
 }
 
 pub fn generate(name: &str, version: &semver::Version) -> String {
@@ -28,9 +37,19 @@ pub fn generate(name: &str, version: &semver::Version) -> String {
         version: version.to_string(),
         edition: "2021".to_string(),
     };
+
+    let embedded_hal_dependency = Dependency {
+        version: semver::Version::parse("1.0.0").unwrap(),
+        features: None,
+    };
+
+    let embedded_hal_mock_dependency = Dependency {
+        version: semver::Version::parse("0.10.0").unwrap(),
+        features: Some(vec!["eh1".to_string()]),
+    };
     let dependencies = Dependencies {
-        embedded_hal: "0.2.7".to_string(),
-        embedded_hal_mock: "0.7.2".to_string(),
+        embedded_hal: embedded_hal_dependency,
+        embedded_hal_mock: embedded_hal_mock_dependency,
     };
 
     let cargo_toml = CargoToml {

@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
-/// TODO:
+// TODO:
+// - Run clippy
+// - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
 use serde::Deserialize;
 use std::{fs::File, path::PathBuf};
 
