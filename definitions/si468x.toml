@@ -9,7 +9,7 @@
 version = "0.0.1"
 
 [device]
-name      = "si486x"
+name      = "si468x"
 endian    = "le"     # or little_endian, be, big_endianname      = "Si468x"
 word_size = 8        ## word size. Default is 8. Other sizes not currently supported 
 
