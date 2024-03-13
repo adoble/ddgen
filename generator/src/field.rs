@@ -34,8 +34,35 @@ pub enum Field {
         bit_range: BitSpec,
         #[serde(rename = "enum")]
         enumeration: Option<String>,
+        #[serde(rename = "type", default)]
+        target_type: Option<TargetType>,
         description: Option<String>,
     },
+}
+
+#[derive(Deserialize, Debug, Default)]
+pub enum TargetType {
+    #[default]
+    #[serde(alias = "u8")]
+    U8,
+    #[serde(alias = "u16")]
+    U16,
+    #[serde(alias = "u32")]
+    U32,
+    #[serde(alias = "u64")]
+    U64,
+    #[serde(alias = "u128")]
+    U128,
+    #[serde(alias = "i8")]
+    I8,
+    #[serde(alias = "i16")]
+    I16,
+    #[serde(alias = "i32")]
+    I32,
+    #[serde(alias = "i64")]
+    I64,
+    #[serde(alias = "i128")]
+    I128,
 }
 
 fn from_bit_spec<'de, D>(deserializer: D) -> Result<BitSpec, D::Error>

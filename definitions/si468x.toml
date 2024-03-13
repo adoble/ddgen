@@ -102,7 +102,7 @@ if both the CTS and ERR bits are set. The command may only be sent in powerup mo
 [commands.DAB_SET_FREQ_LIST.request]
 number_frequencies = { bits = "0[0..7]" }
 #frequencies        = { words = "3.*", bits = "0..15", max = 48, count = "number_frequencies" } # Bits value implies that the value is spread over two bytes. This is a litte tricky to derive
-frequencies = { bits = "3[]..4[];(0[0..7])<=48" }
+frequencies = { bits = "3[]..4[];(0[0..7])<=48", type = "u16" }
 
 
 [commands.DAB_SET_FREQ_LIST.response]
