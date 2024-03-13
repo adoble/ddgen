@@ -131,7 +131,7 @@ mod tests {
             0b0000_0000, // 1
             0b0000_0000, // 2
             0b0111_1000, // 3  little end
-            0b1111_0101, // 4  big end. Top four bits shoudl be ignored
+            0b1111_0101, // 4  big end. Top four bits should be ignored
         ];
         let expected = 1400;
 
@@ -151,6 +151,47 @@ mod tests {
         };
 
         let r = u16::from_le_bytes([data[v], data[w].field(m, n)]);
+
+        assert_eq!(r, expected);
+    }
+
+    #[test]
+    fn deserialize_word_range_with_fields_le_to_u32() {
+        // Litte endian
+        let spec = bit_lang::parse("3[]..6[0..3]").unwrap();
+
+        // Number of 0d222222222 in 3 , 4, 5, 6[0..3]
+        let data = [
+            0x00, // 0
+            0x00, // 1
+            0x00, // 2
+            0x8E, // 3
+            0xD7, // 4
+            0x3E, // 5
+            0x0D, // 6
+        ];
+
+        let expected: u32 = 222_222_222;
+
+        let v = spec.start.index;
+
+        let (w, m, n) = if let Some(word) = spec.end {
+            match word.bit_range {
+                BitRange::Range(m, n) => (word.index, m, n),
+                _ => {
+                    assert!(false, "Unexpected variant");
+                    (0, 0, 0)
+                }
+            }
+        } else {
+            assert!(false, "End word not specified");
+            (0, 0, 0)
+        };
+
+        assert_eq!(v, 3);
+        assert_eq!(w, 6);
+
+        let r = u32::from_le_bytes([data[v], data[v + 1], data[v + 2], data[w].field(m, n)]);
 
         assert_eq!(r, expected);
     }
