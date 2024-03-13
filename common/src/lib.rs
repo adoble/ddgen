@@ -83,10 +83,79 @@ mod tests {
     }
 
     #[test]
-    fn deserialize_word_range() {
+    fn deserialize_word_range_le_to_u16() {
         // Little endian
         let spec = bit_lang::parse("3[]..4[]").unwrap();
 
-        todo!();
+        // Number of 0d1400 in 3 and 4
+        let data: [u8; 5] = [
+            0b0000_0000, // 0
+            0b0000_0000, // 1
+            0b0000_0000, // 2
+            0b0111_1000, // 3  little end
+            0b0000_0101, // 4  big end
+        ];
+        let expected = 1400;
+
+        let v = spec.start.index;
+
+        let w = if let Some(word) = spec.end {
+            match word.bit_range {
+                BitRange::WholeWord => word.index,
+                _ => {
+                    assert!(false, "Unexpected variant");
+                    0
+                }
+            }
+        } else {
+            assert!(false, "End word not specified");
+            0
+        };
+
+        assert_eq!(v, 3);
+        assert_eq!(w, 4);
+
+        let r = u16::from_le_bytes(data[v..=w].try_into().unwrap());
+
+        assert_eq!(r, expected);
+    }
+
+    #[test]
+    fn deserialize_word_range_fields_to_u16() {
+        // Litte endian
+        let spec = bit_lang::parse("3[]..4[0..3]").unwrap();
+
+        // Number of 0d1400 in 3 and 4[0..3]
+        let data: [u8; 5] = [
+            0b0000_0000, // 0
+            0b0000_0000, // 1
+            0b0000_0000, // 2
+            0b0111_1000, // 3  little end
+            0b1111_0101, // 4  big end. Top four bits shoudl be ignored
+        ];
+        let expected = 1400;
+
+        let v = spec.start.index;
+
+        let (w, m, n) = if let Some(word) = spec.end {
+            match word.bit_range {
+                BitRange::Range(m, n) => (word.index, m, n),
+                _ => {
+                    assert!(false, "Unexpected variant");
+                    (0, 0, 0)
+                }
+            }
+        } else {
+            assert!(false, "End word not specified");
+            (0, 0, 0)
+        };
+
+        let mut bytes: [u8; 2] = [0, 0];
+        bytes[0] = data[v];
+        bytes[1] = data[w].field(m, n);
+
+        let r = u16::from_le_bytes(bytes.try_into().unwrap());
+
+        assert_eq!(r, expected);
     }
 }
