@@ -150,11 +150,7 @@ mod tests {
             (0, 0, 0)
         };
 
-        let mut bytes: [u8; 2] = [0, 0];
-        bytes[0] = data[v];
-        bytes[1] = data[w].field(m, n);
-
-        let r = u16::from_le_bytes(bytes.try_into().unwrap());
+        let r = u16::from_le_bytes([data[v], data[w].field(m, n)]);
 
         assert_eq!(r, expected);
     }
