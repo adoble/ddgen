@@ -3,10 +3,12 @@ mod response;
 #[cfg(test)]
 mod tests {
 
+    use std::io::Repeat;
+
     use super::*;
 
     use crate::response::ResponseWord;
-    use bit_lang::{BitRange, BitSpec};
+    use bit_lang::{BitRange, BitSpec, Repeat as WordRepeat, Word};
 
     // 3[4]
     #[test]
@@ -21,15 +23,24 @@ mod tests {
             0b0000_0000,
         ];
 
-        let w: usize = spec.start.index.into();
-        let br = spec.start.bit_range;
-
-        let n = if let BitRange::Single(n) = br {
-            n
-        } else {
-            assert!(false, "Single bit expected, other variant found");
-            0
+        let (w, n) = match spec {
+            BitSpec {
+                start:
+                    Word {
+                        index,
+                        bit_range: BitRange::Single(n),
+                    },
+                end: None,
+                repeat: WordRepeat::None,
+            } => (index, n),
+            _ => {
+                assert!(false, "Unexpected bit spec found");
+                return;
+            }
         };
+
+        assert_eq!(w, 3);
+        assert_eq!(n, 4);
 
         let r = data[w].bit(n);
 
@@ -48,12 +59,20 @@ mod tests {
             0b0000_0000, // 4
         ];
 
-        let w: usize = spec.start.index.into();
-        let (n, m) = if let BitRange::Range(n, m) = spec.start.bit_range {
-            (n, m)
-        } else {
-            assert!(false, "Range expected, other variant found");
-            (0, 0)
+        let (w, n, m) = match spec {
+            BitSpec {
+                start:
+                    Word {
+                        index,
+                        bit_range: BitRange::Range(n, m),
+                    },
+                end: None,
+                repeat: WordRepeat::None,
+            } => (index, n, m),
+            _ => {
+                assert!(false, "Unexpected bit spec found");
+                return;
+            }
         };
 
         let r = data[w].field(n, m);
@@ -97,20 +116,40 @@ mod tests {
         ];
         let expected = 1400;
 
-        let v = spec.start.index;
-
-        let w = if let Some(word) = spec.end {
-            match word.bit_range {
-                BitRange::WholeWord => word.index,
-                _ => {
-                    assert!(false, "Unexpected variant");
-                    0
-                }
+        let (v, w) = match spec {
+            BitSpec {
+                start:
+                    Word {
+                        index: v,
+                        bit_range: BitRange::WholeWord,
+                    },
+                end:
+                    Some(Word {
+                        index: w,
+                        bit_range: BitRange::WholeWord,
+                    }),
+                repeat: WordRepeat::None,
+            } => (v, w),
+            _ => {
+                assert!(false, "Unexpected bit spec found");
+                return;
             }
-        } else {
-            assert!(false, "End word not specified");
-            0
         };
+
+        // let v = spec.start.index;
+
+        // let w = if let Some(word) = spec.end {
+        //     match word.bit_range {
+        //         BitRange::WholeWord => word.index,
+        //         _ => {
+        //             assert!(false, "Unexpected variant");
+        //             0
+        //         }
+        //     }
+        // } else {
+        //     assert!(false, "End word not specified");
+        //     0
+        // };
 
         assert_eq!(v, 3);
         assert_eq!(w, 4);
