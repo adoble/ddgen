@@ -136,21 +136,6 @@ mod tests {
             }
         };
 
-        // let v = spec.start.index;
-
-        // let w = if let Some(word) = spec.end {
-        //     match word.bit_range {
-        //         BitRange::WholeWord => word.index,
-        //         _ => {
-        //             assert!(false, "Unexpected variant");
-        //             0
-        //         }
-        //     }
-        // } else {
-        //     assert!(false, "End word not specified");
-        //     0
-        // };
-
         assert_eq!(v, 3);
         assert_eq!(w, 4);
 
@@ -233,5 +218,47 @@ mod tests {
         let r = u32::from_le_bytes([data[v], data[v + 1], data[v + 2], data[w].field(m, n)]);
 
         assert_eq!(r, expected);
+    }
+
+    #[test]
+    fn deserialize_word_repeat() {
+        let spec = bit_lang::parse("3[];5").unwrap();
+
+        // Number of 0d1400 in 3 and 4
+        let data: [u8; 8] = [
+            0b0000_0000, // 0
+            0b0000_0000, // 1
+            0b0000_0000, // 2
+            1,           // 3
+            2,           // 4
+            3,           // 5
+            4,           // 6
+            5,           // 7
+        ];
+        let expected: [u8; 5] = [1, 2, 3, 4, 5];
+
+        let (w, r) = match spec {
+            BitSpec {
+                start:
+                    Word {
+                        index: w,
+                        bit_range: BitRange::WholeWord,
+                    },
+                end: None,
+                repeat: WordRepeat::Fixed(r),
+            } => (w, r),
+            _ => {
+                assert!(false, "Unexpected bit spec found");
+                return;
+            }
+        };
+
+        assert_eq!(w, 3);
+        assert_eq!(r, 5);
+
+        let mut d: [u8; 5] = [0; 5]; // 5 is repeat
+        d.copy_from_slice(&data[w..(w + r)]);
+
+        assert_eq!(d, expected);
     }
 }
