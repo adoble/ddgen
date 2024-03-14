@@ -256,9 +256,19 @@ mod tests {
         assert_eq!(w, 3);
         assert_eq!(r, 5);
 
-        let mut d: [u8; 5] = [0; 5]; // 5 is repeat
-        d.copy_from_slice(&data[w..(w + r)]);
+        //let mut d: [u8; 5] = [0; 5]; // 5 is repeat
+        //d.copy_from_slice(&data[w..(w + r)]);
+        let d: [u8; 5] = repeating_words(&data, w, r);
 
         assert_eq!(d, expected);
+    }
+
+    // TODO extend with u16, u32 etc.
+    fn repeating_words<const LEN: usize>(source: &[u8], start: usize, repeats: usize) -> [u8; LEN] {
+        let mut buf = [0; LEN];
+
+        buf.copy_from_slice(&source[start..(start + repeats)]);
+
+        buf
     }
 }
