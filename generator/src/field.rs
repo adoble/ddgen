@@ -35,7 +35,7 @@ pub enum Field {
         #[serde(rename = "enum")]
         enumeration: Option<String>,
         #[serde(rename = "type", default)]
-        target_type: Option<TargetType>,
+        target_type: TargetType,
         description: Option<String>,
     },
 }
