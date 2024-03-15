@@ -3,10 +3,6 @@ mod response;
 #[cfg(test)]
 mod tests {
 
-    use std::io::Repeat;
-
-    use super::*;
-
     use crate::response::ResponseWord;
     use bit_lang::{BitRange, BitSpec, Condition, Repeat as WordRepeat, Word};
 
@@ -310,37 +306,22 @@ mod tests {
         assert_eq!(condition, Condition::Lte);
         assert_eq!(limit, 5);
 
-        // let r = match (condition, count_word) {
-        //     (Condition::Lt, _) => count_word - 1,
-        //     (Condition::Lte, _) => count_word,
-        // };
-        // 5 is limit
-        //let d: [u8; 5] = repeating_words(&data, w, data[count_word].into());
-        // let mut d: [u8; 5] = [0; 5];
-        // let mut i = 0;
-        // for b in &data[w..(w + data[count_word] as usize)] {
-        //     d[i] = *b;
-        //     i += 1;
-        // }
-        let d: [u8; 5] = repeating_words1(&data, w, data[count_word].into());
+        let d: [u8; 5] = repeating_words(&data, w, data[count_word].into());
 
         assert_eq!(d, expected);
     }
 
     // TODO extend with u16, u32 etc.
+    // fn repeating_words<const LEN: usize>(source: &[u8], start: usize, repeats: usize) -> [u8; LEN] {
+    //     let mut buf = [0; LEN];
+
+    //     buf.copy_from_slice(&source[start..(start + repeats)]);
+
+    //     buf
+    // }
+
+    // TODO extend with u16, u32 etc.
     fn repeating_words<const LEN: usize>(source: &[u8], start: usize, repeats: usize) -> [u8; LEN] {
-        let mut buf = [0; LEN];
-
-        buf.copy_from_slice(&source[start..(start + repeats)]);
-
-        buf
-    }
-
-    fn repeating_words1<const LEN: usize>(
-        source: &[u8],
-        start: usize,
-        repeats: usize,
-    ) -> [u8; LEN] {
         let mut buf: [u8; LEN] = [0; LEN];
         let mut i = 0;
 
@@ -351,16 +332,4 @@ mod tests {
 
         buf
     }
-
-    // fn repeating_words2<const LEN: usize>(
-    //     source: &[u8],
-    //     start: usize,
-    //     repeats: usize,
-    // ) -> [u8; LEN] {
-    //     source[start..(start + repeats)]
-    //         .iter()
-    //         .take(LEN)
-    //         .copied()
-    //         .collect::<[u8; LEN]>()
-    // }
 }
