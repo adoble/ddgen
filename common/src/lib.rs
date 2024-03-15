@@ -311,14 +311,68 @@ mod tests {
         assert_eq!(d, expected);
     }
 
-    // TODO extend with u16, u32 etc.
-    // fn repeating_words<const LEN: usize>(source: &[u8], start: usize, repeats: usize) -> [u8; LEN] {
-    //     let mut buf = [0; LEN];
+    #[test]
+    fn deserialize_word_range_u16_repeat() {
+        let spec = bit_lang::parse("3[]..4[];3").unwrap();
 
-    //     buf.copy_from_slice(&source[start..(start + repeats)]);
+        // Number of 0d1400 in 3 and 4
+        let mut data: [u8; 10] = [
+            0b0000_0000, // 0
+            0b0000_0000, // 1
+            4,           // 2 - Contains the count of four items double items
+            0,           // 3
+            0,           // 4
+            0,           // 5
+            0,           // 6
+            0,           // 7
+            0,           // 8
+            0xFF,        // 9 extra data
+        ];
+        let expected: [u16; 3] = [22_222, 55_555, 65_535];
 
-    //     buf
-    // }
+        data[3] = expected[0].to_le_bytes()[0];
+        data[4] = expected[0].to_le_bytes()[1];
+        data[5] = expected[1].to_le_bytes()[0];
+        data[6] = expected[1].to_le_bytes()[1];
+        data[7] = expected[2].to_le_bytes()[0];
+        data[8] = expected[2].to_le_bytes()[1];
+
+        let (w, v, r) = match spec {
+            BitSpec {
+                start:
+                    Word {
+                        index: w,
+                        bit_range: BitRange::WholeWord,
+                    },
+                end:
+                    Some(Word {
+                        index: v,
+                        bit_range: BitRange::WholeWord,
+                    }),
+                repeat: WordRepeat::Fixed(r),
+            } => (w, v, r),
+            _ => {
+                assert!(false, "Unexpected bit spec found");
+                return;
+            }
+        };
+
+        assert_eq!(w, 3);
+        assert_eq!(v, 4);
+        assert_eq!(r, 3);
+
+        // let d: [u8; 5] = repeating_words(&data, w, data[count_word].into());
+        let mut d: [u16; 3] = [0; 3];
+        let chunk = v - w + 1;
+        assert_eq!(chunk, 2);
+        let mut i = 0;
+        for element in data[w..].chunks(chunk).take(r) {
+            d[i] = u16::from_le_bytes([element[0], element[1]]);
+            i += 1;
+        }
+
+        assert_eq!(d, expected);
+    }
 
     // TODO extend with u16, u32 etc.
     fn repeating_words<const LEN: usize>(source: &[u8], start: usize, repeats: usize) -> [u8; LEN] {
