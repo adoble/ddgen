@@ -34,6 +34,21 @@ pub fn repeating_words_u16<const LEN: usize>(
     buf
 }
 
+fn modify_bit(word: u8, position: u8, state: bool) -> u8 {
+    let mut mask: u8 = 1 << position;
+
+    let modifed_word = if state {
+        // setting the bit
+        word | mask
+    } else {
+        // clear the bit{
+        mask = !mask;
+        word & mask
+    };
+
+    modifed_word
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -465,5 +480,45 @@ mod tests {
         let d: [u16; 5] = repeating_words_u16(&data, w, data[counter_word].into());
 
         assert_eq!(d, expected);
+    }
+
+    #[test]
+    fn serialise_bit() {
+        let b = true;
+
+        let spec = bit_lang::parse("3[4]").unwrap();
+
+        let expected_data = [
+            0b0000_0000,
+            0b0000_0000,
+            0b0000_0000,
+            0b0001_0000,
+            0b0000_0000,
+        ];
+
+        let mut data: [u8; 5] = [0; 5];
+
+        let (w, n) = match spec {
+            BitSpec {
+                start:
+                    Word {
+                        index,
+                        bit_range: BitRange::Single(n),
+                    },
+                end: None,
+                repeat: WordRepeat::None,
+            } => (index, n),
+            _ => {
+                assert!(false, "Unexpected bit spec found");
+                return;
+            }
+        };
+
+        assert_eq!(w, 3);
+        assert_eq!(n, 4);
+
+        data[w] = modify_bit(data[w], n, b);
+
+        assert_eq!(data, expected_data);
     }
 }
