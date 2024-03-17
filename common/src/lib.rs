@@ -1,3 +1,4 @@
+mod error;
 mod response;
 
 // TODO extend with u16, u32 etc.
@@ -49,13 +50,44 @@ fn modify_bit(word: u8, position: u8, state: bool) -> u8 {
     modifed_word
 }
 
+/// Modify the field as specified by the start and end bit positions.
+///
+/// Warning: Attempting to modify the whole word or having end less then start
+/// will cause the function to panic!
+fn modify_field(word: u8, value: u8, start: u8, end: u8) -> u8 {
+    let mask = ((1 << (end - start + 1)) - 1) << start;
+    let cleared_bits = word & !mask;
+    let new_bits = value << start;
+    cleared_bits | new_bits
+}
+
 #[cfg(test)]
 mod tests {
 
     use super::*;
 
+    use crate::error::DeviceError;
     use crate::response::ResponseWord;
     use bit_lang::{BitRange, BitSpec, Condition, Repeat as WordRepeat, Word};
+
+    // An enum for testing
+    pub enum TestField {
+        Disabled = 0,
+        Enabled = 1,
+        Tristate = 2,
+    }
+
+    impl TryFrom<u8> for TestField {
+        type Error = DeviceError;
+        fn try_from(value: u8) -> Result<Self, Self::Error> {
+            match value {
+                0 => Ok(Self::Disabled),
+                1 => Ok(Self::Enabled),
+                3 => Ok(Self::Tristate),
+                _ => Err(DeviceError::EnumConversion),
+            }
+        }
+    }
 
     // 3[4]
     #[test]
@@ -520,5 +552,44 @@ mod tests {
         data[w] = modify_bit(data[w], n, b);
 
         assert_eq!(data, expected_data);
+    }
+
+    #[test]
+    fn serialize_field() {
+        let spec = bit_lang::parse("2[2..3]").unwrap();
+
+        let mut data = [0u8; 5];
+        data[2] = 0xF1;
+
+        let (w, n, m) = match spec {
+            BitSpec {
+                start:
+                    Word {
+                        index: w,
+                        bit_range: BitRange::Range(n, m),
+                    },
+                end: None,
+                repeat: WordRepeat::None,
+            } => (w, n, m),
+            _ => {
+                assert!(false, "Unexpected bit spec found");
+                return;
+            }
+        };
+
+        assert_eq!(w, 2);
+        assert_eq!(n, 2);
+        assert_eq!(m, 3);
+
+        let field = TestField::Tristate;
+
+        data[w] = modify_field(data[w], field as u8, n, m);
+
+        assert_eq!(data[2], 0b1111_1001);
+
+        let field = TestField::Enabled;
+
+        data[w] = modify_field(data[w], field as u8, n, m);
+        assert_eq!(data[2], 0b1111_0101);
     }
 }
