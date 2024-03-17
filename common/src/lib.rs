@@ -1,5 +1,7 @@
+mod deserialize;
 mod error;
 mod response;
+mod serialize;
 
 // TODO extend with u16, u32 etc.
 pub fn repeating_words_u8<const LEN: usize>(
