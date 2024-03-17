@@ -3,6 +3,8 @@ mod error;
 mod response;
 mod serialize;
 
+pub use crate::error::DeviceError;
+
 // TODO extend with u16, u32 etc.
 pub fn repeating_words_u8<const LEN: usize>(
     source: &[u8],
@@ -37,7 +39,7 @@ pub fn repeating_words_u16<const LEN: usize>(
     buf
 }
 
-fn modify_bit(word: u8, position: u8, state: bool) -> u8 {
+pub fn modify_bit(word: u8, position: u8, state: bool) -> u8 {
     let mut mask: u8 = 1 << position;
 
     let modifed_word = if state {
@@ -56,7 +58,7 @@ fn modify_bit(word: u8, position: u8, state: bool) -> u8 {
 ///
 /// Warning: Attempting to modify the whole word or having end less then start
 /// will cause the function to panic!
-fn modify_field(word: u8, value: u8, start: u8, end: u8) -> u8 {
+pub fn modify_field(word: u8, value: u8, start: u8, end: u8) -> u8 {
     let mask = ((1 << (end - start + 1)) - 1) << start;
     let cleared_bits = word & !mask;
     let new_bits = value << start;
