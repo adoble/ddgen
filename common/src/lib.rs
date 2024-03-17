@@ -592,4 +592,23 @@ mod tests {
         data[w] = modify_field(data[w], field as u8, n, m);
         assert_eq!(data[2], 0b1111_0101);
     }
+
+    #[test]
+    fn serialize_u16() {
+        let spec = bit_lang::parse("2[]..3[]").unwrap();
+
+        // Avoiding the BitSpec destructuring as this has already been demonstrated.
+
+        let value: u16 = 22222; // =0x56CE
+
+        let mut serialized_data = [0u8; 10];
+
+        let v = spec.start.index;
+        let w = spec.end.unwrap().index;
+
+        serialized_data[v..=w].copy_from_slice(&value.to_le_bytes());
+
+        assert_eq!(serialized_data[v], 0xCE);
+        assert_eq!(serialized_data[w], 0x56);
+    }
 }
