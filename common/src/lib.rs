@@ -1,5 +1,6 @@
 mod deserialize;
 mod error;
+mod request;
 mod response;
 mod serialize;
 
@@ -39,31 +40,31 @@ pub fn repeating_words_u16<const LEN: usize>(
     buf
 }
 
-pub fn modify_bit(word: u8, position: u8, state: bool) -> u8 {
-    let mut mask: u8 = 1 << position;
+// pub fn modify_bit(word: u8, position: u8, state: bool) -> u8 {
+//     let mut mask: u8 = 1 << position;
 
-    let modifed_word = if state {
-        // setting the bit
-        word | mask
-    } else {
-        // clear the bit{
-        mask = !mask;
-        word & mask
-    };
+//     let modifed_word = if state {
+//         // setting the bit
+//         word | mask
+//     } else {
+//         // clear the bit{
+//         mask = !mask;
+//         word & mask
+//     };
 
-    modifed_word
-}
+//     modifed_word
+// }
 
-/// Modify the field as specified by the start and end bit positions.
-///
-/// Warning: Attempting to modify the whole word or having end less then start
-/// will cause the function to panic!
-pub fn modify_field(word: u8, value: u8, start: u8, end: u8) -> u8 {
-    let mask = ((1 << (end - start + 1)) - 1) << start;
-    let cleared_bits = word & !mask;
-    let new_bits = value << start;
-    cleared_bits | new_bits
-}
+// /// Modify the field as specified by the start and end bit positions.
+// ///
+// /// Warning: Attempting to modify the whole word or having end less then start
+// /// will cause the function to panic!
+// pub fn modify_field(word: u8, value: u8, start: u8, end: u8) -> u8 {
+//     let mask = ((1 << (end - start + 1)) - 1) << start;
+//     let cleared_bits = word & !mask;
+//     let new_bits = value << start;
+//     cleared_bits | new_bits
+// }
 
 #[cfg(test)]
 //mod test_bit_spec_impl;

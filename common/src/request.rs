@@ -1,5 +1,5 @@
 pub trait RequestWord {
-    //fn new(bits: u8) -> Self;
+    fn new(bits: u8) -> Self;
     fn bits(&self) -> u8;
 
     // TODO this should be private?
@@ -38,7 +38,19 @@ pub trait RequestWord {
 }
 
 impl RequestWord for u8 {
-    fn word(&self) -> &u8 {
+    fn new(bits: u8) -> Self {
+        bits
+    }
+
+    fn bits(&self) -> u8 {
+        *self
+    }
+
+    fn set_bits(&mut self, bits: u8) -> &mut Self {
+        *self = bits;
         self
     }
+    // fn word(&self) -> &u8 {
+    //     self
+    // }
 }

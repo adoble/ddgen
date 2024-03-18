@@ -1,6 +1,7 @@
 #![cfg(test)]
 //use super::*;
 use crate::error::DeviceError;
+use crate::request::RequestWord;
 use crate::response::ResponseWord;
 use crate::*;
 use bit_lang::{BitRange, BitSpec, Condition, Repeat as WordRepeat, Word};
@@ -484,7 +485,8 @@ fn serialise_bit() {
     assert_eq!(w, 3);
     assert_eq!(n, 4);
 
-    data[w] = modify_bit(data[w], n, b);
+    //data[w] = modify_bit(data[w], n, b);
+    data[w].modify_bit(n, b);
 
     assert_eq!(data, expected_data);
 }
@@ -518,13 +520,14 @@ fn serialize_field() {
 
     let field = TestField::Tristate;
 
-    data[w] = modify_field(data[w], field as u8, n, m);
+    // data[w] = modify_field(data[w], field as u8, n, m);
+    data[w].modify_field(field as u8, n, m);
 
     assert_eq!(data[2], 0b1111_1001);
 
     let field = TestField::Enabled;
 
-    data[w] = modify_field(data[w], field as u8, n, m);
+    data[w].modify_field(field as u8, n, m);
     assert_eq!(data[2], 0b1111_0101);
 }
 

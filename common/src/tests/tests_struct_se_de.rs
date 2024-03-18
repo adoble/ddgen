@@ -1,8 +1,8 @@
 #![cfg(test)]
 
 use crate::error::DeviceError;
+use crate::request::RequestWord;
 use crate::response::ResponseWord;
-use crate::*;
 
 // An enum for testing
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -22,6 +22,25 @@ impl TryFrom<u8> for TestField {
             _ => Err(DeviceError::EnumConversion),
         }
     }
+}
+
+// A struct for testing request/serialization
+// Bit structure is:
+// a_bit =  {bits = "4"}
+// a_field =  {bits = "[5..6]"}
+// a_u16 =  {bits = "1[]..2[]"}
+// a_u8 =  {bits = "3[]"}
+// a_count =  {bits = "4[]"}
+// a_repeating_u16 =  {bits = "5[]..6[];(4[])<=5" }
+//
+#[derive(PartialEq, Debug, Copy, Clone)]
+struct TestRequest {
+    a_bit: bool,
+    a_field: TestField,
+    a_u8: u8,
+    a_u16: u16,
+    a_count: u8,
+    a_repeating_u16: [u16; 5],
 }
 
 #[test]
@@ -88,8 +107,8 @@ fn serialize_struct() {
     // The size is calculated from the bit specs.
     let mut data = [0u8; 4];
 
-    data[0] = modify_bit(data[0], 4, test_struct.a_bit);
-    data[0] = modify_field(data[0], test_struct.a_field as u8, 5, 6);
+    data[0].modify_bit(4, test_struct.a_bit);
+    data[0].modify_field(test_struct.a_field as u8, 5, 6);
     data[1] = test_struct.a_u16.to_le_bytes()[0];
     data[2] = test_struct.a_u16.to_le_bytes()[1];
     data[3] = test_struct.a_u8;
