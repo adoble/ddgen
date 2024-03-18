@@ -273,7 +273,7 @@ fn deserialize_word_repeat() {
 
     //let mut d: [u8; 5] = [0; 5]; // 5 is repeat
     //d.copy_from_slice(&data[w..(w + r)]);
-    let d: [u8; 5] = repeating_words_u8(&data, w, r);
+    let d: [u8; 5] = deserialize_repeating_words_u8(&data, w, r);
 
     assert_eq!(d, expected);
 }
@@ -325,7 +325,7 @@ fn deserialize_word_variable_repeat() {
     assert_eq!(condition, Condition::Lte);
     assert_eq!(limit, 5);
 
-    let d: [u8; 5] = repeating_words_u8(&data, w, data[count_word].into());
+    let d: [u8; 5] = deserialize_repeating_words_u8(&data, w, data[count_word].into());
 
     assert_eq!(d, expected);
 }
@@ -380,7 +380,7 @@ fn deserialize_word_range_u16_repeat() {
     assert_eq!(v, 4);
     assert_eq!(r, 3);
 
-    let d: [u16; 3] = repeating_words_u16(&data, w, r);
+    let d: [u16; 3] = deserialize_repeating_words_u16(&data, w, r);
 
     assert_eq!(d, expected);
 }
@@ -445,7 +445,7 @@ fn deserialize_word_range_u16_variable_repeat() {
     assert_eq!(counter_word, 2);
     assert_eq!(limit, 5);
 
-    let d: [u16; 5] = repeating_words_u16(&data, w, data[counter_word].into());
+    let d: [u16; 5] = deserialize_repeating_words_u16(&data, w, data[counter_word].into());
 
     assert_eq!(d, expected);
 }

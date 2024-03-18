@@ -7,7 +7,7 @@ mod serialize;
 pub use crate::error::DeviceError;
 
 // TODO extend with u16, u32 etc.
-pub fn repeating_words_u8<const LEN: usize>(
+pub fn deserialize_repeating_words_u8<const LEN: usize>(
     source: &[u8],
     start: usize,
     repeats: usize,
@@ -24,7 +24,7 @@ pub fn repeating_words_u8<const LEN: usize>(
 }
 
 // TODO extend with u16, u32 etc.
-pub fn repeating_words_u16<const LEN: usize>(
+pub fn deserialize_repeating_words_u16<const LEN: usize>(
     source: &[u8],
     start: usize,
     repeats: usize,
