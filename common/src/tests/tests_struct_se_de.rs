@@ -56,15 +56,32 @@ impl Serialize<16> for TestRequest {
         data[3] = self.a_u8;
         data[4] = self.a_count;
 
-        let mut target_index = 5; // a_repeating_u16 =  {bits = "5[]..6[];(4[])<=6" }
-        for i in 0..(self.a_count as usize) {
-            data[target_index + i] = self.a_repeating_u16[i].to_le_bytes()[0];
-            data[target_index + i + 1] = self.a_repeating_u16[i].to_le_bytes()[1];
-            target_index += 1;
-        }
+        // let mut target_index = 5; // a_repeating_u16 =  {bits = "5[]..6[];(4[])<=6" }
+        // for i in 0..(self.a_count as usize) {
+        //     data[target_index + i] = self.a_repeating_u16[i].to_le_bytes()[0];
+        //     data[target_index + i + 1] = self.a_repeating_u16[i].to_le_bytes()[1];
+        //     target_index += 1;
+        // }
+
+        let s: [u8; 6] = serialize_repeating_words_u16(&self.a_repeating_u16, self.a_count.into());
+        data[5..=10].copy_from_slice(&s);
 
         ((self.a_count * 2) + 5, data)
     }
+}
+
+fn serialize_repeating_words_u16<const LEN: usize>(source: &[u16], number: usize) -> [u8; LEN] {
+    //let mut target_index = 5; // a_repeating_u16 =  {bits = "5[]..6[];(4[])<=6" }
+
+    let mut data = [0u8; LEN];
+    let mut target_position = 0;
+    for i in 0..number {
+        data[target_position + i] = source[i].to_le_bytes()[0];
+        data[target_position + i + 1] = source[i].to_le_bytes()[1];
+        target_position += 1;
+    }
+
+    data
 }
 
 #[test]
@@ -174,4 +191,15 @@ fn serialize_struct2() {
 
     assert_eq!(count, 11);
     assert_eq!(data, expected_data);
+}
+
+#[test]
+#[ignore]
+fn serialize_generalised() {
+
+    // data[0] = test_struct.a_bit.serialize(bit_spec);
+    // data[1] = test_struct.a_field.serialize(bit_spec);
+    // data[1] = test_struct.a_field.serialize(bit_spec);
+    // ...
+    // data[5..16] = test_struct.a_repeating_u16.serialize(bit_spec);
 }
