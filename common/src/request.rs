@@ -54,3 +54,48 @@ impl RequestWord for u8 {
     //     self
     // }
 }
+
+pub trait RequestArray<T> {
+    fn serialize_repeating_words<const N: usize>(source: &[T], number: usize) -> [u8; N];
+}
+
+impl RequestArray<u16> for u16 {
+    fn serialize_repeating_words<const N: usize>(source: &[u16], number: usize) -> [u8; N] {
+        let mut data = [0u8; N];
+        let mut target_position = 0;
+        for i in 0..number {
+            data[target_position + i] = source[i].to_le_bytes()[0];
+            data[target_position + i + 1] = source[i].to_le_bytes()[1];
+            target_position += 1;
+        }
+        data
+    }
+}
+
+impl RequestArray<u8> for u8 {
+    fn serialize_repeating_words<const N: usize>(source: &[u8], number: usize) -> [u8; N] {
+        let mut data = [0u8; N];
+        for i in 0..number {
+            data[i] = source[i];
+        }
+        data
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::request::RequestArray;
+
+    //use super::*;
+
+    #[test]
+    fn test_u16() {
+        let source = [22222u16, 33333];
+
+        let serial_data: [u8; 4] = u16::serialize_repeating_words(&source, 2);
+
+        let expected_data: [u8; 4] = [0xCE, 0x56, 0x35, 0x82];
+
+        assert_eq!(serial_data, expected_data);
+    }
+}
