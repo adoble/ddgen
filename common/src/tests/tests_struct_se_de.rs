@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use crate::error::DeviceError;
-use crate::request::RequestWord;
+use crate::request::{RequestArray, RequestWord};
 use crate::response::ResponseWord;
 use crate::serialize::Serialize;
 
@@ -56,6 +56,16 @@ impl Serialize<16> for TestRequest {
         data[3] = self.a_u8;
         data[4] = self.a_count;
 
+        // Alternative:
+        // self.a_bit.serialize_bit(&data, 0, 4); // Parameters: data_buf, word, bit_position
+        // self.a_field.serialize_field(&data, 0, 5, 6); // Parameters: data_buf, word, start, end
+        // self.a_u16.serialize_word(&data, 1, 2); // Parameters: data_buf, start_word, end_word
+        // self.a_u8.serialize_word(&data, 3, 3); // Parameters: data_buf, start_word, end_word
+        // self.a_count.serialize_word(&data, 4, 4);
+        // self.a_repeating_u16
+        //     .serialize_array(&data, 5, 6, self.a_count); // Parameters; data_buf, start_word, end_word of first element, count
+        // // TODO what happens if the end:word of first elemens is incorrecty set?
+
         // let mut target_index = 5; // a_repeating_u16 =  {bits = "5[]..6[];(4[])<=6" }
         // for i in 0..(self.a_count as usize) {
         //     data[target_index + i] = self.a_repeating_u16[i].to_le_bytes()[0];
@@ -63,26 +73,29 @@ impl Serialize<16> for TestRequest {
         //     target_index += 1;
         // }
 
-        let s: [u8; 6] = serialize_repeating_words_u16(&self.a_repeating_u16, self.a_count.into());
+        //let s: [u8; 6] = serialize_repeating_words_u16(&self.a_repeating_u16, self.a_count.into());
+        let s: [u8; 6] = self
+            .a_repeating_u16
+            .serialize_repeating_words(self.a_count.into());
         data[5..=10].copy_from_slice(&s);
 
         ((self.a_count * 2) + 5, data)
     }
 }
 
-fn serialize_repeating_words_u16<const LEN: usize>(source: &[u16], number: usize) -> [u8; LEN] {
-    //let mut target_index = 5; // a_repeating_u16 =  {bits = "5[]..6[];(4[])<=6" }
+// fn serialize_repeating_words_u16<const LEN: usize>(source: &[u16], number: usize) -> [u8; LEN] {
+//     //let mut target_index = 5; // a_repeating_u16 =  {bits = "5[]..6[];(4[])<=6" }
 
-    let mut data = [0u8; LEN];
-    let mut target_position = 0;
-    for i in 0..number {
-        data[target_position + i] = source[i].to_le_bytes()[0];
-        data[target_position + i + 1] = source[i].to_le_bytes()[1];
-        target_position += 1;
-    }
+//     let mut data = [0u8; LEN];
+//     let mut target_position = 0;
+//     for i in 0..number {
+//         data[target_position + i] = source[i].to_le_bytes()[0];
+//         data[target_position + i + 1] = source[i].to_le_bytes()[1];
+//         target_position += 1;
+//     }
 
-    data
-}
+//     data
+// }
 
 #[test]
 fn deserialize_struct() {

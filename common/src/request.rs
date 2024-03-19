@@ -55,29 +55,28 @@ impl RequestWord for u8 {
     // }
 }
 
-pub trait RequestArray<T> {
-    fn serialize_repeating_words<const N: usize>(source: &[T], number: usize) -> [u8; N];
+pub trait RequestArray {
+    fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N];
 }
 
-impl RequestArray<u16> for u16 {
-    fn serialize_repeating_words<const N: usize>(source: &[u16], number: usize) -> [u8; N] {
+impl<const SOURCE_LEN: usize> RequestArray for [u16; SOURCE_LEN] {
+    fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N] {
         let mut data = [0u8; N];
         let mut target_position = 0;
         for i in 0..number {
-            data[target_position + i] = source[i].to_le_bytes()[0];
-            data[target_position + i + 1] = source[i].to_le_bytes()[1];
+            data[target_position + i] = self[i].to_le_bytes()[0];
+            data[target_position + i + 1] = self[i].to_le_bytes()[1];
             target_position += 1;
         }
         data
     }
 }
 
-impl RequestArray<u8> for u8 {
-    fn serialize_repeating_words<const N: usize>(source: &[u8], number: usize) -> [u8; N] {
+impl<const SOURCE_LEN: usize> RequestArray for [u8; SOURCE_LEN] {
+    fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N] {
         let mut data = [0u8; N];
-        for i in 0..number {
-            data[i] = source[i];
-        }
+
+        data.copy_from_slice(&self[0..number]);
         data
     }
 }
@@ -86,15 +85,26 @@ impl RequestArray<u8> for u8 {
 mod tests {
     use crate::request::RequestArray;
 
-    //use super::*;
-
     #[test]
-    fn test_u16() {
+    fn test_u16_array() {
         let source = [22222u16, 33333];
 
-        let serial_data: [u8; 4] = u16::serialize_repeating_words(&source, 2);
+        // let mut serial_data = [0u8; 4];
+        let serial_data: [u8; 4] = source.serialize_repeating_words(2);
 
         let expected_data: [u8; 4] = [0xCE, 0x56, 0x35, 0x82];
+
+        assert_eq!(serial_data, expected_data);
+    }
+
+    #[test]
+    fn test_u8_array() {
+        let source = [123u8, 33];
+
+        // let mut serial_data = [0u8; 4];
+        let serial_data: [u8; 2] = source.serialize_repeating_words(2);
+
+        let expected_data: [u8; 2] = [123, 33];
 
         assert_eq!(serial_data, expected_data);
     }
