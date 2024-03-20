@@ -33,33 +33,12 @@ pub trait ResponseArray {
 
 impl<const TARGET_LEN: usize> ResponseArray for [u16; TARGET_LEN] {
     fn deserialize_repeating_words(&mut self, source: &[u8]) {
-        //let mut buf: [u16; TARGET_LEN] = [0; TARGET_LEN];
-        let mut i = 0;
-
-        for b in source.chunks(2) {
-            self[i] = u16::from_le_bytes([b[0], b[1]]);
-            i += 1;
-        }
-
-        //buf
+        source
+            .chunks(2)
+            .enumerate()
+            .for_each(|(i, b)| self[i] = u16::from_le_bytes([b[0], b[1]]));
     }
 }
-
-// pub fn deserialize_repeating_words_u16<const LEN: usize>(
-//     source: &[u8],
-//     start: usize,
-//     repeats: usize,
-// ) -> [u16; LEN] {
-//     let mut buf: [u16; LEN] = [0; LEN];
-//     let mut i = 0;
-
-//     for b in source[start..].chunks(2).take(repeats) {
-//         buf[i] = u16::from_le_bytes([b[0], b[1]]);
-//         i += 1;
-//     }
-
-//     buf
-// }
 
 #[cfg(test)]
 mod tests {
