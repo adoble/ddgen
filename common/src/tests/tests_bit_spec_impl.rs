@@ -1,9 +1,8 @@
 #![cfg(test)]
 //use super::*;
-use crate::error::DeviceError;
 use crate::request::RequestWord;
 use crate::response::ResponseWord;
-use crate::*;
+use crate::{error::DeviceError, response::ResponseArray};
 use bit_lang::{BitRange, BitSpec, Condition, Repeat as WordRepeat, Word};
 
 // An enum for testing
@@ -273,7 +272,9 @@ fn deserialize_word_repeat() {
 
     //let mut d: [u8; 5] = [0; 5]; // 5 is repeat
     //d.copy_from_slice(&data[w..(w + r)]);
-    let d: [u8; 5] = deserialize_repeating_words_u8(&data, w, r);
+    let mut d: [u8; 5] = [0; 5];
+    //let d: [u8; 5] = deserialize_repeating_words_u8(&data, w, r);
+    d.deserialize_repeating_words(&data[w..(w + r)]);
 
     assert_eq!(d, expected);
 }
@@ -325,7 +326,9 @@ fn deserialize_word_variable_repeat() {
     assert_eq!(condition, Condition::Lte);
     assert_eq!(limit, 5);
 
-    let d: [u8; 5] = deserialize_repeating_words_u8(&data, w, data[count_word].into());
+    let mut d: [u8; 5] = [0; 5];
+    let repeats: usize = data[count_word] as usize;
+    d.deserialize_repeating_words(&data[w..(w + repeats)]);
 
     assert_eq!(d, expected);
 }
@@ -380,7 +383,10 @@ fn deserialize_word_range_u16_repeat() {
     assert_eq!(v, 4);
     assert_eq!(r, 3);
 
-    let d: [u16; 3] = deserialize_repeating_words_u16(&data, w, r);
+    // let d: [u16; 3] = deserialize_repeating_words_u16(&data, w, r);
+
+    let mut d: [u16; 3] = [0; 3];
+    d.deserialize_repeating_words(&data[w..(w + 2 * r)]);
 
     assert_eq!(d, expected);
 }
@@ -445,7 +451,9 @@ fn deserialize_word_range_u16_variable_repeat() {
     assert_eq!(counter_word, 2);
     assert_eq!(limit, 5);
 
-    let d: [u16; 5] = deserialize_repeating_words_u16(&data, w, data[counter_word].into());
+    let mut d: [u16; 5] = [0; 5];
+    let repeats = data[counter_word] as usize;
+    d.deserialize_repeating_words(&data[w..(w + (repeats * 2))]);
 
     assert_eq!(d, expected);
 }
