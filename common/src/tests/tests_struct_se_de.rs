@@ -2,7 +2,7 @@
 
 use crate::error::DeviceError;
 use crate::request::{RequestArray, RequestWord};
-use crate::response::ResponseWord;
+use crate::response::{ResponseBit, ResponseWord};
 use crate::serialize::Serialize;
 
 // An enum for testing
@@ -123,12 +123,14 @@ fn deserialize_struct() {
     let data: [u8; 4] = [0b0001_0000 | 0b0010_0000, 0xCE, 0x56, 0x64]; // 4 is the calculated size
 
     // deserialize
-    let deserialized_test_struct = TestStruct {
-        a_bit: data[0].bit(4),
-        a_field: data[0].field(5, 6).try_into().unwrap(),
+    let mut deserialized_test_struct = TestStruct {
+        //a_bit: data[0].deserialize_bit(4),   ///TODO, Don't like this form of initialisation.
+        a_bit: Default::default(),
+        a_field: data[0].field(5, 6).try_into().unwrap(), // TODO Altough, is this what we really want?
         a_u8: data[3],
         a_u16: u16::from_le_bytes([data[1], data[2]]),
     };
+    deserialized_test_struct.a_bit.deserialize_bit(data[0], 4);
 
     assert_eq!(deserialized_test_struct, expected_test_struct);
 }

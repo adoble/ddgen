@@ -1,13 +1,28 @@
 // TODO make the word size generic
 
+pub trait ResponseBit {
+    fn deserialize_bit(&mut self, source: u8, position: usize);
+}
+
+impl ResponseBit for bool {
+    /// Get a bit as bool at a particular position
+    fn deserialize_bit(&mut self, source: u8, position: usize) {
+        // A more direct way would be to return the boolean value. However, this way
+        // has been chosen so that it is similar to deserialization in, for instance,
+        // RepeatArray.
+        let mask: u8 = 1 << position;
+        *self = (source & mask) > 0;
+    }
+}
+
 pub trait ResponseWord {
     fn word(&self) -> &u8;
 
     /// Get a bit as bool at a particular position
-    fn bit(&self, position: u8) -> bool {
-        let mask: u8 = 1 << position;
-        (self.word() & mask) > 0
-    }
+    // fn deserialize_bit(&self, position: u8) -> bool {
+    //     let mask: u8 = 1 << position;
+    //     (self.word() & mask) > 0
+    // }
 
     // Get the field at the specified position
     fn field(&self, start: u8, end: u8) -> u8 {
@@ -87,11 +102,19 @@ mod tests {
     use super::*;
     #[test]
     fn response_bits() {
-        let r: u8 = 0b0011_0011;
+        let source: u8 = 0b0011_0011;
 
-        assert_eq!(true, r.bit(1));
-        assert_eq!(false, r.bit(6));
-        assert_eq!(true, r.bit(4));
+        let mut r: [bool; 3] = [false; 3];
+
+        r[0].deserialize_bit(source, 1);
+        r[1].deserialize_bit(source, 6);
+        r[2].deserialize_bit(source, 4);
+
+        assert_eq!(r, [true, false, true]);
+
+        // assert_eq!(true, r.deserialize_bit(source, 1));
+        // assert_eq!(false, r.deserialize_bit(6));
+        // assert_eq!(true, r.deserialize_bit(4));
     }
 
     #[test]

@@ -1,7 +1,7 @@
 #![cfg(test)]
 //use super::*;
 use crate::request::RequestWord;
-use crate::response::ResponseWord;
+use crate::response::{ResponseBit, ResponseWord};
 use crate::{error::DeviceError, response::ResponseArray};
 use bit_lang::{BitRange, BitSpec, Condition, Repeat as WordRepeat, Word};
 
@@ -56,7 +56,8 @@ fn deserialize_bit() {
     assert_eq!(w, 3);
     assert_eq!(n, 4);
 
-    let r = data[w].bit(n);
+    let mut r: bool = false;
+    r.deserialize_bit(data[w], n as usize);
 
     assert_eq!(r, true);
 }
