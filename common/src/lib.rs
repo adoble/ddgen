@@ -1,3 +1,4 @@
+mod bits;
 mod deserialize;
 mod error;
 mod request;

@@ -1,27 +1,57 @@
 #![cfg(test)]
+use crate::bits::Bits;
 //use super::*;
-use crate::request::RequestWord;
-use crate::response::{ResponseBit, ResponseWord};
+use crate::response::{ResponseBit, ResponseField};
 use crate::{error::DeviceError, response::ResponseArray};
 use bit_lang::{BitRange, BitSpec, Condition, Repeat as WordRepeat, Word};
 
 // An enum for testing
+#[derive(PartialEq, PartialOrd, Debug, Clone, Copy, Default)]
 pub enum TestField {
+    #[default]
     Disabled = 0,
     Enabled = 1,
     Tristate = 2,
 }
 
-impl TryFrom<u8> for TestField {
-    type Error = DeviceError;
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Self::Disabled),
-            1 => Ok(Self::Enabled),
-            3 => Ok(Self::Tristate),
-            _ => Err(DeviceError::EnumConversion),
-        }
+impl ResponseField for TestField {
+    fn deserialize_field(
+        &mut self,
+        source: u8,
+        start: usize,
+        end: usize,
+    ) -> Result<(), DeviceError> {
+        *self = match source.field(start, end) {
+            0 => Self::Disabled,
+            1 => Self::Enabled,
+            2 => Self::Tristate,
+            _ => return Err(DeviceError::EnumConversion),
+        };
+        Ok(())
     }
+}
+
+// impl TryFrom<u8> for TestField {
+//     type Error = DeviceError;
+//     fn try_from(value: u8) -> Result<Self, Self::Error> {
+//         match value {
+//             0 => Ok(Self::Disabled),
+//             1 => Ok(Self::Enabled),
+//             3 => Ok(Self::Tristate),
+//             _ => Err(DeviceError::EnumConversion),
+//         }
+//     }
+// }
+
+#[test]
+fn test_enum_deserialize_field() {
+    let source = [0, 0b0111_0000]; // Tristate
+
+    let mut r: TestField = TestField::Disabled;
+
+    r.deserialize_field(source[1], 3, 4).unwrap();
+
+    assert_eq!(r, TestField::Tristate);
 }
 
 // 3[4]
@@ -63,14 +93,14 @@ fn deserialize_bit() {
 }
 
 #[test]
-fn deserialize_field() {
-    let spec = bit_lang::parse("3[4..6]").unwrap();
+fn test_deserialize_field() {
+    let spec = bit_lang::parse("3[4..5]").unwrap();
 
-    let data = [
+    let data: [u8; 5] = [
         0b0000_0000, // 0
         0b0000_0000, // 1
         0b0000_0000, // 2
-        0b0101_0000, // 3   3[4..6] = 0d5
+        0b0101_0000, // 3   3[4..5] = 0d5
         0b0000_0000, // 4
     ];
 
@@ -90,9 +120,13 @@ fn deserialize_field() {
         }
     };
 
-    let r = data[w].field(n, m);
+    let mut test_enum: TestField = Default::default();
 
-    assert_eq!(r, 5);
+    test_enum
+        .deserialize_field(data[w], n as usize, m as usize)
+        .unwrap();
+
+    assert_eq!(test_enum, TestField::Enabled);
 }
 
 #[test]
@@ -189,7 +223,7 @@ fn deserialize_word_range_fields_to_u16() {
         (0, 0, 0)
     };
 
-    let r = u16::from_le_bytes([data[v], data[w].field(m, n)]);
+    let r = u16::from_le_bytes([data[v], data[w].field(m as usize, n as usize)]);
 
     assert_eq!(r, expected);
 }
@@ -230,7 +264,12 @@ fn deserialize_word_range_with_fields_le_to_u32() {
     assert_eq!(v, 3);
     assert_eq!(w, 6);
 
-    let r = u32::from_le_bytes([data[v], data[v + 1], data[v + 2], data[w].field(m, n)]);
+    let r = u32::from_le_bytes([
+        data[v],
+        data[v + 1],
+        data[v + 2],
+        data[w].field(m as usize, n as usize),
+    ]);
 
     assert_eq!(r, expected);
 }
@@ -271,10 +310,7 @@ fn deserialize_word_repeat() {
     assert_eq!(w, 3);
     assert_eq!(r, 5);
 
-    //let mut d: [u8; 5] = [0; 5]; // 5 is repeat
-    //d.copy_from_slice(&data[w..(w + r)]);
     let mut d: [u8; 5] = [0; 5];
-    //let d: [u8; 5] = deserialize_repeating_words_u8(&data, w, r);
     d.deserialize_repeating_words(&data[w..(w + r)]);
 
     assert_eq!(d, expected);
@@ -384,8 +420,6 @@ fn deserialize_word_range_u16_repeat() {
     assert_eq!(v, 4);
     assert_eq!(r, 3);
 
-    // let d: [u16; 3] = deserialize_repeating_words_u16(&data, w, r);
-
     let mut d: [u16; 3] = [0; 3];
     d.deserialize_repeating_words(&data[w..(w + 2 * r)]);
 
@@ -494,7 +528,6 @@ fn serialise_bit() {
     assert_eq!(w, 3);
     assert_eq!(n, 4);
 
-    //data[w] = modify_bit(data[w], n, b);
     data[w].modify_bit(n, b);
 
     assert_eq!(data, expected_data);
@@ -530,13 +563,13 @@ fn serialize_field() {
     let field = TestField::Tristate;
 
     // data[w] = modify_field(data[w], field as u8, n, m);
-    data[w].modify_field(field as u8, n, m);
+    data[w].modify_field(field as u8, n as usize, m as usize);
 
     assert_eq!(data[2], 0b1111_1001);
 
     let field = TestField::Enabled;
 
-    data[w].modify_field(field as u8, n, m);
+    data[w].modify_field(field as u8, n as usize, m as usize);
     assert_eq!(data[2], 0b1111_0101);
 }
 

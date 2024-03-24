@@ -1,8 +1,9 @@
 #![cfg(test)]
 
+use crate::bits::Bits;
 use crate::error::DeviceError;
-use crate::request::{RequestArray, RequestWord};
-use crate::response::{ResponseBit, ResponseWord};
+use crate::request::RequestArray;
+use crate::response::{ResponseBit, ResponseField};
 use crate::serialize::Serialize;
 
 // An enum for testing
@@ -12,6 +13,34 @@ pub enum TestField {
     Enabled = 1,
     Tristate = 2,
 }
+
+impl ResponseField for TestField {
+    fn deserialize_field(
+        &mut self,
+        source: u8,
+        start: usize,
+        end: usize,
+    ) -> Result<(), DeviceError> {
+        *self = match source.field(start, end) {
+            0 => Self::Disabled,
+            1 => Self::Enabled,
+            2 => Self::Tristate,
+            _ => return Err(DeviceError::EnumConversion),
+        };
+        Ok(())
+    }
+}
+
+// impl TestField {
+//     fn deserialize(word: u8, start: usize, end: usize) -> Result<Self, DeviceError> {
+//         match word.field(start, end) {
+//             0 => Ok(Self::Disabled),
+//             1 => Ok(Self::Enabled),
+//             2 => Ok(Self::Tristate),
+//             _ => Err(DeviceError::EnumConversion),
+//         }
+//     }
+// }
 
 impl TryFrom<u8> for TestField {
     type Error = DeviceError;

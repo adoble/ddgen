@@ -2,4 +2,5 @@
 
 pub enum DeviceError {
     EnumConversion,
+    BitPositionOutOfRange,
 }

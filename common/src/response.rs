@@ -1,5 +1,9 @@
 // TODO make the word size generic
 
+//use crate::DeviceError;
+
+use crate::DeviceError;
+
 pub trait ResponseBit {
     fn deserialize_bit(&mut self, source: u8, position: usize);
 }
@@ -15,26 +19,41 @@ impl ResponseBit for bool {
     }
 }
 
+pub trait ResponseField {
+    // fn deserialize_field(&mut self, source: u8, start: usize, end: usize) -> u8 {
+    //     let mut mask: u8 = 0;
+
+    //     for count in start..=end {
+    //         let b = 1 << count;
+    //         mask |= b;
+    //     }
+
+    //     let v = source & mask;
+    //     v >> start
+    // }
+
+    fn deserialize_field(
+        &mut self,
+        source: u8,
+        start: usize,
+        end: usize,
+    ) -> Result<(), DeviceError>;
+}
+
 pub trait ResponseWord {
     fn word(&self) -> &u8;
 
-    /// Get a bit as bool at a particular position
-    // fn deserialize_bit(&self, position: u8) -> bool {
-    //     let mask: u8 = 1 << position;
-    //     (self.word() & mask) > 0
+    // // Get the field at the specified position
+    // fn field(&self, start: u8, end: u8) -> u8 {
+    //     let mut mask: u8 = 0;
+
+    //     for count in start..=end {
+    //         let b = 1 << count;
+    //         mask |= b;
+    //     }
+    //     let v = self.word() & mask;
+    //     v >> start
     // }
-
-    // Get the field at the specified position
-    fn field(&self, start: u8, end: u8) -> u8 {
-        let mut mask: u8 = 0;
-
-        for count in start..=end {
-            let b = 1 << count;
-            mask |= b;
-        }
-        let v = self.word() & mask;
-        v >> start
-    }
 }
 
 impl ResponseWord for u8 {
@@ -115,14 +134,6 @@ mod tests {
         // assert_eq!(true, r.deserialize_bit(source, 1));
         // assert_eq!(false, r.deserialize_bit(6));
         // assert_eq!(true, r.deserialize_bit(4));
-    }
-
-    #[test]
-    fn response_fields() {
-        let r: u8 = 0b0011_0011;
-
-        assert_eq!(r.field(0, 3), 3);
-        assert_eq!(r.field(1, 4), 9);
     }
 
     #[test]
