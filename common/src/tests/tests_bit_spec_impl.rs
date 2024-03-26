@@ -14,42 +14,23 @@ pub enum TestField {
     Tristate = 2,
 }
 
-impl ResponseField for TestField {
-    fn deserialize_field(
-        &mut self,
-        source: u8,
-        start: usize,
-        end: usize,
-    ) -> Result<(), DeviceError> {
-        *self = match source.field(start, end) {
-            0 => Self::Disabled,
-            1 => Self::Enabled,
-            2 => Self::Tristate,
-            _ => return Err(DeviceError::EnumConversion),
-        };
-        Ok(())
+impl TryFrom<u8> for TestField {
+    type Error = DeviceError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Disabled),
+            1 => Ok(Self::Enabled),
+            2 => Ok(Self::Tristate),
+            _ => Err(DeviceError::EnumConversion),
+        }
     }
 }
-
-// impl TryFrom<u8> for TestField {
-//     type Error = DeviceError;
-//     fn try_from(value: u8) -> Result<Self, Self::Error> {
-//         match value {
-//             0 => Ok(Self::Disabled),
-//             1 => Ok(Self::Enabled),
-//             3 => Ok(Self::Tristate),
-//             _ => Err(DeviceError::EnumConversion),
-//         }
-//     }
-// }
 
 #[test]
 fn test_enum_deserialize_field() {
     let source = [0, 0b0111_0000]; // Tristate
 
-    let mut r: TestField = TestField::Disabled;
-
-    r.deserialize_field(source[1], 3, 4).unwrap();
+    let r: TestField = source[1].deserialize_field(3, 4).try_into().unwrap();
 
     assert_eq!(r, TestField::Tristate);
 }
@@ -86,8 +67,7 @@ fn deserialize_bit() {
     assert_eq!(w, 3);
     assert_eq!(n, 4);
 
-    let mut r: bool = false;
-    r.deserialize_bit(data[w], n as usize);
+    let r = data[w].deserialize_bit(n as usize);
 
     assert_eq!(r, true);
 }
@@ -120,10 +100,9 @@ fn test_deserialize_field() {
         }
     };
 
-    let mut test_enum: TestField = Default::default();
-
-    test_enum
-        .deserialize_field(data[w], n as usize, m as usize)
+    let test_enum: TestField = data[w]
+        .deserialize_field(n as usize, m as usize)
+        .try_into()
         .unwrap();
 
     assert_eq!(test_enum, TestField::Enabled);
@@ -528,7 +507,7 @@ fn serialise_bit() {
     assert_eq!(w, 3);
     assert_eq!(n, 4);
 
-    data[w].modify_bit(n, b);
+    data[w].modify_bit(n as usize, b);
 
     assert_eq!(data, expected_data);
 }

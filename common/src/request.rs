@@ -1,41 +1,44 @@
-pub trait RequestWord {
-    // fn new(bits: u8) -> Self;
-    // fn bits(&self) -> u8;
+use crate::bits::Bits;
 
-    // // TODO this should be private?
-    // fn set_bits(&mut self, bits: u8) -> &mut Self;
+// pub trait RequestWord {
 
-    // // Default implementations
-    // fn modify_bit(&mut self, position: u8, state: bool) -> &mut Self {
-    //     let mut mask: u8 = 1 << position;
+// fn new(bits: u8) -> Self;
+// fn bits(&self) -> u8;
 
-    //     let modified_bits = if state {
-    //         // setting the bit
-    //         self.bits() | mask
-    //     } else {
-    //         // clear the bit{
-    //         mask = !mask;
-    //         self.bits() & mask
-    //     };
+// // TODO this should be private?
+// fn set_bits(&mut self, bits: u8) -> &mut Self;
 
-    //     self.set_bits(modified_bits);
+// // Default implementations
+// fn modify_bit(&mut self, position: u8, state: bool) -> &mut Self {
+//     let mut mask: u8 = 1 << position;
 
-    //     self
-    // }
+//     let modified_bits = if state {
+//         // setting the bit
+//         self.bits() | mask
+//     } else {
+//         // clear the bit{
+//         mask = !mask;
+//         self.bits() & mask
+//     };
 
-    // /// Modify the field as specified by the start and end bit positions.
-    // ///
-    // /// Warning: Attempting to modify the whole word or having end less then start
-    // /// will cause the function to panic!
-    // fn modify_field(&mut self, value: u8, start: u8, end: u8) -> &mut Self {
-    //     let mask = ((1 << (end - start + 1)) - 1) << start;
-    //     let cleared_bits = self.bits() & !mask;
-    //     let new_bits = value << start;
-    //     self.set_bits(cleared_bits | new_bits);
+//     self.set_bits(modified_bits);
 
-    //     self
-    // }
-}
+//     self
+// }
+
+// /// Modify the field as specified by the start and end bit positions.
+// ///
+// /// Warning: Attempting to modify the whole word or having end less then start
+// /// will cause the function to panic!
+// fn modify_field(&mut self, value: u8, start: u8, end: u8) -> &mut Self {
+//     let mask = ((1 << (end - start + 1)) - 1) << start;
+//     let cleared_bits = self.bits() & !mask;
+//     let new_bits = value << start;
+//     self.set_bits(cleared_bits | new_bits);
+
+//     self
+// }
+// }
 
 // impl RequestWord for u8 {
 //     fn new(bits: u8) -> Self {
@@ -55,44 +58,113 @@ pub trait RequestWord {
 //     // }
 // }
 
-pub trait RequestArray {
-    fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N];
+pub trait RequestBit {
+    fn serialize_bit(&mut self, source: bool, position: usize);
 }
 
-impl<const SOURCE_LEN: usize> RequestArray for [u16; SOURCE_LEN] {
-    fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N] {
-        let mut data = [0u8; N];
+impl RequestBit for u8 {
+    fn serialize_bit(&mut self, source: bool, position: usize) {
+        self.modify_bit(position, source);
+    }
+}
+
+pub trait RequestField {
+    fn serialize_field(&mut self, source: u8, start: usize, end: usize);
+}
+
+impl RequestField for u8 {
+    fn serialize_field(&mut self, source: u8, start: usize, end: usize) {
+        self.modify_field(source, start, end);
+    }
+}
+
+pub trait RequestWord<T> {
+    //data[1..2].serialize_word(self.a_u16);
+    fn serialize_word(&mut self, source: T);
+}
+
+impl RequestWord<u8> for u8 {
+    fn serialize_word(&mut self, source: u8) {
+        *self = source;
+    }
+}
+
+impl RequestWord<u16> for [u8] {
+    fn serialize_word(&mut self, source: u16) {
+        self[0] = source.to_le_bytes()[0];
+        self[1] = source.to_le_bytes()[1];
+    }
+}
+
+pub trait RequestArray<T> {
+    // Usage : data[5..=10].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
+
+    fn serialize_repeating_words(&mut self, source: T, number: usize);
+
+    //fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N];
+}
+
+impl<const SOURCE_LEN: usize> RequestArray<[u16; SOURCE_LEN]> for [u8] {
+    fn serialize_repeating_words(&mut self, source: [u16; SOURCE_LEN], number: usize) {
         let mut target_position = 0;
         for i in 0..number {
-            data[target_position + i] = self[i].to_le_bytes()[0];
-            data[target_position + i + 1] = self[i].to_le_bytes()[1];
+            self[target_position + i] = source[i].to_le_bytes()[0];
+            self[target_position + i + 1] = source[i].to_le_bytes()[1];
             target_position += 1;
         }
-        data
     }
+    //     impl<const SOURCE_LEN: usize> RequestArray for [u16; SOURCE_LEN] {
+    // fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N] {
+    //     let mut data = [0u8; N];
+    //     let mut target_position = 0;
+    //     for i in 0..number {
+    //         data[target_position + i] = self[i].to_le_bytes()[0];
+    //         data[target_position + i + 1] = self[i].to_le_bytes()[1];
+    //         target_position += 1;
+    //     }
+    //     data
+    // }
 }
 
-impl<const SOURCE_LEN: usize> RequestArray for [u8; SOURCE_LEN] {
-    fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N] {
-        let mut data = [0u8; N];
-
-        data.copy_from_slice(&self[0..number]);
-        data
+impl<const SOURCE_LEN: usize> RequestArray<[u8; SOURCE_LEN]> for [u8] {
+    fn serialize_repeating_words(&mut self, source: [u8; SOURCE_LEN], number: usize) {
+        self.copy_from_slice(&source[0..number]);
     }
+    //impl<const SOURCE_LEN: usize> RequestArray for [u8; SOURCE_LEN] {
+    // fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N] {
+    //     let mut data = [0u8; N];
+
+    //     data.copy_from_slice(&self[0..number]);
+    //     data
+    // }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::request::RequestArray;
 
+    use super::RequestBit;
+
+    // pub trait RequestBit {
+    //     fn serialize_bit(&self, target: &mut u8, position: usize);
+    // }
+    #[test]
+    fn test_serialize_bool() {
+        let mut data = [0u8; 4];
+        let b = true;
+        data[2].serialize_bit(b, 5);
+
+        assert_eq!(data, [0, 0, 0b0010_0000, 0]);
+    }
+
     #[test]
     fn test_u16_array() {
         let source = [22222u16, 33333];
+        let mut serial_data = [0u8; 7];
 
-        // let mut serial_data = [0u8; 4];
-        let serial_data: [u8; 4] = source.serialize_repeating_words(2);
+        serial_data[2..=5].serialize_repeating_words(source, 2);
 
-        let expected_data: [u8; 4] = [0xCE, 0x56, 0x35, 0x82];
+        let expected_data: [u8; 7] = [0, 0, 0xCE, 0x56, 0x35, 0x82, 0];
 
         assert_eq!(serial_data, expected_data);
     }
@@ -101,10 +173,10 @@ mod tests {
     fn test_u8_array() {
         let source = [123u8, 33];
 
-        // let mut serial_data = [0u8; 4];
-        let serial_data: [u8; 2] = source.serialize_repeating_words(2);
+        let mut serial_data = [0u8; 4];
+        serial_data[0..=1].serialize_repeating_words(source, 2);
 
-        let expected_data: [u8; 2] = [123, 33];
+        let expected_data: [u8; 4] = [123, 33, 0, 0];
 
         assert_eq!(serial_data, expected_data);
     }

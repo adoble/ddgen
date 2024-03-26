@@ -5,7 +5,7 @@ pub trait Bits {
 
     fn field(&self, start: usize, end: usize) -> u8;
 
-    fn modify_bit(&mut self, position: u8, state: bool);
+    fn modify_bit(&mut self, position: usize, state: bool);
 
     /// Modify the field as specified by the start and end bit positions.
     ///
@@ -36,7 +36,7 @@ impl Bits for u8 {
         v >> start
     }
 
-    fn modify_bit(&mut self, position: u8, state: bool) {
+    fn modify_bit(&mut self, position: usize, state: bool) {
         let mut mask: u8 = 1 << position;
 
         if state {

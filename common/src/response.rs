@@ -1,21 +1,19 @@
 // TODO make the word size generic
 
-//use crate::DeviceError;
-
-use crate::DeviceError;
-
+use crate::bits::Bits;
 pub trait ResponseBit {
-    fn deserialize_bit(&mut self, source: u8, position: usize);
+    // a_bit: data[0].deserialize_bit(4),
+    fn deserialize_bit(&self, position: usize) -> bool;
 }
 
-impl ResponseBit for bool {
+impl ResponseBit for u8 {
     /// Get a bit as bool at a particular position
-    fn deserialize_bit(&mut self, source: u8, position: usize) {
+    fn deserialize_bit(&self, position: usize) -> bool {
         // A more direct way would be to return the boolean value. However, this way
         // has been chosen so that it is similar to deserialization in, for instance,
         // RepeatArray.
         let mask: u8 = 1 << position;
-        *self = (source & mask) > 0;
+        (*self & mask) > 0
     }
 }
 
@@ -32,16 +30,17 @@ pub trait ResponseField {
     //     v >> start
     // }
 
-    fn deserialize_field(
-        &mut self,
-        source: u8,
-        start: usize,
-        end: usize,
-    ) -> Result<(), DeviceError>;
+    fn deserialize_field(&self, start: usize, end: usize) -> u8;
 }
 
-pub trait ResponseWord {
-    fn word(&self) -> &u8;
+impl ResponseField for u8 {
+    fn deserialize_field(&self, start: usize, end: usize) -> u8 {
+        self.field(start, end)
+    }
+}
+
+pub trait ResponseWord<T> {
+    //fn word(&self) -> &u8;
 
     // // Get the field at the specified position
     // fn field(&self, start: u8, end: u8) -> u8 {
@@ -54,11 +53,19 @@ pub trait ResponseWord {
     //     let v = self.word() & mask;
     //     v >> start
     // }
+    //a_u16: data[2..3].deserialize_word(),
+    fn deserialize_word(&self) -> T;
 }
 
-impl ResponseWord for u8 {
-    fn word(&self) -> &u8 {
-        self
+impl ResponseWord<u16> for [u8] {
+    fn deserialize_word(&self) -> u16 {
+        u16::from_le_bytes([self[0], self[1]])
+    }
+}
+
+impl ResponseWord<u8> for u8 {
+    fn deserialize_word(&self) -> u8 {
+        *self
     }
 }
 pub trait ResponseArray {
@@ -123,17 +130,23 @@ mod tests {
     fn response_bits() {
         let source: u8 = 0b0011_0011;
 
-        let mut r: [bool; 3] = [false; 3];
+        let r = source.deserialize_bit(1);
+        assert_eq!(r, true);
+        let r = source.deserialize_bit(6);
+        assert_eq!(r, false);
+        let r = source.deserialize_bit(4);
+        assert_eq!(r, true);
+    }
 
-        r[0].deserialize_bit(source, 1);
-        r[1].deserialize_bit(source, 6);
-        r[2].deserialize_bit(source, 4);
+    #[test]
+    fn test_deserialize_word() {
+        // 5u8, 31313u16
+        let data: [u8; 3] = [0x05, 0x51, 0x7A];
 
-        assert_eq!(r, [true, false, true]);
-
-        // assert_eq!(true, r.deserialize_bit(source, 1));
-        // assert_eq!(false, r.deserialize_bit(6));
-        // assert_eq!(true, r.deserialize_bit(4));
+        let a_u8: u8 = data[0].deserialize_word();
+        assert_eq!(a_u8, 5);
+        let a_u16 = data[1..=2].deserialize_word();
+        assert_eq!(a_u16, 31313);
     }
 
     #[test]
