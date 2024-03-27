@@ -1,0 +1,33 @@
+# Test defintion
+
+version = "0.0.1"
+
+[device]
+name      = "test_device"
+endian    = "le"
+word_size = 8
+
+[commands.TEST_COMMAND]
+opcode      = 0x09
+description = "A test command"
+
+[commands.TEST_COMMAND.request]
+a_bit           = { bits = "4" }
+a_field         = { bits = "[5..6]", enum = "test_field" }
+a_u16           = { bits = "1[]..2[]" }
+a_u8            = { bits = "3[]" }
+a_count         = { bits = "4[]", description = "Count for a_repeating_u16" }
+a_repeating_u16 = { bits = "5[]..6[];(4[])<=6" }
+
+[commands.TEST_COMMAND.response]
+a_bit           = { bits = "4" }
+a_field         = { bits = "[5..6]", enum = "test_field" }
+a_u16           = { bits = "1[]..2[]" }
+a_u8            = { bits = "3[]" }
+a_count         = { bits = "4[]", description = "Count for a_repeating_u16" }
+a_repeating_u16 = { bits = "5[]..6[];(4[])<=6" }
+
+[enum.test_field]
+disabled = 0
+enabled  = 1
+tristate = 2
