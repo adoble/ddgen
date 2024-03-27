@@ -2,7 +2,7 @@
 
 use crate::error::DeviceError;
 use crate::request::{RequestArray, RequestBit, RequestField, RequestWord};
-use crate::response::{ResponseBit, ResponseField, ResponseWord};
+use crate::response::{ResponseBit, ResponseField, ResponseWord, ResponseArray};
 use crate::serialize::Serialize;
 
 // An enum for testing
@@ -82,6 +82,7 @@ fn deserialize_struct() {
         a_field: TestField::Enabled,
         a_u8: 100,
         a_u16: 22222,
+        
     };
 
     // Bit structure is:
@@ -89,14 +90,23 @@ fn deserialize_struct() {
     // a_field: {bits = "[5..6]"}
     // a_u16: {bits = "1[]..2[]"}
     // a_u8: {bits = "3[]"}
+    // a_u16_repeating: {bits = 4[]..5[];4}
 
     #[rustfmt::skip]
-    let data: [u8; 4] = [
+    let data: [u8; 12] = [
         0b0001_0000 | 0b0010_0000, 
         
         0x64, 
         
-        0xCE, 0x56]; // 4 is the calculated size
+        0xCE, 0x56,
+        
+        //[11111, 22222, 33333, 44444],
+        0x67, 0x2B, 
+        0xCE, 0x56,
+        0x35, 0x82,
+        0x9C, 0xAD,
+
+        ]; // 12 is the calculated size
 
     // Deserialize
     
@@ -105,12 +115,59 @@ fn deserialize_struct() {
         a_field: data[0].deserialize_field(5, 6).try_into().unwrap(), // TODO Altough, is this what we really want?
         a_u8: data[1].deserialize_word(),
         a_u16: data[2..=3].deserialize_word(),
+        
     };
 
     assert_eq!(deserialized_test_struct, expected_test_struct);
 }
 
+#[test]
 
+fn test_deserialize_repeating_word() {
+
+    #[derive(PartialEq, Debug, Copy, Clone)]
+    struct TestStruct {
+        a_repeating_u8: [u8; 2],
+        a_repeating_u16: [u16; 4],
+    }
+
+    let expected_struct = TestStruct {
+        a_repeating_u8:[206, 86],
+        a_repeating_u16: [11111, 22222, 33333, 44444],
+    };
+
+    // Bit structure is:
+    // a_repeating_u8 = {bits = "0[];2"}
+    // a_repeating_u16: {bits = "2[]..3[];4"}
+    #[rustfmt::skip]
+    let data: [u8; 10] = [
+        // [206, 86],
+        0xCE, 
+        0x56,
+        
+        //[11111, 22222, 33333, 44444],
+        0x67, 0x2B, 
+        0xCE, 0x56,
+        0x35, 0x82,
+        0x9C, 0xAD,
+
+        ]; // 12 is the calculated size
+
+        let deserialized_test_struct = TestStruct {
+            a_repeating_u8: data[0..=1].deserialize_repeating_words(2),
+            a_repeating_u16: data[2..=9].deserialize_repeating_words(4),
+        };
+
+    assert_eq!(deserialized_test_struct, expected_struct);
+
+    
+}
+
+#[test]
+#[ignore]
+fn test_deserialize_variable_repeating_word() {
+    todo!()
+}
 
 #[test]
 fn serialize_struct() {

@@ -9,27 +9,12 @@ pub trait ResponseBit {
 impl ResponseBit for u8 {
     /// Get a bit as bool at a particular position
     fn deserialize_bit(&self, position: usize) -> bool {
-        // A more direct way would be to return the boolean value. However, this way
-        // has been chosen so that it is similar to deserialization in, for instance,
-        // RepeatArray.
         let mask: u8 = 1 << position;
         (*self & mask) > 0
     }
 }
 
 pub trait ResponseField {
-    // fn deserialize_field(&mut self, source: u8, start: usize, end: usize) -> u8 {
-    //     let mut mask: u8 = 0;
-
-    //     for count in start..=end {
-    //         let b = 1 << count;
-    //         mask |= b;
-    //     }
-
-    //     let v = source & mask;
-    //     v >> start
-    // }
-
     fn deserialize_field(&self, start: usize, end: usize) -> u8;
 }
 
@@ -40,20 +25,6 @@ impl ResponseField for u8 {
 }
 
 pub trait ResponseWord<T> {
-    //fn word(&self) -> &u8;
-
-    // // Get the field at the specified position
-    // fn field(&self, start: u8, end: u8) -> u8 {
-    //     let mut mask: u8 = 0;
-
-    //     for count in start..=end {
-    //         let b = 1 << count;
-    //         mask |= b;
-    //     }
-    //     let v = self.word() & mask;
-    //     v >> start
-    // }
-    //a_u16: data[2..3].deserialize_word(),
     fn deserialize_word(&self) -> T;
 }
 
@@ -68,58 +39,84 @@ impl ResponseWord<u8> for u8 {
         *self
     }
 }
-pub trait ResponseArray {
-    fn deserialize_repeating_words(&mut self, source: &[u8]);
+pub trait ResponseArray<T> {
+    //  a_repeating_u8: data[0..=1].deserialize_repeating_word(2),
+    // self is the u8 stream
+    fn deserialize_repeating_words(&self, number: usize) -> T;
 }
 
-impl<const TARGET_LEN: usize> ResponseArray for [u8; TARGET_LEN] {
-    fn deserialize_repeating_words(&mut self, source: &[u8]) {
-        source.iter().enumerate().for_each(|(i, b)| self[i] = *b);
+impl<const TARGET_LEN: usize> ResponseArray<[u8; TARGET_LEN]> for [u8] {
+    fn deserialize_repeating_words(&self, number: usize) -> [u8; TARGET_LEN] {
+        let mut target = [0; TARGET_LEN];
+        self.iter()
+            .take(number)
+            .enumerate()
+            .for_each(|(i, b)| target[i] = *b);
+        target
     }
 }
 
-impl<const TARGET_LEN: usize> ResponseArray for [u16; TARGET_LEN] {
-    fn deserialize_repeating_words(&mut self, source: &[u8]) {
-        source
-            .chunks(2)
+impl<const TARGET_LEN: usize> ResponseArray<[u16; TARGET_LEN]> for [u8] {
+    fn deserialize_repeating_words(&self, number: usize) -> [u16; TARGET_LEN] {
+        let mut target = [0; TARGET_LEN];
+        self.chunks(2)
+            .take(number)
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
             .enumerate()
-            .for_each(|(i, b)| self[i] = u16::from_le_bytes([b[0], b[1]]));
+            .for_each(|(i, v)| target[i] = v);
+        target
     }
 }
 
-impl<const TARGET_LEN: usize> ResponseArray for [u32; TARGET_LEN] {
-    fn deserialize_repeating_words(&mut self, source: &[u8]) {
-        source
-            .chunks(4)
+impl<const TARGET_LEN: usize> ResponseArray<[u32; TARGET_LEN]> for [u8] {
+    fn deserialize_repeating_words(&self, number: usize) -> [u32; TARGET_LEN] {
+        let mut target = [0; TARGET_LEN];
+        self.chunks(4)
+            .take(number)
+            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
             .enumerate()
-            .for_each(|(i, b)| self[i] = u32::from_le_bytes([b[0], b[1], b[2], b[3]]));
+            .for_each(|(i, v)| target[i] = v);
+
+        target
     }
 }
 
-impl<const TARGET_LEN: usize> ResponseArray for [i8; TARGET_LEN] {
-    fn deserialize_repeating_words(&mut self, source: &[u8]) {
-        source
-            .iter()
+impl<const TARGET_LEN: usize> ResponseArray<[i8; TARGET_LEN]> for [u8] {
+    fn deserialize_repeating_words(&self, number: usize) -> [i8; TARGET_LEN] {
+        let mut target = [0; TARGET_LEN];
+
+        self.iter()
+            .take(number)
             .enumerate()
-            .for_each(|(i, b)| self[i] = (*b) as i8);
+            .for_each(|(i, b)| target[i] = (*b) as i8);
+        target
     }
 }
 
-impl<const TARGET_LEN: usize> ResponseArray for [i16; TARGET_LEN] {
-    fn deserialize_repeating_words(&mut self, source: &[u8]) {
-        source
-            .chunks(2)
+impl<const TARGET_LEN: usize> ResponseArray<[i16; TARGET_LEN]> for [u8] {
+    fn deserialize_repeating_words(&self, number: usize) -> [i16; TARGET_LEN] {
+        let mut target = [0; TARGET_LEN];
+
+        self.chunks(2)
+            .take(number)
+            .map(|b| i16::from_le_bytes([b[0], b[1]]))
             .enumerate()
-            .for_each(|(i, b)| self[i] = i16::from_le_bytes([b[0], b[1]]));
+            .for_each(|(i, v)| target[i] = v);
+
+        target
     }
 }
 
-impl<const TARGET_LEN: usize> ResponseArray for [i32; TARGET_LEN] {
-    fn deserialize_repeating_words(&mut self, source: &[u8]) {
-        source
-            .chunks(4)
+impl<const TARGET_LEN: usize> ResponseArray<[i32; TARGET_LEN]> for [u8] {
+    fn deserialize_repeating_words(&self, number: usize) -> [i32; TARGET_LEN] {
+        let mut target = [0; TARGET_LEN];
+
+        self.chunks(4)
+            .take(number)
+            .map(|b| i32::from_le_bytes([b[0], b[1], b[2], b[3]]))
             .enumerate()
-            .for_each(|(i, b)| self[i] = i32::from_le_bytes([b[0], b[1], b[2], b[3]]));
+            .for_each(|(i, v)| target[i] = v);
+        target
     }
 }
 
@@ -170,13 +167,13 @@ mod tests {
             data_u32: [0; 2],
         };
 
-        a.data_u8.deserialize_repeating_words(&source[0..2]);
+        a.data_u8 = source[0..2].deserialize_repeating_words(2);
         assert_eq!(a.data_u8, expected_data_u8);
         // Location is slice range and number of repeats is derived from start_word_index + (bit_slice->repeats) / (word range)
-        a.data_u16.deserialize_repeating_words(&source[2..6]);
+        a.data_u16 = source[2..6].deserialize_repeating_words(2);
         assert_eq!(a.data_u16, expected_data_u16);
 
-        a.data_u32.deserialize_repeating_words(&source[6..]);
+        a.data_u32 = source[6..].deserialize_repeating_words(2);
         assert_eq!(a.data_u32, expected_data_u32);
     }
 
@@ -214,13 +211,13 @@ mod tests {
             data_i32: [0; 2],
         };
 
-        a.data_i8.deserialize_repeating_words(&source[0..2]);
+        a.data_i8 = source[0..2].deserialize_repeating_words(2);
         assert_eq!(a.data_i8, expected_data_i8);
         // Location is slice range and number of repeats is derived from start_word_index + (bit_slice->repeats) / (word range)
-        a.data_i16.deserialize_repeating_words(&source[2..6]);
+        a.data_i16 = source[2..6].deserialize_repeating_words(2);
         assert_eq!(a.data_i16, expected_data_i16);
 
-        a.data_i32.deserialize_repeating_words(&source[6..]);
+        a.data_i32 = source[6..].deserialize_repeating_words(2);
         assert_eq!(a.data_i32, expected_data_i32);
     }
 }

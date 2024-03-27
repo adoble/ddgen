@@ -289,8 +289,7 @@ fn deserialize_word_repeat() {
     assert_eq!(w, 3);
     assert_eq!(r, 5);
 
-    let mut d: [u8; 5] = [0; 5];
-    d.deserialize_repeating_words(&data[w..(w + r)]);
+    let d: [u8; 5] = data[w..(w + r)].deserialize_repeating_words(5);
 
     assert_eq!(d, expected);
 }
@@ -342,9 +341,9 @@ fn deserialize_word_variable_repeat() {
     assert_eq!(condition, Condition::Lte);
     assert_eq!(limit, 5);
 
-    let mut d: [u8; 5] = [0; 5];
+    // bits = "3[];(2[])<=5"
     let repeats: usize = data[count_word] as usize;
-    d.deserialize_repeating_words(&data[w..(w + repeats)]);
+    let d: [u8; 5] = data[w..(w + repeats)].deserialize_repeating_words(repeats);
 
     assert_eq!(d, expected);
 }
@@ -399,8 +398,7 @@ fn deserialize_word_range_u16_repeat() {
     assert_eq!(v, 4);
     assert_eq!(r, 3);
 
-    let mut d: [u16; 3] = [0; 3];
-    d.deserialize_repeating_words(&data[w..(w + 2 * r)]);
+    let d: [u16; 3] = data[w..(w + 2 * r)].deserialize_repeating_words(3);
 
     assert_eq!(d, expected);
 }
@@ -465,9 +463,9 @@ fn deserialize_word_range_u16_variable_repeat() {
     assert_eq!(counter_word, 2);
     assert_eq!(limit, 5);
 
-    let mut d: [u16; 5] = [0; 5];
+    //"3[]..4[];(2[])<=5"
     let repeats = data[counter_word] as usize;
-    d.deserialize_repeating_words(&data[w..(w + (repeats * 2))]);
+    let d: [u16; 5] = data[w..(w + (repeats * 2))].deserialize_repeating_words(repeats);
 
     assert_eq!(d, expected);
 }
