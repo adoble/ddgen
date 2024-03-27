@@ -71,10 +71,16 @@ impl Definition {
         out_path: &Path,
         tests_path: &Option<PathBuf>,
     ) -> anyhow::Result<()> {
-        println!("{}", "Generating code ...".bold());
+        println!(
+            "{} in {}",
+            "Generating code".bold(),
+            out_path.as_os_str().to_str().unwrap()
+        );
 
         let source_path_buf = self.generate_package_structure(out_path)?;
         let source_path = &source_path_buf.as_path();
+
+        self.generate_common(source_path)?;
 
         // let _tokens = rust::Tokens::new();
 
@@ -302,7 +308,48 @@ impl Definition {
     }
 
     fn generate_common(&self, out_path: &Path) -> anyhow::Result<()> {
-        // println!("Transferring common code over.");
+        println!("Transferring common code over.");
+
+        //let common_source_path = PathBuf::from("../../common/src");
+        let common_source_path = PathBuf::from("./common/src");
+        // println!(
+        //     "common source path {:?}",
+        //     fs::canonicalize(&common_source_path).unwrap()
+        // );
+        let common_source_files = [
+            "bits.rs",
+            "deserialize.rs",
+            "error.rs",
+            "request.rs",
+            "response.rs",
+            "serialize.rs",
+        ];
+
+        let wd = PathBuf::from(".");
+        println!("I am here {:?}", fs::canonicalize(wd).unwrap());
+        println!("out_path is {:?}", fs::canonicalize(out_path).unwrap());
+        println!(
+            "common_source_path is {:?}",
+            fs::canonicalize(common_source_path.clone()).unwrap()
+        );
+
+        for common_file in common_source_files {
+            let common_source_file_path = common_source_path.join(common_file);
+            let common_target_file_path = out_path.join(common_file);
+            File::create(common_target_file_path.clone())?;
+            // println!(
+            //     "Copying from {:?} to {:?}",
+            //     fs::canonicalize(&common_source_file_path).unwrap(),
+            //     fs::canonicalize(&common_target_file_path).unwrap(),
+            // );
+            println!(
+                "Copying from {:?} to {:?}",
+                common_source_file_path.clone(),
+                common_target_file_path.clone(),
+            );
+            fs::copy(common_source_file_path, common_target_file_path)
+                .with_context(|| "Can not copy file")?;
+        }
 
         // let lib_path: PathBuf = [out_path, Path::new("register.rs")].iter().collect();
         // let mut file = File::create(lib_path).with_context(|| "Cannot open output file")?; //TODO make the context useful
@@ -321,8 +368,7 @@ impl Definition {
         // let code_str = include_str!("../common/readable.rs");
         // file.write_all(code_str.as_bytes())?;
 
-        //Ok(())
-        todo!()
+        Ok(())
     }
 
     fn generate_errors(&self, out_path: &Path) -> anyhow::Result<()> {
