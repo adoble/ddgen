@@ -310,63 +310,29 @@ impl Definition {
     fn generate_common(&self, out_path: &Path) -> anyhow::Result<()> {
         println!("Transferring common code over.");
 
-        //let common_source_path = PathBuf::from("../../common/src");
-        let common_source_path = PathBuf::from("./common/src");
-        // println!(
-        //     "common source path {:?}",
-        //     fs::canonicalize(&common_source_path).unwrap()
-        // );
-        let common_source_files = [
-            "bits.rs",
-            "deserialize.rs",
-            "error.rs",
-            "request.rs",
-            "response.rs",
-            "serialize.rs",
-        ];
+        // Need to use include_str!() so as to bind the common files to the binary
+        // as resources. However, include_str!() only accepts str literals so have to
+        // initialise the hashmap in this akward way.
+        let common_resources = HashMap::from([
+            ("bits.rs", include_str!("../../common/src/bits.rs")),
+            (
+                "deserialize.rs",
+                include_str!("../../common/src/deserialize.rs"),
+            ),
+            ("error.rs", include_str!("../../common/src/error.rs")),
+            ("request.rs", include_str!("../../common/src/request.rs")),
+            ("response.rs", include_str!("../../common/src/response.rs")),
+            (
+                "serialize.rs",
+                include_str!("../../common/src/serialize.rs"),
+            ),
+        ]);
 
-        let wd = PathBuf::from(".");
-        println!("I am here {:?}", fs::canonicalize(wd).unwrap());
-        println!("out_path is {:?}", fs::canonicalize(out_path).unwrap());
-        println!(
-            "common_source_path is {:?}",
-            fs::canonicalize(common_source_path.clone()).unwrap()
-        );
-
-        for common_file in common_source_files {
-            let common_source_file_path = common_source_path.join(common_file);
-            let common_target_file_path = out_path.join(common_file);
-            File::create(common_target_file_path.clone())?;
-            // println!(
-            //     "Copying from {:?} to {:?}",
-            //     fs::canonicalize(&common_source_file_path).unwrap(),
-            //     fs::canonicalize(&common_target_file_path).unwrap(),
-            // );
-            println!(
-                "Copying from {:?} to {:?}",
-                common_source_file_path.clone(),
-                common_target_file_path.clone(),
-            );
-            fs::copy(common_source_file_path, common_target_file_path)
-                .with_context(|| "Can not copy file")?;
+        for (file_name, code_resource) in &common_resources {
+            let lib_path: PathBuf = [out_path, Path::new(file_name)].iter().collect();
+            let mut file = File::create(lib_path).with_context(|| "Cannot open output file")?; //TODO make the context useful
+            file.write_all(code_resource.as_bytes())?;
         }
-
-        // let lib_path: PathBuf = [out_path, Path::new("register.rs")].iter().collect();
-        // let mut file = File::create(lib_path).with_context(|| "Cannot open output file")?; //TODO make the context useful
-
-        // let code_str = include_str!("../common/register_i2c.rs");
-
-        // file.write_all(code_str.as_bytes())?;
-
-        // let lib_path: PathBuf = [out_path, Path::new("writable.rs")].iter().collect();
-        // let mut file = File::create(lib_path).with_context(|| "Cannot open output file")?; //TODO make the context useful
-        // let code_str = include_str!("../common/writable.rs");
-        // file.write_all(code_str.as_bytes())?;
-
-        // let lib_path: PathBuf = [out_path, Path::new("readable.rs")].iter().collect();
-        // let mut file = File::create(lib_path).with_context(|| "Cannot open output file")?; //TODO make the context useful
-        // let code_str = include_str!("../common/readable.rs");
-        // file.write_all(code_str.as_bytes())?;
 
         Ok(())
     }
