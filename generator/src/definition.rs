@@ -337,20 +337,6 @@ impl Definition {
         Ok(())
     }
 
-    fn generate_errors(&self, out_path: &Path) -> anyhow::Result<()> {
-        // println!("Transferring error code block over");
-
-        // let lib_path: PathBuf = [out_path, Path::new("error.rs")].iter().collect();
-        // let mut file = File::create(lib_path).with_context(|| "Cannot open output file")?; //TODO make the context useful
-
-        // let code_str = include_str!("../common/error.rs");
-
-        // file.write_all(code_str.as_bytes())?;
-
-        // Ok(())
-        todo!()
-    }
-
     fn generate_tests(&self, out_path: &Path, test_code_path: &Path) -> anyhow::Result<()> {
         // println!("{}", "Transferring test code over".yellow());
         // // Test code files are small so just reading into a string
