@@ -82,6 +82,8 @@ impl Definition {
 
         self.generate_common(source_path)?;
 
+        self.generate_commands(source_path)?;
+
         // let _tokens = rust::Tokens::new();
 
         // self.generate_register_block(source_path)?;
@@ -90,10 +92,6 @@ impl Definition {
         // }
 
         // self.generate_types_file(source_path)?;
-
-        // self.generate_common(source_path)?;
-
-        // self.generate_errors(source_path)?;
 
         // if let Some(test_code_path) = tests_path {
         //     self.generate_tests(out_path, test_code_path)?;
@@ -166,6 +164,14 @@ impl Definition {
 
         // Ok(())
         todo!()
+    }
+
+    fn generate_commands(&self, out_path: &Path) -> anyhow::Result<()> {
+        for (command_name, command) in &self.commands {
+            command.generate_command(command_name, out_path)?;
+        }
+
+        Ok(())
     }
 
     fn generate_register_block(&self, out_path: &Path) -> anyhow::Result<()> {

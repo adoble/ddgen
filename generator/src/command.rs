@@ -3,6 +3,7 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
+use convert_case::{Case, Casing};
 use genco::prelude::*;
 use serde::Deserialize;
 
@@ -31,29 +32,48 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn generate_register(&self, name: &str, out_path: &Path) -> anyhow::Result<()> {
-        // // Create a file for the register  file
-        // let register_file_name = format!("{}.rs", name.to_lowercase());
-        // let lib_path: PathBuf = [out_path, Path::new(register_file_name.as_str())]
+    pub fn generate_command(&self, name: &str, out_path: &Path) -> anyhow::Result<()> {
+        println!("Generating command files ...");
+        // Create a file for the command  file
+        let command_file_name = format!("{}.rs", name.to_lowercase());
+        let target_path = out_path.join(command_file_name.clone());
+        // let target_path: PathBuf = [out_path, Path::new(command_file_name.as_str())]
         //     .iter()
         //     .collect();
-        // let file = File::create(lib_path).with_context(|| "Cannot open output file")?;
 
-        // let mut tokens = rust::Tokens::new();
+        let file = File::create(target_path)
+            .with_context(|| format!("Cannot open output file {}", command_file_name))?;
 
-        // // Generate code
-        // self.generate_register_preamble(&mut tokens, name);
-        // self.generate_register_struct(&mut tokens, name);
+        let mut tokens = rust::Tokens::new();
 
-        // self.generate_register_reader(&mut tokens);
-        // self.generate_register_writer(&mut tokens);
+        let request_struct_name = format!("{}Request", name.to_case(Case::UpperCamel));
+        let response_struct_name = format!("{}Response", name.to_case(Case::UpperCamel));
 
-        // println!("Generating register file for {}", name.to_uppercase());
+        // DEBUG
+        quote_in!(tokens =>
+            #[derive(Debug, PartialEq, Eq)]$['\r']
+            pub struct $(request_struct_name) {$['\r']
+                $(ref toks => self.generate_members(toks, &self.request))$['\r']
+            }
+            $['\n']
+            #[derive(Debug, PartialEq, Eq)]$['\r']
+            pub struct $(response_struct_name) {$['\r']
+                $(ref toks => self.generate_members(toks, &self.request))$['\r']
+            }
+        );
 
-        // // Write the register file
-        // output_file(file, tokens)?;
-        // Ok(())
-        todo!()
+        output_file(file, tokens)?;
+
+        Ok(())
+    }
+
+    fn generate_members(&self, tokens: &mut Tokens<Rust>, members: &HashMap<String, Field>) {
+        for (name, field) in members {
+            field.generate_field(tokens, name);
+            // quote_in!(*tokens =>
+            //     pub $name : u8, $['\r']//$(field.type_as_str()),
+            // );
+        }
     }
 
     pub(crate) fn generate_register_preamble(&self, tokens: &mut Tokens<Rust>, name: &str) {
