@@ -52,14 +52,24 @@ impl Command {
         // DEBUG
         quote_in!(tokens =>
             #[derive(Debug, PartialEq, Eq)]$['\r']
-            pub struct $(request_struct_name) {$['\r']
+            pub struct $(&request_struct_name) {$['\r']
                 $(ref toks => self.generate_members(toks, &self.request))$['\r']
             }
             $['\n']
+            impl Serialize<16> for $(&request_struct_name) {
+                $(ref toks => self.generate_serializations(toks, &self.request))$['\r']
+            }
+            $['\n']
             #[derive(Debug, PartialEq, Eq)]$['\r']
-            pub struct $(response_struct_name) {$['\r']
+            pub struct $(&response_struct_name) {$['\r']
                 $(ref toks => self.generate_members(toks, &self.request))$['\r']
             }
+            $['\n']
+            impl Deserialize<$(&response_struct_name)> for [u8] {
+                $(ref toks => self.generate_deserializations(toks, &self.request))$['\r']
+
+            }
+
         );
 
         output_file(file, tokens)?;
@@ -74,6 +84,28 @@ impl Command {
             //     pub $name : u8, $['\r']//$(field.type_as_str()),
             // );
         }
+    }
+
+    fn generate_serializations(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        _members: &HashMap<String, Field>,
+    ) {
+        quote_in!(*tokens =>
+            // Serialization
+
+        );
+    }
+
+    fn generate_deserializations(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        _members: &HashMap<String, Field>,
+    ) {
+        quote_in!(*tokens =>
+            // DeSerialization
+
+        );
     }
 
     pub(crate) fn generate_register_preamble(&self, tokens: &mut Tokens<Rust>, name: &str) {
