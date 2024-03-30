@@ -3,6 +3,7 @@
 // TODO:
 // - Run clippy
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
+// - Need to format the code after generation. (Can we run cargo fmt at the end?)
 use serde::Deserialize;
 use std::{fs::File, path::PathBuf};
 
