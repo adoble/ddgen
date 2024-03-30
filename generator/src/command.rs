@@ -34,12 +34,9 @@ pub struct Command {
 impl Command {
     pub fn generate_command(&self, name: &str, out_path: &Path) -> anyhow::Result<()> {
         println!("Generating command files ...");
-        // Create a file for the command  file
+
         let command_file_name = format!("{}.rs", name.to_lowercase());
         let target_path = out_path.join(command_file_name.clone());
-        // let target_path: PathBuf = [out_path, Path::new(command_file_name.as_str())]
-        //     .iter()
-        //     .collect();
 
         let file = File::create(target_path)
             .with_context(|| format!("Cannot open output file {}", command_file_name))?;
@@ -49,8 +46,25 @@ impl Command {
         let request_struct_name = format!("{}Request", name.to_case(Case::UpperCamel));
         let response_struct_name = format!("{}Response", name.to_case(Case::UpperCamel));
 
+        let command_doc_comment = DocComment::from_string(&format!("Command {}", name)).as_string();
+        let description_doc_comment =
+            DocComment::from_string(self.description.as_ref().unwrap_or(&String::new()))
+                .as_string();
+        let generated_doc_comment =
+            DocComment::from_string(&format!("Generated with version {} of ddgen", VERSION))
+                .as_string();
+
         // DEBUG
         quote_in!(tokens =>
+            $(command_doc_comment)$['\r']
+
+
+            $(description_doc_comment)$['\r']
+
+
+            $(generated_doc_comment)
+
+            $['\n']
             #[derive(Debug, PartialEq, Eq)]$['\r']
             pub struct $(&request_struct_name) {$['\r']
                 $(ref toks => self.generate_members(toks, &self.request))$['\r']
@@ -79,33 +93,27 @@ impl Command {
 
     fn generate_members(&self, tokens: &mut Tokens<Rust>, members: &HashMap<String, Field>) {
         for (name, field) in members {
-            field.generate_field(tokens, name);
+            field.generate_struct_member(tokens, name);
             // quote_in!(*tokens =>
             //     pub $name : u8, $['\r']//$(field.type_as_str()),
             // );
         }
     }
 
-    fn generate_serializations(
-        &self,
-        tokens: &mut Tokens<Rust>,
-        _members: &HashMap<String, Field>,
-    ) {
-        quote_in!(*tokens =>
-            // Serialization
-
-        );
+    fn generate_serializations(&self, tokens: &mut Tokens<Rust>, members: &HashMap<String, Field>) {
+        for (name, field) in members {
+            field.generate_field_serialization(tokens, name);
+        }
     }
 
     fn generate_deserializations(
         &self,
         tokens: &mut Tokens<Rust>,
-        _members: &HashMap<String, Field>,
+        members: &HashMap<String, Field>,
     ) {
-        quote_in!(*tokens =>
-            // DeSerialization
-
-        );
+        for (name, field) in members {
+            field.generate_field_deserialization(tokens, name);
+        }
     }
 
     pub(crate) fn generate_register_preamble(&self, tokens: &mut Tokens<Rust>, name: &str) {
