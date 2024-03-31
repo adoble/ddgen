@@ -45,10 +45,10 @@ struct TestStruct {
     a_repeating_u16: [u16; 6],
 }
 
-impl Serialize<16> for TestStruct {
-    fn serialize(&self) -> (u8, [u8; 16]) {
+impl Serialize for TestStruct {
+    fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
         // The size is calculated from the bit specs.
-        let mut data = [0u8; 16];
+        let mut data = [0u8; N];
 
         //  TODO what happens if the end:word of first elemens is incorrecty set?
 
