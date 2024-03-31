@@ -2,6 +2,8 @@
 
 // TODO:
 // - Run clippy
+// - Change serialize so that the const generics are in the function
+//   and not in the trait.
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
 // - Need to format the code after generation. (Can we run cargo fmt at the end?)
 use serde::Deserialize;
