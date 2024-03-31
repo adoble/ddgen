@@ -102,7 +102,7 @@ impl Command {
 
     fn generate_serializations(&self, tokens: &mut Tokens<Rust>, members: &HashMap<String, Field>) {
         for (name, field) in members {
-            field.generate_field_serialization(tokens, name);
+            field.generate_field_serialization(tokens, field, name);
         }
     }
 
@@ -112,7 +112,7 @@ impl Command {
         members: &HashMap<String, Field>,
     ) {
         for (name, field) in members {
-            field.generate_field_deserialization(tokens, name);
+            field.generate_field_deserialization(tokens, field, name);
         }
     }
 
