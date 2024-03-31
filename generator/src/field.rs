@@ -127,7 +127,7 @@ enum FunctionType {
 }
 
 impl Field {
-    pub fn generate_field(&self, tokens: &mut Tokens<Rust>, name: &str) {
+    pub fn generate_struct_member(&self, tokens: &mut Tokens<Rust>, name: &str) {
         // Add field comment
 
         match self {
@@ -159,5 +159,26 @@ impl Field {
                 );
             }
         }
+    }
+
+    pub fn generate_field_serialization(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        field: &Field,
+        name: &str,
+    ) {
+        quote_in!(*tokens =>
+
+        );
+
+        todo!();
+    }
+    pub fn generate_field_deserialization(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        field: &Field,
+        name: &str,
+    ) {
+        todo!();
     }
 }
