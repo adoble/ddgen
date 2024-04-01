@@ -24,9 +24,6 @@ pub struct Command {
 
     description: Option<String>,
 
-    // request: Request,
-
-    // reponse: Response,
     request: HashMap<String, Field>,
     response: HashMap<String, Field>,
 }
@@ -70,19 +67,17 @@ impl Command {
                 $(ref toks => self.generate_members(toks, &self.request))$['\r']
             }
             $['\n']
-            impl Serialize<16> for $(&request_struct_name) {
-                $(ref toks => self.generate_serializations(toks, &self.request))$['\r']
-            }
+            $(ref toks => self.generate_serializations(toks, &request_struct_name, &self.request))$['\r']
+
             $['\n']
             #[derive(Debug, PartialEq, Eq)]$['\r']
             pub struct $(&response_struct_name) {$['\r']
-                $(ref toks => self.generate_members(toks, &self.request))$['\r']
+                $(ref toks => self.generate_members(toks,  &self.request))$['\r']
             }
             $['\n']
-            impl Deserialize<$(&response_struct_name)> for [u8] {
-                $(ref toks => self.generate_deserializations(toks, &self.request))$['\r']
+            $(ref toks => self.generate_deserializations(toks, &response_struct_name,&self.request))$['\r']
 
-            }
+
 
         );
 
@@ -100,15 +95,42 @@ impl Command {
         }
     }
 
-    fn generate_serializations(&self, tokens: &mut Tokens<Rust>, members: &HashMap<String, Field>) {
-        for (name, field) in members {
-            field.generate_field_serialization(tokens, field, name);
-        }
+    fn generate_serializations(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        struct_name: &str,
+        members: &HashMap<String, Field>,
+    ) {
+        // let mut serialization_buffer_size = 0;
+        // for f in members.values().filter(|&f| f.is_bitfield()) {
+        //     if let Field::BitField { bit_range, .. } = f {
+        //         println!("{:?} maxsize = {}", bit_range, bit_range.max_size());
+        //         serialization_buffer_size += bit_range.max_size();
+        //     }
+        // }
+        let mut serialization_buffer_size = self.buffer_size(members);
+
+        // for f in members.values().filter(|&f| f.is_structure()) {
+        //     if let Field::Structure { .. } = f {
+        //         todo!();
+        //     }
+        // }
+
+        quote_in!(*tokens =>
+            impl Serialize for $(struct_name) {
+                fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
+                let mut data = [0u8, $(serialization_buffer_size)];
+
+                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks, field, name)}) )
+                }
+            }
+        );
     }
 
     fn generate_deserializations(
         &self,
         tokens: &mut Tokens<Rust>,
+        struct_name: &str,
         members: &HashMap<String, Field>,
     ) {
         for (name, field) in members {
@@ -284,5 +306,27 @@ impl Command {
 
         // );
         todo!();
+    }
+
+    pub fn buffer_size(&self, members: &HashMap<String, Field>) -> usize {
+        let mut buffer_size = 0;
+        let mut positions: HashMap<usize, usize> = HashMap::new();
+        for f in members.values() {
+            // Need to implement this with a hashmap as more than one bit spec can reference the
+            // same position in the buffer. The key is the position and the value is the size.
+            match f {
+                Field::BitField { bit_range, .. } => {
+                    if !positions.contains_key(&bit_range.start.index) {
+                        positions.insert(bit_range.start.index, bit_range.max_size());
+                    }
+                    //buffer_size += bit_range.max_size()
+                }
+                Field::Structure {
+                    common_structure_name,
+                } => todo!(),
+            }
+        }
+
+        positions.values().fold(0, |acc, size| acc + size)
     }
 }

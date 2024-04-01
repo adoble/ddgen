@@ -1,11 +1,14 @@
 # Test defintion
-
+# TODO 
+# - Add a header 
+# - Add a variable bit spec
 version = "0.0.1"
 
 [device]
 name      = "test_device"
 endian    = "le"
 word_size = 8
+
 
 [commands.TEST_COMMAND]
 opcode      = 0x09

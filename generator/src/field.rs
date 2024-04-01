@@ -20,7 +20,7 @@ use bit_lang::BitSpec;
 //     pub(crate) description: Option<String>,
 // }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, PartialEq)]
 #[serde(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum Field {
@@ -43,7 +43,23 @@ pub enum Field {
     },
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+impl Field {
+    pub fn is_bitfield(&self) -> bool {
+        match self {
+            Field::BitField { .. } => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_structure(&self) -> bool {
+        match self {
+            Field::Structure { .. } => true,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Deserialize, Debug, Default, Clone, PartialEq)]
 pub enum TargetType {
     #[default]
     U8,
@@ -167,11 +183,10 @@ impl Field {
         field: &Field,
         name: &str,
     ) {
+        let todo_doc_comment = DocComment::from_string(format!("{}", name).as_str()).as_string();
         quote_in!(*tokens =>
-
+            $(todo_doc_comment)$['\r']
         );
-
-        todo!();
     }
     pub fn generate_field_deserialization(
         &self,
@@ -179,6 +194,6 @@ impl Field {
         field: &Field,
         name: &str,
     ) {
-        todo!();
+        //TODO
     }
 }
