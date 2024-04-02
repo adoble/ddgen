@@ -38,7 +38,7 @@ fn gen(definition: &str) -> Result<(), anyhow::Error> {
 
     // Need to add the generated project to the workspace members
     // ASSUMING that the device name and the definition name are the same
-    let member = format!("generated/{definition}");
+    //let member = format!("generated/{definition}");
     //add_workspace_member(&member)?;
 
     Ok(())

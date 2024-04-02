@@ -43,17 +43,11 @@ pub enum Field {
 
 impl Field {
     pub fn is_bitfield(&self) -> bool {
-        match self {
-            Field::BitField { .. } => true,
-            _ => false,
-        }
+        matches!(self, Field::BitField { .. })
     }
 
     pub fn is_structure(&self) -> bool {
-        match self {
-            Field::Structure { .. } => true,
-            _ => false,
-        }
+        matches!(self, Field::Structure { .. })
     }
 }
 
@@ -92,6 +86,7 @@ impl From<String> for TargetType {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<String> for TargetType {
     fn into(self) -> String {
         match self {
@@ -106,10 +101,7 @@ impl Into<String> for TargetType {
             TargetType::I64 => "i64".to_string(),
             TargetType::I128 => "i128".to_string(),
             // TODO this seems rather akward
-            TargetType::Enumeration(name) => {
-                let target_type = name.to_string().to_case(Case::UpperCamel);
-                target_type
-            }
+            TargetType::Enumeration(name) => name.to_string().to_case(Case::UpperCamel),
         }
     }
 }
@@ -236,7 +228,7 @@ impl Field {
                 repeat: Repeat::None,
             } => format!("data[{start_index}..={end_index}].serialize_word(self.{name});"),
 
-            _ => format!("todo!({name})"),
+            _ => format!("todo!(\"{name}\")"),
         }
     }
 

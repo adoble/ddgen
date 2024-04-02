@@ -153,9 +153,10 @@ impl Command {
             // same position in the buffer. The key is the position and the value is the size.
             match f {
                 Field::BitField { bit_range, .. } => {
-                    if !positions.contains_key(&bit_range.start.index) {
-                        positions.insert(bit_range.start.index, bit_range.max_size());
-                    }
+                    positions.entry(bit_range.start.index).or_insert_with(|| bit_range.max_size());
+                    // if !positions.contains_key(&bit_range.start.index) {
+                    //     positions.insert(bit_range.start.index, bit_range.max_size());
+                    // }
                     //buffer_size += bit_range.max_size()
                 }
                 Field::Structure {
@@ -165,6 +166,6 @@ impl Command {
             }
         }
 
-        positions.values().fold(0, |acc, size| acc + size)
+        positions.values().sum::<usize>()
     }
 }
