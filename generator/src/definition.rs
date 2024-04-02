@@ -4,18 +4,17 @@ use std::{collections::HashMap, fs, path::Path};
 
 use anyhow::Context;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::PathBuf;
 
-use convert_case::{Case, Casing};
 use crossterm::style::Stylize;
 use genco::prelude::*;
 
 use crate::cargo_gen;
 use crate::command::Command;
 use crate::common_structure::CommonStructure;
-use crate::doc_comment::DocComment;
-use crate::output::output_file;
+// use crate::doc_comment::DocComment;
+// use crate::output::output_file;
 use crate::Enumeration;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -69,7 +68,7 @@ impl Definition {
     pub fn generate_code(
         &self,
         out_path: &Path,
-        tests_path: &Option<PathBuf>,
+        _tests_path: &Option<PathBuf>,
     ) -> anyhow::Result<()> {
         println!(
             "{} in {}",
@@ -124,7 +123,7 @@ impl Definition {
         Ok(source_path_buf)
     }
 
-    fn generate_lib(&self, out_path: &Path, tests: bool) -> anyhow::Result<()> {
+    fn generate_lib(&self, _out_path: &Path, _tests: bool) -> anyhow::Result<()> {
         // println!("Generating lib");
         // // Create a file for the lib file
         // let lib_path: PathBuf = [out_path, Path::new("lib.rs")].iter().collect();
@@ -174,66 +173,12 @@ impl Definition {
         Ok(())
     }
 
-    fn generate_register_block(&self, out_path: &Path) -> anyhow::Result<()> {
-        // println!("Generating register_block.rs");
-
-        // // Create a file for the register block
-        // let register_block_path: PathBuf =
-        //     [out_path, Path::new("register_block.rs")].iter().collect();
-
-        // let file = File::create(register_block_path).with_context(|| "Cannot open output file")?;
-
-        // let mut tokens = rust::Tokens::new();
-
-        // let reg_variables: Vec<String> = self
-        //     .registers
-        //     .keys()
-        //     .map(|name| {
-        //         format!(
-        //             "{}: crate::{}::{}",
-        //             name.to_lowercase(),
-        //             name.to_lowercase(),
-        //             name.to_uppercase()
-        //         )
-        //     })
-        //     .collect();
-
-        // quote_in!(tokens =>
-        //   const BASE_ADDRESS: u8 = $(self.device.base_address);
-
-        //   pub struct RegisterBlock {
-        //       pub address: u8,
-
-        //       // Registers
-        //       $(for var in reg_variables.iter() join($['\r'])=> pub $var,)
-        //   }
-
-        //   impl RegisterBlock {
-        //       pub fn new(offset_address: u8) -> Self {
-        //           // TODO need a check on offset address
-        //           Self {
-        //               address: BASE_ADDRESS | offset_address,
-        //               // Registers
-        //               $(for name in reg_variables join(,$['\r'])=>  $name::new(offset_address))
-
-        //           }
-        //       }
-        //   }
-
-        // );
-
-        // output_file(file, tokens)?;
-
-        // Ok(())
-        todo!()
-    }
-
     /// Generates a file `types.rs` that contains any type defined in the device definition,
     /// especially the enumerations.
     /// Note: the type are generated for the whole devive rather than for individual registers as:
     /// * Imports are simpler.
     /// * They can be reused for different registers.
-    fn generate_types_file(&self, out_path: &Path) -> anyhow::Result<()> {
+    fn generate_types_file(&self, _out_path: &Path) -> anyhow::Result<()> {
         // println!("Generating types");
         // // Create a file for the types
         // let types_path: PathBuf = [out_path, Path::new("types.rs")].iter().collect();
@@ -287,7 +232,7 @@ impl Definition {
         todo!()
     }
 
-    fn generate_enum_items(&self, tokens: &mut Tokens<Rust>, enumeration: &Enumeration) {
+    fn generate_enum_items(&self, _tokens: &mut Tokens<Rust>, _enumeration: &Enumeration) {
         // // struct Enumeration(HashMap<String, u8>);
 
         // for item in enumeration.0.iter() {
@@ -301,7 +246,7 @@ impl Definition {
         todo!()
     }
 
-    fn generate_enum_mappings(&self, tokens: &mut Tokens<Rust>, enumeration: &Enumeration) {
+    fn generate_enum_mappings(&self, _tokens: &mut Tokens<Rust>, _enumeration: &Enumeration) {
         // for item in enumeration.0.iter() {
         //     let name = item.0.to_case(Case::UpperCamel);
         //     let descriminate = item.1.to_string();
@@ -343,7 +288,7 @@ impl Definition {
         Ok(())
     }
 
-    fn generate_tests(&self, out_path: &Path, test_code_path: &Path) -> anyhow::Result<()> {
+    fn generate_tests(&self, _out_path: &Path, _test_code_path: &Path) -> anyhow::Result<()> {
         // println!("{}", "Transferring test code over".yellow());
         // // Test code files are small so just reading into a string
         // let mut file =

@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use crossterm::style::Stylize;
+//use crossterm::style::Stylize;
 
 #[derive(Copy, PartialEq, Debug, Clone)]
 pub struct Span {
@@ -18,7 +18,6 @@ pub struct ContentSpans(Vec<Span>);
 impl ContentSpans {
     fn from(contents: &str) -> ContentSpans {
         let mut spans: Vec<Span> = Vec::new();
-        let mut count = 0;
         let mut start: usize = 1;
         let mut end: usize = 0;
 
@@ -72,7 +71,7 @@ pub fn error_report(contents: &str, message: &str, span_range: Option<Range<usiz
         }
     };
 
-    let mut content_ranges = ContentSpans::from(contents);
+    let content_ranges = ContentSpans::from(contents);
     let location = content_ranges.location(span);
     match location {
         Some(loc) => println!(

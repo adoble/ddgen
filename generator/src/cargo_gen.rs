@@ -1,5 +1,3 @@
-use std::default;
-
 /// Generates a `Cargo.toml` file for the generated driver
 use serde::Serialize;
 

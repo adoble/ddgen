@@ -64,7 +64,7 @@ fn main() {
 
     let mut file = match File::open(args.in_path) {
         Ok(file) => file,
-        Err(error) => {
+        Err(_error) => {
             println!("Unable to open definition file {}", definition_file_name);
             return;
         }

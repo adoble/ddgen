@@ -146,12 +146,12 @@ impl Field {
 
         match self {
             Field::Structure {
-                common_structure_name,
+                common_structure_name: _,
             } => todo!(),
             Field::BitField {
-                bit_range,
                 target_type,
                 description,
+                ..
             } => {
                 // Description
                 if description.is_some() {
@@ -189,7 +189,7 @@ impl Field {
             $(field_serialize_code);$['\r']
         );
     }
-    pub fn generate_field_deserialization(&self, tokens: &mut Tokens<Rust>, name: &str) {
+    pub fn generate_field_deserialization(&self, _tokens: &mut Tokens<Rust>, _name: &str) {
         //TODO
     }
 
@@ -240,7 +240,7 @@ impl Field {
         }
     }
 
-    fn generate_header_field_serialization(&self, common_structure_name: &str) -> String {
+    fn generate_header_field_serialization(&self, _common_structure_name: &str) -> String {
         todo!()
     }
 }
