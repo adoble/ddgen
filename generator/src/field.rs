@@ -1,5 +1,3 @@
-use std::io::repeat;
-
 use convert_case::{Case, Casing};
 use genco::prelude::*;
 use serde::{de::Error, Deserialize, Deserializer};
@@ -224,6 +222,19 @@ impl Field {
                 end: None,
                 repeat: Repeat::None,
             } => format!("data[{index}].serialize_word(self.{name});"),
+            BitSpec {
+                start:
+                    Word {
+                        index: start_index,
+                        bit_range: BitRange::WholeWord,
+                    },
+                end:
+                    Some(Word {
+                        index: end_index,
+                        bit_range: BitRange::WholeWord,
+                    }),
+                repeat: Repeat::None,
+            } => format!("data[{start_index}..={end_index}].serialize_word(self.{name});"),
 
             _ => format!("todo!({name})"),
         }
