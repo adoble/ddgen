@@ -108,7 +108,7 @@ impl Command {
                 fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
                 let mut data = [0u8, $(serialization_buffer_size)];
 
-                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks, field, name)}) )
+                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name)}) )
                 }
             }
         );
@@ -122,12 +122,18 @@ impl Command {
     ) {
         quote_in!(*tokens=>
            impl Deserialize<$(struct_name)> for [u8] {
-               fn deserialize(&self) -> Result<$(struct_name), DeviceError> {
-                    let deserialized_struct = $(struct_name) {
-                        $(for (name, field) in members => $(ref toks {field.generate_field_deserialization(toks, field, name)}) )
-                    };
-               }
-           }
+
+               fn deserialize(&self) -> Result<$(struct_name), DeviceError> { $['\r']
+
+                    let deserialized_struct = $(struct_name) {$['\r']
+
+                        $(for (name, field) in members => $(ref toks {field.generate_field_deserialization(toks,  name)}) )$['\r']
+
+                    };$['\r']
+
+               }$['\r']
+
+           }$['\r']
         );
     }
 

@@ -1,11 +1,11 @@
+use std::io::repeat;
+
 use convert_case::{Case, Casing};
 use genco::prelude::*;
 use serde::{de::Error, Deserialize, Deserializer};
 
-use crate::access::Access;
-use crate::bit_range::BitRange;
 use crate::doc_comment::DocComment;
-use bit_lang::BitSpec;
+use bit_lang::{BitRange, BitSpec, Repeat, Word};
 
 // #[derive(Deserialize, Debug)]
 // #[serde(deny_unknown_fields)]
@@ -177,23 +177,59 @@ impl Field {
         }
     }
 
-    pub fn generate_field_serialization(
-        &self,
-        tokens: &mut Tokens<Rust>,
-        field: &Field,
-        name: &str,
-    ) {
-        let todo_doc_comment = DocComment::from_string(format!("{}", name).as_str()).as_string();
+    pub fn generate_field_serialization(&self, tokens: &mut Tokens<Rust>, name: &str) {
+        let field_serialize_code = match self {
+            Field::BitField { bit_range, .. } => {
+                self.generate_word_field_serialization(name, bit_range)
+            }
+            Field::Structure {
+                common_structure_name,
+            } => self.generate_header_field_serialization(common_structure_name),
+        };
+
         quote_in!(*tokens =>
-            $(todo_doc_comment)$['\r']
+            $(field_serialize_code);$['\r']
         );
     }
-    pub fn generate_field_deserialization(
-        &self,
-        tokens: &mut Tokens<Rust>,
-        field: &Field,
-        name: &str,
-    ) {
+    pub fn generate_field_deserialization(&self, tokens: &mut Tokens<Rust>, name: &str) {
         //TODO
+    }
+
+    fn generate_word_field_serialization(&self, name: &str, bit_range: &BitSpec) -> String {
+        match bit_range {
+            BitSpec {
+                start:
+                    Word {
+                        index,
+                        bit_range: BitRange::Single(bit_position),
+                    },
+                end: None,
+                repeat: Repeat::None,
+            } => format!("data[{index}].serialize_bit(self.{name}, {bit_position});"),
+            BitSpec {
+                start:
+                    Word {
+                        index,
+                        bit_range: BitRange::Range(start_bit, end_bit),
+                    },
+                end: None,
+                repeat: Repeat::None,
+            } => format!("data[{index}].serialize_field(self.{name}, {start_bit}, {end_bit});"),
+            BitSpec {
+                start:
+                    Word {
+                        index,
+                        bit_range: BitRange::WholeWord,
+                    },
+                end: None,
+                repeat: Repeat::None,
+            } => format!("data[{index}].serialize_word(self.{name});"),
+
+            _ => format!("todo!({name})"),
+        }
+    }
+
+    fn generate_header_field_serialization(&self, common_structure_name: &str) -> String {
+        todo!()
     }
 }
