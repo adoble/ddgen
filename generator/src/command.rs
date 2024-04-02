@@ -101,20 +101,7 @@ impl Command {
         struct_name: &str,
         members: &HashMap<String, Field>,
     ) {
-        // let mut serialization_buffer_size = 0;
-        // for f in members.values().filter(|&f| f.is_bitfield()) {
-        //     if let Field::BitField { bit_range, .. } = f {
-        //         println!("{:?} maxsize = {}", bit_range, bit_range.max_size());
-        //         serialization_buffer_size += bit_range.max_size();
-        //     }
-        // }
         let mut serialization_buffer_size = self.buffer_size(members);
-
-        // for f in members.values().filter(|&f| f.is_structure()) {
-        //     if let Field::Structure { .. } = f {
-        //         todo!();
-        //     }
-        // }
 
         quote_in!(*tokens =>
             impl Serialize for $(struct_name) {
@@ -133,9 +120,15 @@ impl Command {
         struct_name: &str,
         members: &HashMap<String, Field>,
     ) {
-        for (name, field) in members {
-            field.generate_field_deserialization(tokens, field, name);
-        }
+        quote_in!(*tokens=>
+           impl Deserialize<$(struct_name)> for [u8] {
+               fn deserialize(&self) -> Result<$(struct_name), DeviceError> {
+                    let deserialized_struct = $(struct_name) {
+                        $(for (name, field) in members => $(ref toks {field.generate_field_deserialization(toks, field, name)}) )
+                    };
+               }
+           }
+        );
     }
 
     pub(crate) fn generate_register_preamble(&self, tokens: &mut Tokens<Rust>, name: &str) {
