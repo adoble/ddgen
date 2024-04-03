@@ -34,7 +34,7 @@ pub struct Word {
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub enum Condition {
+enum Condition {
     Lt,
     Lte,
 }
@@ -42,14 +42,10 @@ pub enum Condition {
 // #[derive(Debug, PartialEq, Copy, Clone)]
 #[derive(Debug, PartialEq, Clone)]
 pub enum Repeat {
-    // A simple fixed number of repititions
+    // A simple fixed number of repeatitions
     Fixed(usize),
-    // A variable number of repitions determined by another word and limited
-    Variable {
-        word: Word,
-        condition: Condition,
-        limit: usize,
-    },
+    // A variable number of repeatations determined by another word and limited
+    Variable { word: Word, limit: usize },
     // No repeat has been specified.
     // Having this removes the need to have an extra Option
     None,
@@ -61,16 +57,7 @@ impl Repeat {
         match self {
             Repeat::None => 1,
             Repeat::Fixed(number) => *number,
-            Repeat::Variable {
-                condition: Condition::Lt,
-                limit,
-                ..
-            } => (*limit) - 1,
-            Repeat::Variable {
-                condition: Condition::Lte,
-                limit,
-                ..
-            } => *limit,
+            Repeat::Variable { limit, .. } => *limit,
         }
     }
 }
@@ -78,8 +65,13 @@ impl Repeat {
 // #[derive(Debug, PartialEq, Copy, Clone)]
 #[derive(Debug, PartialEq, Clone)]
 pub struct BitSpec {
+    /// The word at the start of a word range. If a
+    /// a single word is specified then this is the
+    /// only entry.  
     pub start: Word,
+    /// The elast word in a word range.
     pub end: Option<Word>,
+    /// How the word is repeated, if at all.
     pub repeat: Repeat,
 }
 
@@ -211,12 +203,16 @@ fn variable_word(input: &str) -> IResult<&str, Word> {
 fn variable_repeat(input: &str) -> IResult<&str, Repeat> {
     let (remaining, (word, condition, limit)) =
         tuple((variable_word, condition, u8_parser))(input)?;
+
+    let adjusted_limit = match condition {
+        Condition::Lte => limit,
+        Condition::Lt => limit - 1,
+    };
     Ok((
         remaining,
         Repeat::Variable {
             word,
-            condition,
-            limit: limit.into(),
+            limit: adjusted_limit.into(),
         },
     ))
 }
@@ -315,11 +311,7 @@ mod tests {
             bit_range: BitRange::WholeWord,
         };
 
-        let expected = Repeat::Variable {
-            word,
-            condition: Condition::Lt,
-            limit: 49,
-        };
+        let expected = Repeat::Variable { word, limit: 48 };
         assert_eq!(r, expected);
 
         let data = ";(4[])";
@@ -335,11 +327,7 @@ mod tests {
             bit_range: BitRange::WholeWord,
         };
 
-        let expected = Repeat::Variable {
-            word,
-            condition: Condition::Lte,
-            limit: 48,
-        };
+        let expected = Repeat::Variable { word, limit: 48 };
         assert_eq!(r, expected);
 
         let data = "(4[0..7])<49";
@@ -349,11 +337,7 @@ mod tests {
             bit_range: BitRange::Range(0, 7),
         };
 
-        let expected = Repeat::Variable {
-            word,
-            condition: Condition::Lt,
-            limit: 49,
-        };
+        let expected = Repeat::Variable { word, limit: 48 };
         assert_eq!(r, expected);
     }
     #[test]
@@ -389,8 +373,7 @@ mod tests {
         assert_eq!(repeat.max_repeats(), 5);
 
         let repeat = Repeat::Variable {
-            condition: Condition::Lt,
-            limit: 6,
+            limit: 5,
             word: Word {
                 index: 5,
                 bit_range: BitRange::WholeWord,
@@ -399,7 +382,6 @@ mod tests {
         assert_eq!(repeat.max_repeats(), 5);
 
         let repeat = Repeat::Variable {
-            condition: Condition::Lte,
             limit: 6,
             word: Word {
                 index: 5,
@@ -498,8 +480,7 @@ mod tests {
                 index: 3,
                 bit_range: BitRange::WholeWord,
             },
-            condition: Condition::Lt,
-            limit: 49,
+            limit: 48,
         };
         let expected = BitSpec {
             start: Word {

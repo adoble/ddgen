@@ -140,7 +140,7 @@
 //!
 //! # Example Code
 //! ```
-//! use bit_lang::parser::{BitRange, BitSpec, Condition, Repeat, Word};
+//! use bit_lang::parser::{BitRange, BitSpec,  Repeat, Word};
 //!
 //! fn main() {
 //!     let data = "5[3..7]";
@@ -167,7 +167,7 @@
 pub mod parser;
 use std::fmt::Display;
 
-pub use parser::{BitRange, BitSpec, Condition, Repeat, Word};
+pub use parser::{BitRange, BitSpec, Repeat, Word};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Error {
@@ -275,13 +275,12 @@ mod tests {
 
         let data = "4[]..7[];(3[])<49";
         let bit_spec = parse(data).unwrap();
-        let repeat = Repeat::Variable {
+        let expected_repeat = Repeat::Variable {
             word: Word {
                 index: 3,
                 bit_range: BitRange::WholeWord,
             },
-            condition: Condition::Lt,
-            limit: 49,
+            limit: 48,
         };
         let expected = BitSpec {
             start: Word {
@@ -292,7 +291,7 @@ mod tests {
                 index: 7,
                 bit_range: BitRange::WholeWord,
             }),
-            repeat: repeat,
+            repeat: expected_repeat,
         };
         assert_eq!(bit_spec, expected);
     }

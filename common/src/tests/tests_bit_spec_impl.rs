@@ -3,7 +3,7 @@ use crate::bits::Bits;
 //use super::*;
 use crate::response::{ResponseBit, ResponseField};
 use crate::{error::DeviceError, response::ResponseArray};
-use bit_lang::{BitRange, BitSpec, Condition, Repeat as WordRepeat, Word};
+use bit_lang::{BitRange, BitSpec, Repeat as WordRepeat, Word};
 
 // An enum for testing
 #[derive(PartialEq, PartialOrd, Debug, Clone, Copy, Default)]
@@ -311,7 +311,7 @@ fn deserialize_word_variable_repeat() {
     ];
     let expected: [u8; 5] = [1, 2, 3, 4, 0];
 
-    let (w, count_word, condition, limit) = match spec {
+    let (w, count_word, limit) = match spec {
         BitSpec {
             start:
                 Word {
@@ -326,10 +326,9 @@ fn deserialize_word_variable_repeat() {
                             index: count_index,
                             bit_range: BitRange::WholeWord,
                         },
-                    condition,
                     limit,
                 },
-        } => (w, count_index, condition, limit),
+        } => (w, count_index, limit),
         _ => {
             assert!(false, "Unexpected bit spec found");
             return;
@@ -338,7 +337,6 @@ fn deserialize_word_variable_repeat() {
 
     assert_eq!(w, 3);
     assert_eq!(count_word, 2);
-    assert_eq!(condition, Condition::Lte);
     assert_eq!(limit, 5);
 
     // bits = "3[];(2[])<=5"
@@ -448,7 +446,6 @@ fn deserialize_word_range_u16_variable_repeat() {
                             index: counter_word,
                             bit_range: BitRange::WholeWord,
                         },
-                    condition: Condition::Lte,
                     limit,
                 },
         } => (w, v, counter_word, limit),

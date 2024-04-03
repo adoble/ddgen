@@ -3,7 +3,7 @@ use genco::prelude::*;
 use serde::{de::Error, Deserialize, Deserializer};
 
 use crate::doc_comment::DocComment;
-use bit_lang::{BitRange, BitSpec, Condition, Repeat, Word};
+use bit_lang::{BitRange, BitSpec, Repeat, Word};
 
 // #[derive(Deserialize, Debug)]
 // #[serde(deny_unknown_fields)]
@@ -170,15 +170,7 @@ impl Field {
 
                 let type_string = match bit_range.repeat {
                     Repeat::Fixed(limit) => format!("[{}; {}]", type_string, limit),
-                    Repeat::Variable {
-                        condition, limit, ..
-                    } => {
-                        let number = match condition {
-                            Condition::Lt => limit - 1,
-                            Condition::Lte => limit,
-                        };
-                        format!("[{}; {}]", type_string, number)
-                    }
+                    Repeat::Variable { limit, .. } => format!("[{}; {}]", type_string, limit),
                     Repeat::None => type_string,
                 };
 

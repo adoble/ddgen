@@ -21,7 +21,7 @@ a_u16           = { bits = "1[]..2[]" }
 a_u8            = { bits = "3[]" }
 a_i16           = { bits = "4[]..5[]", type = "i16" }
 a_count         = { bits = "6[]", description = "Count for a_repeating_u16" }
-a_repeating_u16 = { bits = "7[]..8[];(6[])<=6" }
+a_repeating_u16 = { bits = "7[]..8[];(6[])<7" }
 # The bit pattern has a flaw! If more fields are placed behind it, 
 # then no way to know how big a_repeating_u16 really is as this 
 # depends on a_count.
