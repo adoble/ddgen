@@ -13,4 +13,4 @@ genco        = "0.17.8"
 semver       = { version = "1.0.22", features = ["serde"] }
 serde        = { version = "1.0.197", features = ["derive"] }
 toml         = { version = "0.8.10", features = ["parse"] }
-bit-lang     = { path = "../../bit-lang" }
+bit-lang     = { path = "../bit-lang" }

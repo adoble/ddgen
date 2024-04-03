@@ -1,0 +1,62 @@
+digit = "0" |"1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+
+hex_letter = "A" | "B" | "C" | "D" | "E" | "F" | "a" | "b" | "c" | "d" | "e" | "f"; 
+
+boolean = "0" | "1";
+
+seperator = "_"
+
+white_space = " " | "\t";
+
+spaces = "" | {white_space};
+
+u8 = {digit}; (* Max. 255 *)
+
+index = u8;
+
+single_bit = index;
+
+range = index ".." index;
+
+bit_range = index | range;  (* NEW *)
+
+fully_qualified_word = [index] "[" bit_range"]";  (* TODO variable indexes *)
+
+word = bit_range | fully_qualified_word | [index] "[" literal "]";   (* NEW *)
+
+
+variable_word = "(" word ")";
+
+
+fixed_repeat = u8;
+
+limit = u8; 
+
+condition =  "<" | "<=" ; 
+
+variable_repeat = word condition limit;
+
+
+repeat = ";" (fixed_repeat  | variable_repeat);
+
+
+
+(* TODO Words as variables *)
+
+literal = hex_literal | boolean_literal;
+
+hex_literal = hex_header {digit | hex_letter | seperator};
+
+hex_header = "0x" | "0X"
+
+boolean_literal = boolean_header {boolean | seperator}
+
+boolean_header = "0b" | "0B";
+
+bit_spec = word [".." word] [repeat]
+
+
+
+
+
+
