@@ -38,6 +38,13 @@ pub enum Field {
         #[serde(default)]
         target_type: Option<TargetType>,
         description: Option<String>,
+        // // The symbolic name of the field. This is the field name assigned to in the toml
+        // #[serde(skip_deserializing)]
+        // symbolic_name: Option<String>,
+
+        // // The field used to specify the  the number of repeats.
+        // #[serde(skip_deserializing)]
+        // repeating_number_field: Option<Box<Field>>,
     },
 }
 
@@ -86,6 +93,8 @@ impl From<String> for TargetType {
     }
 }
 
+// Need a seperate Into::into as the conversion is not symetric and cannot
+// be automatically handled by the compiler.
 #[allow(clippy::from_over_into)]
 impl Into<String> for TargetType {
     fn into(self) -> String {
