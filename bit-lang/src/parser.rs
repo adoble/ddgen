@@ -69,7 +69,7 @@ pub struct BitSpec {
     /// a single word is specified then this is the
     /// only entry.  
     pub start: Word,
-    /// The elast word in a word range.
+    /// The last word in a word range.
     pub end: Option<Word>,
     /// How the word is repeated, if at all.
     pub repeat: Repeat,
@@ -116,7 +116,7 @@ fn range(input: &str) -> IResult<&str, BitRange> {
 }
 
 fn bit_range(input: &str) -> IResult<&str, BitRange> {
-    alt((range, single_bit))(input) // Order importantre
+    alt((range, single_bit))(input) // Order important
 }
 
 fn fully_qualified_word(input: &str) -> IResult<&str, Word> {
