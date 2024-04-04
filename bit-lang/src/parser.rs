@@ -75,10 +75,6 @@ pub struct BitSpec {
     pub repeat: Repeat,
 }
 
-fn index(input: &str) -> IResult<&str, u8> {
-    (u8_parser)(input)
-}
-
 impl BitSpec {
     /// Get the max size in bytes of an array that could
     /// contain the bit specification.
@@ -100,6 +96,10 @@ impl BitSpec {
 
         n_words * repeats
     }
+}
+
+fn index(input: &str) -> IResult<&str, u8> {
+    (u8_parser)(input)
 }
 
 fn single_bit(input: &str) -> IResult<&str, BitRange> {
