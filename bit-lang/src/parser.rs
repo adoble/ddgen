@@ -1,3 +1,5 @@
+use std::fmt;
+
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -16,12 +18,32 @@ pub enum LiteralType {
     Bin(String),
 }
 
+impl fmt::Display for LiteralType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LiteralType::Bin(literal) => write!(f, "0b{literal}"),
+            LiteralType::Hex(literal) => write!(f, "0x{literal}"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum BitRange {
     Single(u8),
     Range(u8, u8),
     WholeWord,
     Literal(LiteralType),
+}
+
+impl fmt::Display for BitRange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BitRange::Single(position) => write!(f, "{position}"),
+            BitRange::Range(start, end) => write!(f, "{start}..{end}"),
+            BitRange::WholeWord => write!(f, ""),
+            BitRange::Literal(literal) => write!(f, "{literal}"),
+        }
+    }
 }
 
 //#[derive(Debug, PartialEq, Copy, Clone)]
@@ -31,6 +53,12 @@ pub struct Word {
     pub index: usize,
     // No bit spec refers to the whole word
     pub bit_range: BitRange,
+}
+
+impl fmt::Display for Word {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}[{}]", self.index, self.bit_range)
+    }
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -58,6 +86,16 @@ impl Repeat {
             Repeat::None => 1,
             Repeat::Fixed(number) => *number,
             Repeat::Variable { limit, .. } => *limit,
+        }
+    }
+}
+
+impl fmt::Display for Repeat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Repeat::None => write!(f, ""),
+            Repeat::Fixed(repeat) => write!(f, "{repeat}"),
+            Repeat::Variable { word, limit } => write!(f, "({word})<={limit}"),
         }
     }
 }
@@ -95,6 +133,23 @@ impl BitSpec {
         let repeats = self.repeat.max_repeats();
 
         n_words * repeats
+    }
+}
+
+impl fmt::Display for BitSpec {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let BitSpec { start, end, repeat } = self;
+
+        let s = format!("{start}");
+        let e = match end {
+            Some(word) => format!("..{word}"),
+            None => String::new(),
+        };
+        let r = match repeat {
+            Repeat::None => String::new(),
+            _ => format!(";{repeat}"),
+        };
+        write!(f, "{s}{e}{r}")
     }
 }
 
@@ -295,6 +350,57 @@ mod tests {
     }
 
     #[test]
+    fn test_bit_range_to_string() {
+        assert_eq!(BitRange::Single(5).to_string(), "5");
+        assert_eq!(BitRange::Single(5).to_string(), "5");
+        assert_eq!(BitRange::WholeWord.to_string(), "");
+        assert_eq!(
+            BitRange::Literal(LiteralType::Hex("2E".to_string())).to_string(),
+            "0x2E"
+        );
+        assert_eq!(
+            BitRange::Literal(LiteralType::Bin("1100".to_string())).to_string(),
+            "0b1100"
+        );
+    }
+
+    #[test]
+    fn test_word_to_string() {
+        assert_eq!(
+            Word {
+                bit_range: BitRange::Range(3, 6),
+                index: 4
+            }
+            .to_string(),
+            "4[3..6]".to_string()
+        );
+        assert_eq!(
+            Word {
+                bit_range: BitRange::WholeWord,
+                index: 4
+            }
+            .to_string(),
+            "4[]".to_string()
+        );
+        assert_eq!(
+            Word {
+                bit_range: BitRange::Single(5),
+                index: 4
+            }
+            .to_string(),
+            "4[5]".to_string()
+        );
+        assert_eq!(
+            Word {
+                bit_range: BitRange::Literal(LiteralType::Hex("340A".to_string())),
+                index: 4
+            }
+            .to_string(),
+            "4[0x340A]".to_string()
+        );
+    }
+
+    #[test]
     fn test_repeat() {
         let data = ";12";
         let (_, r) = repeat(data).unwrap();
@@ -316,6 +422,25 @@ mod tests {
 
         let data = ";(4[])";
         assert!(repeat(data).is_err());
+    }
+
+    #[test]
+    fn test_repeat_to_string() {
+        assert_eq!(Repeat::Fixed(12).to_string(), "12");
+
+        assert_eq!(Repeat::None.to_string(), "");
+
+        assert_eq!(
+            Repeat::Variable {
+                word: Word {
+                    index: 4,
+                    bit_range: BitRange::WholeWord,
+                },
+                limit: 48
+            }
+            .to_string(),
+            "(4[])<=48"
+        );
     }
 
     #[test]
@@ -589,6 +714,75 @@ mod tests {
             repeat: Repeat::None,
         };
         assert_eq!(r, expected);
+    }
+    #[test]
+    fn test_bit_spec_to_string() {
+        assert_eq!(
+            BitSpec {
+                start: Word {
+                    index: 6,
+                    bit_range: BitRange::Single(4)
+                },
+                end: None,
+                repeat: Repeat::None
+            }
+            .to_string(),
+            "6[4]"
+        );
+
+        assert_eq!(
+            BitSpec {
+                start: Word {
+                    index: 6,
+                    bit_range: BitRange::Single(4)
+                },
+                end: Some(Word {
+                    index: 8,
+                    bit_range: BitRange::Range(1, 6)
+                }),
+                repeat: Repeat::None
+            }
+            .to_string(),
+            "6[4]..8[1..6]"
+        );
+
+        assert_eq!(
+            BitSpec {
+                start: Word {
+                    index: 6,
+                    bit_range: BitRange::WholeWord
+                },
+                end: Some(Word {
+                    index: 8,
+                    bit_range: BitRange::Range(1, 6)
+                }),
+                repeat: Repeat::Fixed(10)
+            }
+            .to_string(),
+            "6[]..8[1..6];10"
+        );
+
+        assert_eq!(
+            BitSpec {
+                start: Word {
+                    index: 6,
+                    bit_range: BitRange::WholeWord
+                },
+                end: Some(Word {
+                    index: 8,
+                    bit_range: BitRange::WholeWord
+                }),
+                repeat: Repeat::Variable {
+                    limit: 10,
+                    word: Word {
+                        index: 3,
+                        bit_range: BitRange::WholeWord
+                    }
+                }
+            }
+            .to_string(),
+            "6[]..8[];(3[])<=10"
+        );
     }
 
     #[test]
