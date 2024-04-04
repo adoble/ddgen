@@ -6,7 +6,7 @@ use nom::{
     character::complete::u8 as u8_parser,
     character::complete::{char, one_of},
     combinator::{map, opt, recognize, value},
-    multi::many1,
+    multi::{many0, many1},
     //number::complete::{i32, u8},
     sequence::{delimited, preceded, separated_pair, tuple},
     IResult,
@@ -70,9 +70,9 @@ enum Condition {
 // #[derive(Debug, PartialEq, Copy, Clone)]
 #[derive(Debug, PartialEq, Clone)]
 pub enum Repeat {
-    // A simple fixed number of repeatitions
+    // A simple fixed number of repetitions
     Fixed(usize),
-    // A variable number of repeatations determined by another word and limited
+    // A variable number of repetations determined by another word and limited
     Variable { word: Word, limit: usize },
     // No repeat has been specified.
     // Having this removes the need to have an extra Option
@@ -299,16 +299,55 @@ fn hexadecimal(input: &str) -> IResult<&str, LiteralType> {
     Ok((remaining, LiteralType::Hex(hex.to_string())))
 }
 
-fn binary(input: &str) -> IResult<&str, LiteralType> {
+fn separater(input: &str) -> IResult<&str, char> {
+    let (input, sep_char) = one_of("_")(input)?;
+
+    Ok((input, sep_char))
+}
+
+fn boolean_char(input: &str) -> IResult<&str, char> {
+    let (input, bool_char) = one_of("01")(input)?;
+    Ok((input, bool_char))
+
+    // TODO bin_digit
+}
+
+// <binary> ::= (<boolean_char> | <separator>)* <boolean_char> ( <boolean_char> | <separator>)*
+fn binary(input: &str) -> IResult<&str, &str> {
+    let (input, binary_number) = recognize(tuple((
+        many1(boolean_char),
+        many0(tuple((opt(separater), many1(boolean_char)))),
+    )))(input)?;
+
+    // // This is based on the definition in the rust reference documentation
+    // let (input, binary_number) = recognize(tuple((
+    //     many0(alt((boolean_char, separater))),
+    //     boolean_char,
+    //     many0(alt((boolean_char, separater))),
+    // )))(input)?;
+
+    Ok((input, binary_number))
+}
+
+// fn binary(input: &str) -> IResult<&str, LiteralType> {
+//     let (input, _) = alt((tag("0b"), tag("0B")))(input)?;
+//     //let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
+//     let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
+
+//     Ok((remaining, LiteralType::Bin(bin.to_string())))
+// }
+
+fn binary_literal(input: &str) -> IResult<&str, LiteralType> {
     let (input, _) = alt((tag("0b"), tag("0B")))(input)?;
     //let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
-    let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
+    //let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
+    let (remaining, bin) = recognize(binary)(input)?;
 
     Ok((remaining, LiteralType::Bin(bin.to_string())))
 }
 
 fn literal(input: &str) -> IResult<&str, LiteralType> {
-    let (remaining, literal) = alt((hexadecimal, binary))(input)?;
+    let (remaining, literal) = alt((hexadecimal, binary_literal))(input)?;
     Ok((remaining, literal))
 }
 
@@ -326,6 +365,44 @@ pub fn bit_spec(input: &str) -> IResult<&str, BitSpec> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_seperator() {
+        let data = "_";
+        let (_, c) = separater(data).unwrap();
+        assert_eq!(c, '_');
+
+        assert!(separater("1").is_err());
+    }
+
+    #[test]
+    fn test_boolean_char() {
+        let data = "1";
+        let (_, c) = boolean_char(data).unwrap();
+        assert_eq!(c, '1');
+
+        let data = "0";
+        let (_, c) = boolean_char(data).unwrap();
+        assert_eq!(c, '0');
+
+        let data = "_";
+        assert!(boolean_char(data).is_err());
+    }
+
+    #[test]
+    fn test_binary() {
+        let data = "1";
+        let (_, c) = binary(data).unwrap();
+        assert_eq!(c, "1");
+
+        let data = "1011001";
+        let (_, c) = binary(data).unwrap();
+        assert_eq!(c, "1011001");
+
+        let data = "1011_001";
+        let (_, c) = binary(data).unwrap();
+        assert_eq!(c, "1011_001");
+    }
 
     #[test]
     fn test_literal_word() {
@@ -925,11 +1002,11 @@ mod tests {
         let (_, r) = literal(data).unwrap();
         assert_eq!(r, LiteralType::Bin("1011_1100".to_string()));
 
-        // let data = "0b1011_11b0";
-        // assert!(literal(data).is_err());
+        let data = "0b_1011_11b0";
+        assert!(literal(data).is_err());
 
-        // let data = "0Xab_zc";
-        // assert!(literal(data).is_err());
+        let data = "0Xzb";
+        assert!(literal(data).is_err());
     }
 
     #[test]
@@ -944,13 +1021,13 @@ mod tests {
     }
 
     #[test]
-    fn test_binary() {
+    fn test_binary_literal() {
         let data = "0b10001100";
-        let (_, bin) = binary(data).unwrap();
+        let (_, bin) = binary_literal(data).unwrap();
         assert_eq!(bin, LiteralType::Bin("10001100".to_string()));
 
         let data = "0b1000_1100";
-        let (_, bin) = binary(data).unwrap();
+        let (_, bin) = binary_literal(data).unwrap();
         assert_eq!(bin, LiteralType::Bin("1000_1100".to_string()));
     }
 }
