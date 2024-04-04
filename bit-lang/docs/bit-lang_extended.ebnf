@@ -1,0 +1,70 @@
+/*  Syntax from https://bnfplayground.pauliankline.com/ */
+
+<digit> ::= [0-9]
+
+<hex_letter> ::= [A-F] | [a-f]  
+
+<symbol_char> ::= [A-Z] | [a-z] 
+
+<symbol> ::= <symbol_char>+ (<seperator>? <symbol_char>+)*
+
+<boolean_char> ::= "0" | "1"
+
+<boolean> ::= <boolean_char>+ (<seperator>? <boolean_char>+)*
+
+<seperator> ::= "_"
+
+<white_space> ::= " " | "\t"
+
+<spaces> ::=  <white_space>+
+
+/* Max. 255 */
+<number> ::= <digit>+ 
+
+<index> ::= <number> 
+
+
+<single_bit> ::= <index>
+
+<range> ::= <index> ".." <index>
+
+<bit_range> ::= <index> | <range>  
+
+<word> ::= (<index> | <follows_index>)? "[" (<bit_range> | E ) "]"  
+
+<literal_word> ::= (<index>?) "[" <literal> "]"  
+
+/*<word> ::=  <fully_qualified_word> | (<index>)? "[" <literal> "]"*/   
+
+
+<variable> ::= "(" (<word> | <symbol>) ")"  
+
+<follows_index> ::= "(>" <symbol> ")"
+
+<fixed_repeat> ::= <number>
+
+<limit> ::= <number> 
+
+<condition> ::=  "<" | "<="  
+
+<variable_repeat> ::=  <variable> <condition> <limit>
+
+<repeat> ::=  <fixed_repeat>  | <variable_repeat>
+
+<literal> ::= <hex_literal> | <boolean_literal>
+
+<hex_literal> ::= <hex_header> (<digit> | <hex_letter> | <seperator>)+
+
+<hex_header> ::= "0x" | "0X"
+
+<boolean_literal> ::= <boolean_header> (<boolean> | <seperator>)+
+
+<boolean_header> ::= "0b" | "0B"
+
+<word_range> ::= <word> (".." <word>)? | <word> "*" <number>
+
+<bit_spec> ::= (<symbol> ":")? <word_range> (";" <repeat>)?  |  (<symbol> ":")? <bit_range> | <literal_word>
+
+/* TODO variable indexes - required with follow statements?  */
+/*  TODO follow statements and word numbers : nstations:(>frequencies)[]*2;(nstations)<10  */
+
