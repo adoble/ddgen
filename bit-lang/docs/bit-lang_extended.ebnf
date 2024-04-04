@@ -6,13 +6,17 @@
 
 <symbol_char> ::= [A-Z] | [a-z] 
 
-<symbol> ::= <symbol_char>+ (<seperator>? <symbol_char>+)*
+<symbol> ::= <symbol_char>+ (<separator>? <symbol_char>+)*
 
 <boolean_char> ::= "0" | "1"
 
-<boolean> ::= <boolean_char>+ (<seperator>? <boolean_char>+)*
+<binary> ::= <boolean_char>+ (<separator>? <boolean_char>+)* 
 
-<seperator> ::= "_"
+/* The rust documentaton uses this: */
+/* <binary> ::= (<boolean_char> | <separator>)* <boolean_char> ( <boolean_char> | <separator>)* */
+
+
+<separator> ::= "_"
 
 <white_space> ::= " " | "\t"
 
@@ -25,7 +29,6 @@
 
 
 <single_bit> ::= <index>
-
 <range> ::= <index> ".." <index>
 
 <bit_range> ::= <index> | <range>  
@@ -51,15 +54,15 @@
 
 <repeat> ::=  <fixed_repeat>  | <variable_repeat>
 
-<literal> ::= <hex_literal> | <boolean_literal>
+<literal> ::= <hex_literal> | <binary_literal>
 
-<hex_literal> ::= <hex_header> (<digit> | <hex_letter> | <seperator>)+
+<hex_literal> ::= <hex_header> (<digit> | <hex_letter> | <separator>)+
 
 <hex_header> ::= "0x" | "0X"
 
-<boolean_literal> ::= <boolean_header> (<boolean> | <seperator>)+
+<binary_literal> ::= <binary_header> (<binary> | <separator>)+
 
-<boolean_header> ::= "0b" | "0B"
+<binary_header> ::= "0b" | "0B"
 
 <word_range> ::= <word> (".." <word>)? | <word> "*" <number>
 
