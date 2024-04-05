@@ -50,14 +50,16 @@ impl Serialize for TestStruct {
         // The size is calculated from the bit specs.
         let mut data = [0u8; N];
 
-        //  TODO what happens if the end:word of first elemens is incorrecty set?
+        //  TODO what happens if the end:word of first element is incorrecty set?
 
         data[0].serialize_bit(self.a_bit, 4);
         data[0].serialize_field(self.a_field as u8, 5, 6);
         data[1..=2].serialize_word(self.a_u16);
         data[3].serialize_word(self.a_u8);
         data[4].serialize_word(self.a_count);
-        data[5..=10].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
+
+        //data[5..=10].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
+        data[5..].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
 
         ((self.a_count * 2) + 5, data)
     }
