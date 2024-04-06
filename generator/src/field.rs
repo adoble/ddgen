@@ -262,7 +262,7 @@ impl Field {
 
                 repeat: Repeat::Fixed(limit),
                 ..
-            } => format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit})"),
+            } => format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit});"),
             _ => format!("todo!(\"{name}\")"),
         }
     }

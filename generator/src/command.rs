@@ -76,7 +76,7 @@ impl Command {
             $(ref toks => self.generate_serializations(toks, &request_struct_name, &self.request))$['\r']
 
             $['\n']
-            #[derive(Debug, PartialEq, Eq)]$['\r']
+            #[derive(Debug, PartialEq)]$['\r']
             pub struct $(&response_struct_name) {$['\r']
                 $(ref toks => self.generate_members(toks,  &self.request))$['\r']
             }
@@ -112,10 +112,14 @@ impl Command {
         quote_in!(*tokens =>
             impl Serialize for $(struct_name) {
                 fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
-                let mut data = [0u8, $(serialization_buffer_size)];
+                let mut data = [0u8; N];
 
                 $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name, members)}) )
+
+                ($(serialization_buffer_size), data)
                 }
+
+
             }
         );
     }
@@ -157,7 +161,7 @@ impl Command {
     pub fn buffer_size(&self, members: &HashMap<String, Field>) -> usize {
         let mut positions: HashMap<usize, usize> = HashMap::new();
         for f in members.values() {
-            // Need to implement this with a hashmap as more than one bit spec can reference the
+            // Implementing this with a hashmap as more than one bit spec can reference the
             // same position in the buffer. The key is the position and the value is the size.
             match f {
                 Field::BitField { bit_spec: bit_range, .. } => {

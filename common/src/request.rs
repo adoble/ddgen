@@ -89,8 +89,21 @@ impl RequestWord<u8> for u8 {
     }
 }
 
+impl RequestWord<i8> for u8 {
+    fn serialize_word(&mut self, source: i8) {
+        *self = source as u8;
+    }
+}
+
 impl RequestWord<u16> for [u8] {
     fn serialize_word(&mut self, source: u16) {
+        self[0] = source.to_le_bytes()[0];
+        self[1] = source.to_le_bytes()[1];
+    }
+}
+
+impl RequestWord<i16> for [u8] {
+    fn serialize_word(&mut self, source: i16) {
         self[0] = source.to_le_bytes()[0];
         self[1] = source.to_le_bytes()[1];
     }
@@ -143,11 +156,8 @@ impl<const SOURCE_LEN: usize> RequestArray<[u8; SOURCE_LEN]> for [u8] {
 mod tests {
     use crate::request::RequestArray;
 
-    use super::RequestBit;
+    use super::{RequestBit, RequestWord};
 
-    // pub trait RequestBit {
-    //     fn serialize_bit(&self, target: &mut u8, position: usize);
-    // }
     #[test]
     fn test_serialize_bool() {
         let mut data = [0u8; 4];
@@ -155,6 +165,38 @@ mod tests {
         data[2].serialize_bit(b, 5);
 
         assert_eq!(data, [0, 0, 0b0010_0000, 0]);
+    }
+
+    #[test]
+    fn test_serialize_word_u8() {
+        let mut data = [0u8; 4];
+        let w: u8 = 42;
+        data[2].serialize_word(w);
+
+        assert_eq!(data, [0, 0, 42, 0]);
+    }
+
+    #[test]
+    fn test_serialize_word_i8() {
+        let mut data = [0u8; 4];
+        let w: i8 = -42;
+        data[2].serialize_word(w);
+
+        let expected_u8 = w as u8;
+
+        assert_eq!(data, [0, 0, expected_u8, 0]);
+    }
+
+    #[test]
+    fn test_serialize_word_u16() {
+        let mut data = [0u8; 4];
+        let w: u16 = 22222;
+        data[2..].serialize_word(w);
+
+        assert_eq!(
+            data,
+            [0, 0, 22222u16.to_le_bytes()[0], 22222u16.to_le_bytes()[1]]
+        );
     }
 
     #[test]

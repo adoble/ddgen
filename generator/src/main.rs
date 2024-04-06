@@ -10,6 +10,8 @@
 //   Could change this to a new type (e.g. SymbolTable(<HashMap<String, Field>)), but need to
 //   see if this can be done easily with serde (see https://github.com/softprops/dynomite/pull/145).
 //  - Merge field::TargetType with bit_spec::BitSpecType
+//  - Ensure that all types are handled in serailize and deserialize
+//  - Need to handle big endian encodings
 use serde::Deserialize;
 use std::{fs::File, path::PathBuf};
 
