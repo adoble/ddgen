@@ -134,6 +134,44 @@ impl BitSpec {
 
         n_words * repeats
     }
+
+    /// Suggest a type for a variable to hold the value
+    /// specified by the bit spec.
+    pub fn suggested_word_type(&self) -> String {
+        //if let Self::BitField { bit_spec, .. } = self {
+        match self {
+            BitSpec {
+                start:
+                    Word {
+                        bit_range: BitRange::Single(_),
+                        ..
+                    },
+                end: None,
+                ..
+            } => "bool",
+            BitSpec {
+                start: Word { .. },
+                end: None,
+                ..
+            } => "u8",
+            BitSpec {
+                start: Word {
+                    index: start_index, ..
+                },
+                end: Some(Word {
+                    index: end_index, ..
+                }),
+                ..
+            } => match end_index - start_index + 1 {
+                2 => "u16",
+                4 => "u32",
+                8 => "u64",
+                16 => "u128",
+                _ => "usize",
+            },
+        }
+        .to_string()
+    }
 }
 
 impl fmt::Display for BitSpec {
@@ -152,6 +190,8 @@ impl fmt::Display for BitSpec {
         write!(f, "{s}{e}{r}")
     }
 }
+
+// Parse function follow ...
 
 fn index(input: &str) -> IResult<&str, u8> {
     (u8_parser)(input)
@@ -365,6 +405,68 @@ pub fn bit_spec(input: &str) -> IResult<&str, BitSpec> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_suggested_word_type() {
+        let bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::Single(5),
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+
+        assert_eq!(bit_spec.suggested_word_type(), "bool");
+
+        let bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::Range(5, 7),
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+        assert_eq!(bit_spec.suggested_word_type(), "u8");
+
+        let bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+        assert_eq!(bit_spec.suggested_word_type(), "u8");
+
+        let bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: Some(Word {
+                index: 5,
+                bit_range: BitRange::WholeWord,
+            }),
+            repeat: Repeat::None,
+        };
+        assert_eq!(bit_spec.suggested_word_type(), "u16");
+
+        let bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: Some(Word {
+                index: 11,
+                bit_range: BitRange::WholeWord,
+            }),
+            repeat: Repeat::None,
+        };
+        assert_eq!(bit_spec.suggested_word_type(), "u64");
+
+        //todo!("more tests");
+    }
 
     #[test]
     fn test_seperator() {
