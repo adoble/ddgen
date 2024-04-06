@@ -1,3 +1,10 @@
 [workspace]
-members  = ["generator", "xtask", "common", "examples/si468x-pac", "sandbox"]
+members = [
+    "generator",
+    "xtask",
+    "common",
+    "examples/si468x-pac",
+    "sandbox",
+    "generated/test_device",
+]
 resolver = "2"

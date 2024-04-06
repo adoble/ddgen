@@ -677,6 +677,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "test_device"
+version = "0.0.1"
+dependencies = [
+ "embedded-hal 1.0.0",
+ "embedded-hal-mock",
+]
+
+[[package]]
 name = "thiserror"
 version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"

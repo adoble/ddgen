@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use convert_case::{Case, Casing};
 use genco::prelude::*;
 use serde::{de::Error, Deserialize, Deserializer};
 
+//use crate::{bit_range::BitRange, doc_comment::DocComment};
 use crate::doc_comment::DocComment;
 use bit_lang::{BitRange, BitSpec, Repeat, Word};
 
@@ -29,7 +32,7 @@ pub enum Field {
     BitField {
         #[serde(rename = "bits")]
         #[serde(deserialize_with = "from_bit_spec")]
-        bit_range: BitSpec,
+        bit_spec: BitSpec,
         // #[serde(rename = "enum")]
         // enumeration: Option<String>,
         // #[serde(rename = "type", default)]
@@ -41,10 +44,6 @@ pub enum Field {
         // // The symbolic name of the field. This is the field name assigned to in the toml
         // #[serde(skip_deserializing)]
         // symbolic_name: Option<String>,
-
-        // // The field used to specify the  the number of repeats.
-        // #[serde(skip_deserializing)]
-        // repeating_number_field: Option<Box<Field>>,
     },
 }
 
@@ -58,6 +57,7 @@ impl Field {
     }
 }
 
+// TODO merge this with BitSpecType in  BitSpec.
 #[derive(Deserialize, Debug, Default, Clone, PartialEq)]
 pub enum TargetType {
     #[default]
@@ -152,7 +152,7 @@ impl Field {
             Field::BitField {
                 target_type,
                 description,
-                bit_range,
+                bit_spec,
             } => {
                 // Description
                 if description.is_some() {
@@ -165,10 +165,10 @@ impl Field {
 
                 let type_string = match target_type {
                     Some(t) => t.clone().into(),
-                    None => "u8".to_string(),
+                    None => bit_spec.suggested_word_type(),
                 };
 
-                let type_string = match bit_range.repeat {
+                let type_string = match bit_spec.repeat {
                     Repeat::Fixed(limit) => format!("[{}; {}]", type_string, limit),
                     Repeat::Variable { limit, .. } => format!("[{}; {}]", type_string, limit),
                     Repeat::None => type_string,
@@ -182,11 +182,17 @@ impl Field {
         }
     }
 
-    pub fn generate_field_serialization(&self, tokens: &mut Tokens<Rust>, name: &str) {
+    pub fn generate_field_serialization(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        name: &str,
+        _members: &HashMap<String, Field>,
+    ) {
         let field_serialize_code = match self {
-            Field::BitField { bit_range, .. } => {
-                self.generate_word_field_serialization(name, bit_range)
-            }
+            Field::BitField {
+                bit_spec: bit_range,
+                ..
+            } => self.generate_word_field_serialization(name, bit_range),
             Field::Structure {
                 common_structure_name,
             } => self.generate_header_field_serialization(common_structure_name),
@@ -196,8 +202,10 @@ impl Field {
             $(field_serialize_code);$['\r']
         );
     }
-    pub fn generate_field_deserialization(&self, _tokens: &mut Tokens<Rust>, _name: &str) {
-        //TODO
+    pub fn generate_field_deserialization(&self, tokens: &mut Tokens<Rust>, name: &str) {
+        quote_in!(*tokens =>
+            todo!($(quoted(name))),$['\r']
+        );
     }
 
     fn generate_word_field_serialization(&self, name: &str, bit_range: &BitSpec) -> String {
@@ -219,7 +227,9 @@ impl Field {
                     },
                 end: None,
                 repeat: Repeat::None,
-            } => format!("data[{index}].serialize_field(self.{name}, {start_bit}, {end_bit});"),
+            } => {
+                format!("data[{index}].serialize_field(self.{name} as u8, {start_bit}, {end_bit});")
+            }
             BitSpec {
                 start:
                     Word {
@@ -243,6 +253,16 @@ impl Field {
                 repeat: Repeat::None,
             } => format!("data[{start_index}..={end_index}].serialize_word(self.{name});"),
 
+            BitSpec {
+                start:
+                    Word {
+                        index: start_index,
+                        bit_range: BitRange::WholeWord,
+                    },
+
+                repeat: Repeat::Fixed(limit),
+                ..
+            } => format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit})"),
             _ => format!("todo!(\"{name}\")"),
         }
     }

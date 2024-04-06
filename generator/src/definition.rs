@@ -7,14 +7,15 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
+use convert_case::{Case, Casing};
 use crossterm::style::Stylize;
 use genco::prelude::*;
 
 use crate::cargo_gen;
 use crate::command::Command;
 use crate::common_structure::CommonStructure;
-// use crate::doc_comment::DocComment;
-// use crate::output::output_file;
+use crate::doc_comment::DocComment;
+use crate::output::output_file;
 use crate::Enumeration;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -68,7 +69,7 @@ impl Definition {
     pub fn generate_code(
         &self,
         out_path: &Path,
-        _tests_path: &Option<PathBuf>,
+        tests_path: &Option<PathBuf>,
     ) -> anyhow::Result<()> {
         println!(
             "{} in {}",
@@ -90,13 +91,13 @@ impl Definition {
         //     register.1.generate_register(register.0, source_path)?;
         // }
 
-        // self.generate_types_file(source_path)?;
+        self.generate_types_file(source_path)?;
 
         // if let Some(test_code_path) = tests_path {
         //     self.generate_tests(out_path, test_code_path)?;
         // }
 
-        // self.generate_lib(source_path, tests_path.is_some())?;
+        self.generate_lib(source_path, tests_path.is_some())?;
 
         Ok(())
     }
@@ -123,31 +124,36 @@ impl Definition {
         Ok(source_path_buf)
     }
 
-    fn generate_lib(&self, _out_path: &Path, _tests: bool) -> anyhow::Result<()> {
-        // println!("Generating lib");
-        // // Create a file for the lib file
-        // let lib_path: PathBuf = [out_path, Path::new("lib.rs")].iter().collect();
-        // let file = File::create(lib_path).with_context(|| "Cannot open output file")?;
+    fn generate_lib(&self, out_path: &Path, _tests: bool) -> anyhow::Result<()> {
+        println!("Generating lib");
+        // Create a file for the lib file
+        let lib_path: PathBuf = [out_path, Path::new("lib.rs")].iter().collect();
+        let file = File::create(lib_path).with_context(|| "Cannot crate  lib file")?;
 
-        // let mut tokens = rust::Tokens::new();
+        let mut tokens = rust::Tokens::new();
 
-        // quote_in!(tokens =>
-        //     #![cfg_attr(not(test), no_std)]
+        quote_in!(tokens =>
+            #![cfg_attr(not(test), no_std)]
 
-        //     // Rexports
-        //     pub use crate::register::Register;
-        //     pub use crate::readable::Readable;
-        //     pub use crate::writable::Writable;
-        //     pub use crate::error::DeviceError;
-        //     pub use crate::register_block::RegisterBlock;
+            //Reexports  TODO have this as a comment in the code
 
-        //     pub mod register_block;
 
-        //     $(for name in self.registers.keys() join(;$['\r'])=>  pub mod $(name.to_lowercase()) );
+           pub use crate::types::*;
+           pub use crate::error::DeviceError;
 
-        //     $(if self.enumerations.is_some() => $['\n']pub mod types;  )
 
-        //     pub mod error;
+            $(for name in self.commands.keys() join(;$['\r'])=>  pub mod $(name.to_lowercase()) );
+
+            // $(if self.enumerations.is_some() => $['\n']pub mod types;  )  TODO
+
+            pub mod error;
+            mod types;
+            mod deserialize;
+            mod serialize;
+            mod request;
+            mod response;
+            mod bits;
+
 
         //     mod readable;
         //     mod writable;
@@ -155,14 +161,13 @@ impl Definition {
 
         //     $(if tests => $['\n']  #[cfg(test)] $['\n'] mod tests;)
 
-        // );
+        );
 
-        // output_file(file, tokens)?;
+        output_file(file, tokens)?;
 
         // // TODO update to include types/enumerations
 
-        // Ok(())
-        todo!()
+        Ok(())
     }
 
     fn generate_commands(&self, out_path: &Path) -> anyhow::Result<()> {
@@ -178,84 +183,82 @@ impl Definition {
     /// Note: the type are generated for the whole devive rather than for individual registers as:
     /// * Imports are simpler.
     /// * They can be reused for different registers.
-    fn generate_types_file(&self, _out_path: &Path) -> anyhow::Result<()> {
-        // println!("Generating types");
-        // // Create a file for the types
-        // let types_path: PathBuf = [out_path, Path::new("types.rs")].iter().collect();
+    fn generate_types_file(&self, out_path: &Path) -> anyhow::Result<()> {
+        println!("Generating types");
+        // Create a file for the types
+        let types_path: PathBuf = [out_path, Path::new("types.rs")].iter().collect();
 
-        // let file = File::create(types_path).with_context(|| "Cannot open output file")?;
+        let file = File::create(types_path).with_context(|| "Cannot open output file")?;
 
-        // let mut tokens = rust::Tokens::new();
+        let mut tokens = rust::Tokens::new();
 
-        // let doc_comment = DocComment::from_string("Types used in the driver");
-        // let generated_doc_comment = DocComment::from_string(&format!(
-        //     "Generated with version {} of {}",
-        //     VERSION, PKG_NAME
-        // ));
+        let doc_comment = DocComment::from_string("Types used in the driver");
+        let generated_doc_comment = DocComment::from_string(&format!(
+            "Generated with version {} of {}",
+            VERSION, PKG_NAME
+        ));
 
-        // quote_in!(tokens =>
-        //             $(doc_comment.as_string())
-        //             $(DocComment::empty())
-        //             $(generated_doc_comment.as_string())
-        //             $['\n']
-        //             use crate::error::DeviceError;
-        //             $['\n']
-        // );
+        quote_in!(tokens =>
+                    $(doc_comment.as_string())
+                    $(DocComment::empty())
+                    $(generated_doc_comment.as_string())
+                    $['\n']
+                    use crate::error::DeviceError;
+                    $['\n']
+        );
 
-        // if let Some(enumerations) = &self.enumerations {
-        //     for enumeration in enumerations {
-        //         let enum_identifier = &enumeration.0.to_case(Case::UpperCamel);
+        if let Some(enumerations) = &self.enumerations {
+            for enumeration in enumerations {
+                let enum_identifier = &enumeration.0.to_case(Case::UpperCamel);
 
-        //         quote_in!(tokens =>
-        //             pub enum $enum_identifier {
-        //                 $(ref toks {self.generate_enum_items(toks, enumeration.1)})
-        //             }
-        //             $['\n']
+                quote_in!(tokens =>
+                    #[derive(PartialEq, Debug, Copy, Clone)]
+                    pub enum $enum_identifier {
+                        $(ref toks {self.generate_enum_items(toks, enumeration.1)})
+                    }
+                    $['\n']
 
-        //             impl TryFrom<u8> for $enum_identifier {
-        //                 type Error = DeviceError;
-        //                 fn try_from(value: u8) -> Result<Self, Self::Error> {
-        //                     match value {
-        //                         $(ref toks {self.generate_enum_mappings(toks, enumeration.1)})
-        //                         _ => Err(DeviceError::EnumConversion),
-        //                     }
-        //                 }
-        //             }
-        //             $['\n']
-        //         );
-        //     }
-        // };
+                    impl TryFrom<u8> for $enum_identifier {
+                        type Error = DeviceError;
+                        fn try_from(value: u8) -> Result<Self, Self::Error> {
+                            match value {
+                                $(ref toks {self.generate_enum_mappings(toks, enumeration.1)})
+                                _ => Err(DeviceError::EnumConversion),
+                            }
+                        }
+                    }
+                    $['\n']
+                );
+            }
+        };
 
-        // output_file(file, tokens)?;
+        output_file(file, tokens)?;
 
-        // Ok(())
-        todo!()
+        Ok(())
     }
 
-    fn generate_enum_items(&self, _tokens: &mut Tokens<Rust>, _enumeration: &Enumeration) {
-        // // struct Enumeration(HashMap<String, u8>);
+    fn generate_enum_items(&self, tokens: &mut Tokens<Rust>, enumeration: &Enumeration) {
+        // struct Enumeration(HashMap<String, u8>);
 
-        // for item in enumeration.0.iter() {
-        //     let name = item.0.to_case(Case::UpperCamel);
-        //     let descriminate = item.1.to_string();
-        //     quote_in!(*tokens =>
-        //         $name = $descriminate,
-        //         $['\r']
-        //     );
-        // }
-        todo!()
+        for item in enumeration.0.iter() {
+            let name = item.0.to_case(Case::UpperCamel);
+            let descriminate = item.1.to_string();
+            quote_in!(*tokens =>
+                $name = $descriminate,
+                $['\r']
+            );
+        }
     }
 
-    fn generate_enum_mappings(&self, _tokens: &mut Tokens<Rust>, _enumeration: &Enumeration) {
-        // for item in enumeration.0.iter() {
-        //     let name = item.0.to_case(Case::UpperCamel);
-        //     let descriminate = item.1.to_string();
-        //     quote_in!(*tokens =>
-        //         $descriminate => Ok(Self::$name),
-        //         $['\r']
-        //     );
-        // }
-        todo!()
+    fn generate_enum_mappings(&self, tokens: &mut Tokens<Rust>, enumeration: &Enumeration) {
+        for item in enumeration.0.iter() {
+            let name = item.0.to_case(Case::UpperCamel);
+            let descriminate = item.1.to_string();
+            quote_in!(*tokens =>
+                $descriminate => Ok(Self::$name),
+                $['\r']
+            );
+        }
     }
 
     fn generate_common(&self, out_path: &Path) -> anyhow::Result<()> {

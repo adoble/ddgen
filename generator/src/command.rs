@@ -58,10 +58,17 @@ impl Command {
             $(description_doc_comment)$['\r']
 
 
-            $(generated_doc_comment)
+            $(generated_doc_comment)$['\n']
+
+            use crate::deserialize::Deserialize;
+            use crate::error::DeviceError;
+            use crate::request::{RequestArray, RequestBit, RequestField, RequestWord};
+            use crate::response::{ResponseArray, ResponseBit, ResponseField, ResponseWord};
+            use crate::serialize::Serialize;
+            use crate::types::*;
 
             $['\n']
-            #[derive(Debug, PartialEq, Eq)]$['\r']
+            #[derive(Debug, PartialEq)]$['\r']
             pub struct $(&request_struct_name) {$['\r']
                 $(ref toks => self.generate_members(toks, &self.request))$['\r']
             }
@@ -107,7 +114,7 @@ impl Command {
                 fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
                 let mut data = [0u8, $(serialization_buffer_size)];
 
-                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name)}) )
+                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name, members)}) )
                 }
             }
         );
@@ -124,11 +131,12 @@ impl Command {
 
                fn deserialize(&self) -> Result<$(struct_name), DeviceError> { $['\r']
 
-                    let deserialized_struct = $(struct_name) {$['\r']
+                    Ok($(struct_name) {$['\r']
 
-                        $(for (name, field) in members => $(ref toks {field.generate_field_deserialization(toks,  name)}) )$['\r']
+                        $(for (name, field) in members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name)}) ) $['\r']
 
-                    };$['\r']
+                    })$['\r']
+
 
                }$['\r']
 
@@ -152,7 +160,7 @@ impl Command {
             // Need to implement this with a hashmap as more than one bit spec can reference the
             // same position in the buffer. The key is the position and the value is the size.
             match f {
-                Field::BitField { bit_range, .. } => {
+                Field::BitField { bit_spec: bit_range, .. } => {
                     positions.entry(bit_range.start.index).or_insert_with(|| bit_range.max_size());
                     // if !positions.contains_key(&bit_range.start.index) {
                     //     positions.insert(bit_range.start.index, bit_range.max_size());

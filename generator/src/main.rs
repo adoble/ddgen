@@ -6,6 +6,10 @@
 //   and not in the trait.
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
 // - Need to format the code after generation. (Can we run cargo fmt at the end?)
+// - Often need to passs HashMap<String, Field> into functions as this forms the symbol table.
+//   Could change this to a new type (e.g. SymbolTable(<HashMap<String, Field>)), but need to
+//   see if this can be done easily with serde (see https://github.com/softprops/dynomite/pull/145).
+//  - Merge field::TargetType with bit_spec::BitSpecType
 use serde::Deserialize;
 use std::{fs::File, path::PathBuf};
 
@@ -16,7 +20,7 @@ use std::{collections::HashMap, io::Read};
 use crate::{definition::Definition, error_reporting::error_report};
 
 mod access;
-mod bit_range;
+//mod bit_range;
 mod cargo_gen;
 mod command;
 mod common_structure;
