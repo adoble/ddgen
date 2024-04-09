@@ -199,9 +199,9 @@ impl Definition {
         ));
 
         quote_in!(tokens =>
-                    $(doc_comment.as_string())
-                    $(DocComment::empty())
-                    $(generated_doc_comment.as_string())
+                    $(doc_comment.as_string())$['\r']
+                    $(DocComment::empty())$['\r']
+                    $(generated_doc_comment.as_string())$['\r']
                     $['\n']
                     use crate::error::DeviceError;
                     $['\n']
