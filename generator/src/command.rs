@@ -108,7 +108,9 @@ impl Command {
         struct_name: &str,
         members: &HashMap<String, Field>,
     ) {
-        // Generate a table that maps bitspecs to symbols
+        // Generate a table that maps bitspecs to symbols. Note this is
+        // only for the request/serialization as the response may have
+        // different symbols
         let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
         for (name, field) in members {
             if let Field::BitField { bit_spec, .. } = field {
@@ -125,7 +127,7 @@ impl Command {
                 fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
                 let mut data = [0u8; N];
 
-                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name, members, &symbol_table)}) )
+                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name,  &symbol_table)}) )
 
                 ($(serialization_buffer_size), data)
                 }
@@ -141,6 +143,18 @@ impl Command {
         struct_name: &str,
         members: &HashMap<String, Field>,
     ) {
+        // Generate a table that maps bitspecs to symbols. Note this is
+        // only for the response/deserialization as the request may have
+        // different symbols
+        let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
+        for (name, field) in members {
+            if let Field::BitField { bit_spec, .. } = field {
+                symbol_table.insert(bit_spec.clone(), name.to_string());
+            } else {
+                todo!("Handle structures");
+            }
+        }
+
         quote_in!(*tokens=>
            impl Deserialize<$(struct_name)> for [u8] {
 
@@ -148,7 +162,7 @@ impl Command {
 
                     Ok($(struct_name) {$['\r']
 
-                        $(for (name, field) in members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name)}) ) $['\r']
+                        $(for (name, field) in members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name, &symbol_table)}) ) $['\r']
 
                     })$['\r']
 

@@ -186,7 +186,6 @@ impl Field {
         &self,
         tokens: &mut Tokens<Rust>,
         name: &str,
-        members: &HashMap<String, Field>,
         symbol_table: &HashMap<BitSpec, String>,
     ) {
         let field_serialize_code = match self {
@@ -203,9 +202,24 @@ impl Field {
             $(field_serialize_code);$['\r']
         );
     }
-    pub fn generate_field_deserialization(&self, tokens: &mut Tokens<Rust>, name: &str) {
+    pub fn generate_field_deserialization(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        name: &str,
+        symbol_table: &HashMap<BitSpec, String>,
+    ) {
+        let field_deserialize_code = match self {
+            Field::BitField { bit_spec, .. } => {
+                self.generate_word_field_deserialization(name, bit_spec, symbol_table)
+            }
+
+            Field::Structure {
+                common_structure_name,
+            } => self.generate_header_field_deserialization(common_structure_name),
+        };
+
         quote_in!(*tokens =>
-            todo!($(quoted(name))),$['\r']
+            $(field_deserialize_code),$['\r']
         );
     }
 
@@ -224,7 +238,7 @@ impl Field {
                     },
                 end: None,
                 repeat: Repeat::None,
-            } => format!("data[{index}].serialize_bit(self.{name}, {bit_position});"),
+            } => format!("data[{index}].serialize_bit(self.{name}, {bit_position})"),
             BitSpec {
                 start:
                     Word {
@@ -234,7 +248,7 @@ impl Field {
                 end: None,
                 repeat: Repeat::None,
             } => {
-                format!("data[{index}].serialize_field(self.{name} as u8, {start_bit}, {end_bit});")
+                format!("data[{index}].serialize_field(self.{name} as u8, {start_bit}, {end_bit})")
             }
             BitSpec {
                 start:
@@ -244,7 +258,7 @@ impl Field {
                     },
                 end: None,
                 repeat: Repeat::None,
-            } => format!("data[{index}].serialize_word(self.{name});"),
+            } => format!("data[{index}].serialize_word(self.{name})"),
             BitSpec {
                 start:
                     Word {
@@ -257,7 +271,7 @@ impl Field {
                         bit_range: BitRange::WholeWord,
                     }),
                 repeat: Repeat::None,
-            } => format!("data[{start_index}..={end_index}].serialize_word(self.{name});"),
+            } => format!("data[{start_index}..={end_index}].serialize_word(self.{name})"),
 
             BitSpec {
                 start:
@@ -269,7 +283,7 @@ impl Field {
                 repeat: Repeat::Fixed(limit),
                 ..
             } => {
-                format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit});",)
+                format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit})",)
             }
             BitSpec {
                 start:
@@ -298,7 +312,7 @@ impl Field {
                 let count_symbol_name = symbol_table.get(&repeat_bit_spec);
                 if count_symbol_name.is_some() {
                     format!(
-                        "data[{start_index}..].serialize_repeating_words(self.{}, self.{} as usize);",
+                        "data[{start_index}..].serialize_repeating_words(self.{}, self.{} as usize)",
                         name,
                         count_symbol_name.unwrap()
                     )
@@ -311,7 +325,113 @@ impl Field {
         }
     }
 
+    fn generate_word_field_deserialization(
+        &self,
+        name: &str,
+        bit_spec: &BitSpec,
+        symbol_table: &HashMap<BitSpec, String>,
+    ) -> String {
+        match bit_spec {
+            BitSpec {
+                start:
+                    Word {
+                        index,
+                        bit_range: BitRange::Single(bit_position),
+                    },
+                end: None,
+                repeat: Repeat::None,
+                //} => format!("data[{index}].serialize_bit(self.{name}, {bit_position});"),
+            } => format!("self[{index}].deserialize_bit(self.{bit_position})"),
+            BitSpec {
+                start:
+                    Word {
+                        index,
+                        bit_range: BitRange::Range(start_bit, end_bit),
+                    },
+                end: None,
+                repeat: Repeat::None,
+            } => {
+                format!("self[{index}].deserialize_field( {start_bit}, {end_bit})")
+            }
+            BitSpec {
+                start:
+                    Word {
+                        index,
+                        bit_range: BitRange::WholeWord,
+                    },
+                end: None,
+                repeat: Repeat::None,
+            } => format!("self[{index}].deserialize_word()"),
+            BitSpec {
+                start:
+                    Word {
+                        index: start_index,
+                        bit_range: BitRange::WholeWord,
+                    },
+                end:
+                    Some(Word {
+                        index: end_index,
+                        bit_range: BitRange::WholeWord,
+                    }),
+                repeat: Repeat::None,
+            } => format!("self[{start_index}..={end_index}].deserialize_word()"),
+
+            BitSpec {
+                start:
+                    Word {
+                        index: start_index,
+                        bit_range: BitRange::WholeWord,
+                    },
+
+                repeat: Repeat::Fixed(limit),
+                ..
+            } => {
+                format!("self[{start_index}..].deserialize_repeating_words({limit})")
+            }
+            BitSpec {
+                start:
+                    Word {
+                        index: start_index,
+                        bit_range: BitRange::WholeWord,
+                    },
+
+                repeat:
+                    Repeat::Variable {
+                        word: repeat_word, ..
+                    },
+                ..
+            } => {
+                // The parser assumes that the repeat word is a simple word (i.e. no range, no repeats) -
+                // for example, a byte.
+                // This excludes repeat words that are, for instance, a u16 that using two words.
+                // In most cases this is enough, however the symbol table maps full bit_specs to symbols as
+                // it needs to cover all symbols. What follows is a workaround, but ultimately the parser
+                //  should recognise full bit specs for variable repeat words.
+                let repeat_bit_spec = BitSpec {
+                    start: repeat_word.clone(),
+                    end: None,
+                    repeat: Repeat::None,
+                };
+                let count_symbol_name = symbol_table.get(&repeat_bit_spec);
+                if count_symbol_name.is_some() {
+                    format!(
+                        "self[{start_index}..].serialize_repeating_words(self.{} as usize)",
+                        count_symbol_name.unwrap()
+                    )
+                } else {
+                    println!("Cannot find bit_spec {}", bit_spec.to_string());
+                    todo!("Proper error handling");
+                }
+            }
+            _ => format!("todo!(\"{name}\")"),
+        }
+    }
+
     fn generate_header_field_serialization(&self, _common_structure_name: &str) -> String {
-        todo!()
+        todo!("Cmplete generate_header_field_serialization")
+    }
+
+    fn generate_header_field_deserialization(&self, _common_structure_name: &str) -> String {
+        todo!("generate_header_field_deserialization")
     }
 }
