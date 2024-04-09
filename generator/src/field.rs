@@ -317,7 +317,7 @@ impl Field {
                         count_symbol_name.unwrap()
                     )
                 } else {
-                    println!("Cannot find bit_spec {}", bit_spec.to_string());
+                    println!("Cannot find bit_spec {}", bit_spec);
                     todo!("Proper error handling");
                 }
             }
@@ -420,7 +420,7 @@ impl Field {
                         repeat_word.index
                     )
                 } else {
-                    println!("Cannot find bit_spec {}", bit_spec.to_string());
+                    println!("Cannot find bit_spec {}", bit_spec);
                     todo!("Proper error handling");
                 }
             }

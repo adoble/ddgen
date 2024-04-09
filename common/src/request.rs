@@ -120,6 +120,7 @@ pub trait RequestArray<T> {
 impl<const SOURCE_LEN: usize> RequestArray<[u16; SOURCE_LEN]> for [u8] {
     fn serialize_repeating_words(&mut self, source: [u16; SOURCE_LEN], number: usize) {
         let mut target_position = 0;
+        #[allow(clippy::explicit_counter_loop)]
         for i in 0..number {
             self[target_position + i] = source[i].to_le_bytes()[0];
             self[target_position + i + 1] = source[i].to_le_bytes()[1];

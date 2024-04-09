@@ -148,7 +148,7 @@ mod tests {
 
         let a_u8: u8 = data[0].deserialize_word();
         assert_eq!(a_u8, 5);
-        let a_u16 = data[1..=2].deserialize_word();
+        let a_u16: u16 = data[1..=2].deserialize_word();
         assert_eq!(a_u16, 31313);
     }
 
