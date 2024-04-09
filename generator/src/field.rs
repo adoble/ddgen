@@ -341,7 +341,7 @@ impl Field {
                 end: None,
                 repeat: Repeat::None,
                 //} => format!("data[{index}].serialize_bit(self.{name}, {bit_position});"),
-            } => format!("self[{index}].deserialize_bit(self.{bit_position})"),
+            } => format!("self[{index}].deserialize_bit({bit_position})"),
             BitSpec {
                 start:
                     Word {
@@ -351,7 +351,7 @@ impl Field {
                 end: None,
                 repeat: Repeat::None,
             } => {
-                format!("self[{index}].deserialize_field( {start_bit}, {end_bit})")
+                format!("self[{index}].deserialize_field({start_bit}, {end_bit}).try_into()?")
             }
             BitSpec {
                 start:
@@ -407,6 +407,7 @@ impl Field {
                 // In most cases this is enough, however the symbol table maps full bit_specs to symbols as
                 // it needs to cover all symbols. What follows is a workaround, but ultimately the parser
                 //  should recognise full bit specs for variable repeat words.
+                // TODO do we need the symbol_table?
                 let repeat_bit_spec = BitSpec {
                     start: repeat_word.clone(),
                     end: None,
@@ -415,8 +416,8 @@ impl Field {
                 let count_symbol_name = symbol_table.get(&repeat_bit_spec);
                 if count_symbol_name.is_some() {
                     format!(
-                        "self[{start_index}..].serialize_repeating_words(self.{} as usize)",
-                        count_symbol_name.unwrap()
+                        "self[{start_index}..].deserialize_repeating_words(self[{}].deserialize_word() as usize)",
+                        repeat_word.index
                     )
                 } else {
                     println!("Cannot find bit_spec {}", bit_spec.to_string());

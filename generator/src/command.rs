@@ -53,15 +53,13 @@ impl Command {
 
         // DEBUG
         quote_in!(tokens =>
+            #![allow(unused_imports)]$['\n']
             $(command_doc_comment)$['\r']
-
 
             $(description_doc_comment)$['\r']
 
-
             $(generated_doc_comment)$['\n']
 
-            #[allow(unused_imports)]$['\n']
 
             use crate::deserialize::Deserialize;
             use crate::error::DeviceError;
