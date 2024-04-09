@@ -12,7 +12,7 @@ use nom::{
     IResult,
 };
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum LiteralType {
     Hex(String),
     Bin(String),
@@ -27,7 +27,7 @@ impl fmt::Display for LiteralType {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum BitRange {
     Single(u8),
     Range(u8, u8),
@@ -47,7 +47,7 @@ impl fmt::Display for BitRange {
 }
 
 //#[derive(Debug, PartialEq, Copy, Clone)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct Word {
     // No index refers to index = 0
     pub index: usize,
@@ -68,7 +68,7 @@ enum Condition {
 }
 
 // #[derive(Debug, PartialEq, Copy, Clone)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Repeat {
     // A simple fixed number of repetitions
     Fixed(usize),
@@ -101,7 +101,7 @@ impl fmt::Display for Repeat {
 }
 
 // #[derive(Debug, PartialEq, Copy, Clone)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct BitSpec {
     /// The word at the start of a word range. If a
     /// a single word is specified then this is the

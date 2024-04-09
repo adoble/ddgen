@@ -10,6 +10,7 @@ use serde::Deserialize;
 use crate::doc_comment::DocComment;
 use crate::field::Field;
 use crate::output::output_file;
+use bit_lang::BitSpec;
 
 //use crate::generate::output_file; //TODO need to place this in it's own module
 
@@ -107,6 +108,16 @@ impl Command {
         struct_name: &str,
         members: &HashMap<String, Field>,
     ) {
+        // Generate a table that maps bitspecs to symbols
+        let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
+        for (name, field) in members {
+            if let Field::BitField { bit_spec, .. } = field {
+                symbol_table.insert(bit_spec.clone(), name.to_string());
+            } else {
+                todo!("Handle structures");
+            }
+        }
+
         let serialization_buffer_size = self.buffer_size(members);
 
         quote_in!(*tokens =>
@@ -114,7 +125,7 @@ impl Command {
                 fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
                 let mut data = [0u8; N];
 
-                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name, members)}) )
+                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name, members, &symbol_table)}) )
 
                 ($(serialization_buffer_size), data)
                 }

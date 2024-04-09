@@ -186,13 +186,14 @@ impl Field {
         &self,
         tokens: &mut Tokens<Rust>,
         name: &str,
-        _members: &HashMap<String, Field>,
+        members: &HashMap<String, Field>,
+        symbol_table: &HashMap<BitSpec, String>,
     ) {
         let field_serialize_code = match self {
-            Field::BitField {
-                bit_spec: bit_range,
-                ..
-            } => self.generate_word_field_serialization(name, bit_range),
+            Field::BitField { bit_spec, .. } => {
+                self.generate_word_field_serialization(name, bit_spec, symbol_table)
+            }
+
             Field::Structure {
                 common_structure_name,
             } => self.generate_header_field_serialization(common_structure_name),
@@ -208,8 +209,13 @@ impl Field {
         );
     }
 
-    fn generate_word_field_serialization(&self, name: &str, bit_range: &BitSpec) -> String {
-        match bit_range {
+    fn generate_word_field_serialization(
+        &self,
+        name: &str,
+        bit_spec: &BitSpec,
+        symbol_table: &HashMap<BitSpec, String>,
+    ) -> String {
+        match bit_spec {
             BitSpec {
                 start:
                     Word {
@@ -262,7 +268,45 @@ impl Field {
 
                 repeat: Repeat::Fixed(limit),
                 ..
-            } => format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit});"),
+            } => {
+                format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit});",)
+            }
+            BitSpec {
+                start:
+                    Word {
+                        index: start_index,
+                        bit_range: BitRange::WholeWord,
+                    },
+
+                repeat:
+                    Repeat::Variable {
+                        word: repeat_word, ..
+                    },
+                ..
+            } => {
+                // The parser assumes that the repeat word is a simple word (i.e. no range, no repeats) -
+                // for example, a byte.
+                // This excludes repeat words that are, for instance, a u16 that using two words.
+                // In most cases this is enough, however the symbol table maps full bit_specs to symbols as
+                // it needs to cover all symbols. What follows is a workaround, but ultimately the parser
+                //  should recognise full bit specs for variable repeat words.
+                let repeat_bit_spec = BitSpec {
+                    start: repeat_word.clone(),
+                    end: None,
+                    repeat: Repeat::None,
+                };
+                let count_symbol_name = symbol_table.get(&repeat_bit_spec);
+                if count_symbol_name.is_some() {
+                    format!(
+                        "data[{start_index}..].serialize_repeating_words(self.{}, self.{} as usize);",
+                        name,
+                        count_symbol_name.unwrap()
+                    )
+                } else {
+                    println!("Cannot find bit_spec {}", bit_spec.to_string());
+                    todo!("Proper error handling");
+                }
+            }
             _ => format!("todo!(\"{name}\")"),
         }
     }
