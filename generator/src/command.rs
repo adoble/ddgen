@@ -61,6 +61,8 @@ impl Command {
 
             $(generated_doc_comment)$['\n']
 
+            #[allow(unused_imports)]$['\n']
+
             use crate::deserialize::Deserialize;
             use crate::error::DeviceError;
             use crate::request::{RequestArray, RequestBit, RequestField, RequestWord};
