@@ -34,6 +34,12 @@ impl ResponseWord<u16> for [u8] {
     }
 }
 
+impl ResponseWord<i16> for [u8] {
+    fn deserialize_word(&self) -> i16 {
+        i16::from_le_bytes([self[0], self[1]])
+    }
+}
+
 impl ResponseWord<u8> for u8 {
     fn deserialize_word(&self) -> u8 {
         *self
