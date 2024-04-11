@@ -1,11 +1,13 @@
 #![allow(dead_code)]
 
 // TODO:
+// - Need to format the code after generation. (Can we run cargo fmt at the end?). Also have a look at
+//   https://github.com/rust-lang/rustfmt/issues/1534
+//   and example code here:
+//   https://github.com/bcmyers/num-format/blob/v0.1.2/num-format-dev/src/rustfmt.rs
 // - Run clippy
-// - Change serialize so that the const generics are in the function
-//   and not in the trait.
+// - Restructure main so that the whole generation function can be automatically tested.
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
-// - Need to format the code after generation. (Can we run cargo fmt at the end?)
 // - Often need to passs HashMap<String, Field> into functions as this forms the symbol table.
 //   Could change this to a new type (e.g. SymbolTable(<HashMap<String, Field>)), but need to
 //   see if this can be done easily with serde (see https://github.com/softprops/dynomite/pull/145).
