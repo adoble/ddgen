@@ -1,10 +1,6 @@
 #![allow(dead_code)]
 
 // TODO:
-// - Need to format the code after generation. (Can we run cargo fmt at the end?). Also have a look at
-//   https://github.com/rust-lang/rustfmt/issues/1534
-//   and example code here:
-//   https://github.com/bcmyers/num-format/blob/v0.1.2/num-format-dev/src/rustfmt.rs
 // - Run clippy
 // - Restructure main so that the whole generation function can be automatically tested.
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
@@ -14,6 +10,7 @@
 //  - Merge field::TargetType with bit_spec::BitSpecType
 //  - Ensure that all types are handled in serailize and deserialize
 //  - Need to handle big endian encodings
+//  - Replace the comment generation with something like this: https://github.com/udoprog/genco/issues/53#issuecomment-1821318498
 use serde::Deserialize;
 use std::{fs::File, path::PathBuf};
 
