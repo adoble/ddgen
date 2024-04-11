@@ -147,14 +147,16 @@ impl Field {
 
         match self {
             Field::Structure {
-                common_structure_name: _,
-            } => todo!(),
+                common_structure_name,
+            } => {
+                println!("Commmon structure name {common_structure_name}");
+                todo!()
+            }
             Field::BitField {
                 target_type,
                 description,
                 bit_spec,
             } => {
-                // Description
                 if description.is_some() {
                     let comments = DocComment::from_string(description.as_deref().unwrap());
                     quote_in!(*tokens =>

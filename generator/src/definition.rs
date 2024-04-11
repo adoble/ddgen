@@ -82,6 +82,10 @@ impl Definition {
 
         self.generate_common(source_path)?;
 
+        if let Some(common_structures) = &self.common_structures {
+            self.generate_common_structure_files(source_path, common_structures)?;
+        }
+
         self.generate_commands(source_path)?;
 
         // let _tokens = rust::Tokens::new();
@@ -259,6 +263,40 @@ impl Definition {
                 $['\r']
             );
         }
+    }
+
+    fn generate_common_structure_files(
+        &self,
+        source_path: &Path,
+        common_structures: &HashMap<String, CommonStructure>,
+    ) -> anyhow::Result<()> {
+        println!("Generate common structure files ...");
+        for (name, structure) in common_structures {
+            let name = name.to_case(Case::Lower);
+            let file_name = format!("{name}.rs");
+            let path: PathBuf = [source_path, Path::new(&file_name)].iter().collect();
+            let file = File::create(path).with_context(|| format!("Cannot open {file_name}"))?;
+
+            let mut tokens = rust::Tokens::new();
+
+            let doc_comment = DocComment::from_string("Common structure used in the driver");
+            let generated_doc_comment =
+                DocComment::from_string(&format!("Generated with version {} of ddgen", VERSION));
+
+            quote_in!(tokens =>
+                $(doc_comment.as_string())$['\r']
+                $(DocComment::empty())$['\r']
+                $(generated_doc_comment.as_string())$['\r']
+                $['\n']
+                $(ref toks {structure.generate(toks, name)})
+
+
+            );
+
+            output_file(file, tokens)?;
+        }
+
+        Ok(())
     }
 
     fn generate_common(&self, out_path: &Path) -> anyhow::Result<()> {
