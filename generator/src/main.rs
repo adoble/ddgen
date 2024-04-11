@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
 // TODO:
-// - Run clippy
 // - Restructure main so that the whole generation function can be automatically tested.
+// - Common structure serialisation
+// - Run clippy
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
 // - Often need to passs HashMap<String, Field> into functions as this forms the symbol table.
 //   Could change this to a new type (e.g. SymbolTable(<HashMap<String, Field>)), but need to
@@ -12,7 +13,10 @@
 //  - Need to handle big endian encodings
 //  - Replace the comment generation with something like this: https://github.com/udoprog/genco/issues/53#issuecomment-1821318498
 use serde::Deserialize;
-use std::{fs::File, path::PathBuf};
+use std::{
+    fs::File,
+    path::{Path, PathBuf},
+};
 
 use clap::Parser;
 use crossterm::style::Stylize;
@@ -75,24 +79,27 @@ fn main() {
         }
     };
 
-    //let mut file = File::open(args.in_path).unwrap();
-
-    let mut contents = String::new();
+    let mut toml_specification = String::new();
 
     println!("Reading definition");
 
-    file.read_to_string(&mut contents).unwrap();
+    file.read_to_string(&mut toml_specification).unwrap();
 
-    let parse_result: Result<Definition, toml::de::Error> = toml::from_str(contents.as_str());
+    generate(&args.out_path, &args.tests, toml_specification);
+}
+
+fn generate(out_path: &Path, tests_path: &Option<PathBuf>, toml_specification: String) {
+    let parse_result: Result<Definition, toml::de::Error> =
+        toml::from_str(toml_specification.as_str());
     match parse_result {
         Ok(definition) => {
             definition
-                .generate_code(&args.out_path, &args.tests)
+                .generate_code(out_path, tests_path)
                 .expect("Unable to generate driver code");
             println!("{}", "Finished generation!".green());
         }
         Err(err) => {
-            error_report(contents.as_str(), err.message(), err.span())
+            error_report(toml_specification.as_str(), err.message(), err.span())
             // let span = err.span();
             // println!("{} {:?}", err.message().red(), span)
         }
