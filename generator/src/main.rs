@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 // TODO:
-// - Restructure main so that the whole generation function can be automatically tested.
 // - Common structure serialisation
 // - Run clippy
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.

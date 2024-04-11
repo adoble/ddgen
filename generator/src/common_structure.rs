@@ -3,7 +3,7 @@ use serde::Deserialize;
 use convert_case::{Case, Casing};
 use genco::prelude::*;
 
-use std::{collections::HashMap, path::Path};
+use std::collections::HashMap;
 
 use crate::field::Field;
 
@@ -18,7 +18,7 @@ impl CommonStructure {
             struct $struct_name {$['\r']
 
 
-                $(for (name, field) in &self.0 => $(ref toks {field.generate_struct_member(toks,  &name)}) )
+                $(for (name, field) in &self.0 => $(ref toks {field.generate_struct_member(toks, name)}) )
 
 
 
