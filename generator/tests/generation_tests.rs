@@ -1,47 +1,56 @@
-use std::fs::{self, File};
-use std::io::{self, Write};
+use std::fs::{self};
 use std::path::{Path, PathBuf};
+use std::str;
 
-use tempfile::{tempdir, Builder};
+use tempfile::Builder;
 
-use xshell::{cmd, Shell};
-#[ignore]
 #[test]
 fn generate_simple() {
-    // Load the definition file for this test as resource
-    let definition = include_bytes!("resources/simple.toml");
+    let definition = include_str!("resources/simple.toml");
+    let expected = include_str!("resources/test_command.rs");
 
     let temp_dir = Builder::new().prefix("ddgen_").tempdir().unwrap();
-    let definitions_dir: PathBuf = [temp_dir.path(), Path::new("definitions")].iter().collect();
-    fs::create_dir_all(definitions_dir).unwrap();
-
-    let def_file: PathBuf = [temp_dir.path(), Path::new("definitions/simple.toml")]
-        .iter()
-        .collect();
-    fs::write(&def_file, definition).unwrap();
 
     let generated_dir: PathBuf = [temp_dir.path(), Path::new("generated")].iter().collect();
     fs::create_dir_all(&generated_dir).unwrap();
 
-    let sh = Shell::new().unwrap();
+    generate::generate(&generated_dir, &None, definition);
 
-    let _p = sh.change_dir(temp_dir.path());
+    // Read the generated command file and compare
+    let gen_file_path: PathBuf = [
+        temp_dir.path(),
+        Path::new("generated/simple/src/test_command.rs"),
+    ]
+    .iter()
+    .collect();
+    let buf = fs::read(gen_file_path).unwrap();
+    let actual = str::from_utf8(&buf).unwrap();
 
-    cmd!(sh, "ls").run().unwrap();
+    // As formatting can change, strip all white space from the strings.
+    let expected_clean = clean_spaces_tabs(expected);
+    let actual_clean = clean_spaces_tabs(actual);
 
-    // Generate the driver for the specified definition file under <root>/generated/<device name>
-    // let gen_dir_name = generated_dir.as_os_str();
-    // let def_file_name = def_file.as_os_str();
-    // let gen_dir_name = generated_dir.to_str().unwrap();
-    // let def_file_name = def_file.to_str().unwrap();
+    assert_eq!(actual_clean, expected_clean);
+}
 
-    let gen_dir_name = "./generated";
-    let def_file_name = "./definitions/simple.toml";
+fn clean_spaces_tabs(input: &str) -> String {
+    let mut result = String::new();
+    let mut last_char: Option<char> = None;
 
-    cmd!(
-        sh,
-        "cargo run --bin generator --   {def_file_name} {gen_dir_name}"
-    )
-    .run()
-    .unwrap();
+    for c in input.chars() {
+        match c {
+            ' ' | '\t' => {
+                if last_char != Some(' ') {
+                    result.push(' ');
+                }
+                last_char = Some(' ');
+            }
+            _ => {
+                result.push(c);
+                last_char = Some(c);
+            }
+        }
+    }
+
+    result
 }

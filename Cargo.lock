@@ -331,7 +331,6 @@ dependencies = [
  "serde",
  "tempfile",
  "toml",
- "xshell 0.2.6",
 ]
 
 [[package]]

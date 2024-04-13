@@ -15,7 +15,7 @@ use bit_lang::BitSpec;
 //use crate::generate::output_file; //TODO need to place this in it's own module
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const PKG_NAME: &str = env!("CARGO_PKG_NAME");
+// const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
