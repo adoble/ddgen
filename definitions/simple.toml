@@ -1,0 +1,21 @@
+# Test defintion
+# TODO 
+# - Add a header 
+# - Add a variable bit spec
+version = "0.0.1"
+
+[device]
+name      = "simple"
+endian    = "le"
+word_size = 8
+
+
+[commands.TEST_COMMAND]
+opcode      = 0x09
+description = "A simple command"
+
+[commands.TEST_COMMAND.request]
+a_word = { bits = "[]" }
+
+[commands.TEST_COMMAND.response]
+a_word = { bits = "[]" }
