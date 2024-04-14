@@ -4,6 +4,8 @@ use std::str;
 
 use tempfile::Builder;
 
+mod utilities;
+
 #[test]
 fn generate_simple() {
     let definition = include_str!("resources/simple.toml");
@@ -27,30 +29,8 @@ fn generate_simple() {
     let actual = str::from_utf8(&buf).unwrap();
 
     // As formatting can change, strip all white space from the strings.
-    let expected_clean = clean_spaces_tabs(expected);
-    let actual_clean = clean_spaces_tabs(actual);
+    let expected_clean = utilities::clean_spaces_tabs(expected);
+    let actual_clean = utilities::clean_spaces_tabs(actual);
 
     assert_eq!(actual_clean, expected_clean);
-}
-
-fn clean_spaces_tabs(input: &str) -> String {
-    let mut result = String::new();
-    let mut last_char: Option<char> = None;
-
-    for c in input.chars() {
-        match c {
-            ' ' | '\t' => {
-                if last_char != Some(' ') {
-                    result.push(' ');
-                }
-                last_char = Some(' ');
-            }
-            _ => {
-                result.push(c);
-                last_char = Some(c);
-            }
-        }
-    }
-
-    result
 }
