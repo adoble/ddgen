@@ -79,10 +79,10 @@ impl Command {
             $['\n']
             #[derive(Debug, PartialEq)]$['\r']
             pub struct $(&response_struct_name) {$['\r']
-                $(ref toks => self.generate_members(toks,  &self.request))$['\r']
+                $(ref toks => self.generate_members(toks,  &self.response))$['\r']
             }
             $['\n']
-            $(ref toks => self.generate_deserializations(toks, &response_struct_name,&self.request))$['\r']
+            $(ref toks => self.generate_deserializations(toks, &response_struct_name,&self.response))$['\r']
 
 
 
