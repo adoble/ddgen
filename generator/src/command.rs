@@ -5,6 +5,7 @@ use std::path::Path;
 use anyhow::Context;
 use convert_case::{Case, Casing};
 use genco::prelude::*;
+use indexmap::IndexMap;
 use serde::Deserialize;
 
 use crate::doc_comment::DocComment;
@@ -17,6 +18,9 @@ use bit_lang::BitSpec;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 // const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 
+/// Represents a command
+// Using IndexMap so that the order of the membres is
+// preserved between runs. Helps with code readablity and testing.
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Command {
@@ -24,8 +28,8 @@ pub struct Command {
 
     description: Option<String>,
 
-    request: HashMap<String, Field>,
-    response: HashMap<String, Field>,
+    request: IndexMap<String, Field>,
+    response: IndexMap<String, Field>,
 }
 
 impl Command {
@@ -53,12 +57,10 @@ impl Command {
 
         // DEBUG
         quote_in!(tokens =>
-            #![allow(unused_imports)]$['\n']
-            $(command_doc_comment)$['\r']
-
-            $(description_doc_comment)$['\r']
-
-            $(generated_doc_comment)$['\n']
+            #![allow(unused_imports)]
+            $(command_doc_comment)
+            $(description_doc_comment)
+            $(generated_doc_comment)
 
 
             use crate::deserialize::Deserialize;
@@ -68,21 +70,20 @@ impl Command {
             use crate::serialize::Serialize;
             use crate::types::*;
 
-            $['\n']
-            #[derive(Debug, PartialEq)]$['\r']
-            pub struct $(&request_struct_name) {$['\r']
-                $(ref toks => self.generate_members(toks, &self.request))$['\r']
-            }
-            $['\n']
-            $(ref toks => self.generate_serializations(toks, &request_struct_name, &self.request))$['\r']
 
-            $['\n']
-            #[derive(Debug, PartialEq)]$['\r']
-            pub struct $(&response_struct_name) {$['\r']
-                $(ref toks => self.generate_members(toks,  &self.response))$['\r']
+            #[derive(Debug, PartialEq)]
+            pub struct $(&request_struct_name) {
+                $(ref toks => self.generate_members(toks, &self.request))
             }
-            $['\n']
-            $(ref toks => self.generate_deserializations(toks, &response_struct_name,&self.response))$['\r']
+
+            $(ref toks => self.generate_serializations(toks, &request_struct_name, &self.request))
+
+            #[derive(Debug, PartialEq)]
+            pub struct $(&response_struct_name) {
+                $(ref toks => self.generate_members(toks,  &self.response))
+            }
+
+            $(ref toks => self.generate_deserializations(toks, &response_struct_name,&self.response))
 
 
 
@@ -93,12 +94,9 @@ impl Command {
         Ok(())
     }
 
-    fn generate_members(&self, tokens: &mut Tokens<Rust>, members: &HashMap<String, Field>) {
+    fn generate_members(&self, tokens: &mut Tokens<Rust>, members: &IndexMap<String, Field>) {
         for (name, field) in members {
             field.generate_struct_member(tokens, name);
-            // quote_in!(*tokens =>
-            //     pub $name : u8, $['\r']//$(field.type_as_str()),
-            // );
         }
     }
 
@@ -106,7 +104,7 @@ impl Command {
         &self,
         tokens: &mut Tokens<Rust>,
         struct_name: &str,
-        members: &HashMap<String, Field>,
+        members: &IndexMap<String, Field>,
     ) {
         // Generate a table that maps bitspecs to symbols. Note this is
         // only for the request/serialization as the response may have
@@ -125,11 +123,11 @@ impl Command {
         quote_in!(*tokens =>
             impl Serialize for $(struct_name) {
                 fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
-                let mut data = [0u8; N];
+                  let mut data = [0u8; N];
 
-                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name,  &symbol_table)}) )
+                  $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name,  &symbol_table)}) )
 
-                ($(serialization_buffer_size), data)
+                  ($(serialization_buffer_size), data)
                 }
 
 
@@ -141,7 +139,7 @@ impl Command {
         &self,
         tokens: &mut Tokens<Rust>,
         struct_name: &str,
-        members: &HashMap<String, Field>,
+        members: &IndexMap<String, Field>,
     ) {
         // Generate a table that maps bitspecs to symbols. Note this is
         // only for the response/deserialization as the request may have
@@ -158,18 +156,12 @@ impl Command {
         quote_in!(*tokens=>
            impl Deserialize<$(struct_name)> for [u8] {
 
-               fn deserialize(&self) -> Result<$(struct_name), DeviceError> { $['\r']
-
-                    Ok($(struct_name) {$['\r']
-
-                        $(for (name, field) in members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name, &symbol_table)}) ) $['\r']
-
-                    })$['\r']
-
-
-               }$['\r']
-
-           }$['\r']
+               fn deserialize(&self) -> Result<$(struct_name), DeviceError> {
+                    Ok($(struct_name) {
+                        $(for (name, field) in members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name, &symbol_table)}) )
+                    })
+               }
+           }
         );
     }
 
@@ -183,7 +175,7 @@ impl Command {
         todo!();
     }
 
-    pub fn buffer_size(&self, members: &HashMap<String, Field>) -> usize {
+    pub fn buffer_size(&self, members: &IndexMap<String, Field>) -> usize {
         let mut positions: HashMap<usize, usize> = HashMap::new();
         for f in members.values() {
             // Implementing this with a hashmap as more than one bit spec can reference the
