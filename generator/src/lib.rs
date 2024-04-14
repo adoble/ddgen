@@ -23,8 +23,10 @@ mod output;
 #[serde(deny_unknown_fields)]
 struct Enumeration(HashMap<String, u8>);
 
+/// Generate the code
 pub fn generate(out_path: &Path, tests_path: &Option<PathBuf>, toml_specification: &str) {
     let parse_result: Result<Definition, toml::de::Error> = toml::from_str(toml_specification);
+
     match parse_result {
         Ok(definition) => {
             definition
@@ -38,5 +40,5 @@ pub fn generate(out_path: &Path, tests_path: &Option<PathBuf>, toml_specificatio
             // let span = err.span();
             // println!("{} {:?}", err.message().red(), span)
         }
-    }
+    };
 }

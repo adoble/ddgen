@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 // TODO:
+// - Add some more integration tests
 // - Common structure serialisation
 // - Run clippy
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
@@ -11,6 +12,8 @@
 //  - Ensure that all types are handled in serailize and deserialize
 //  - Need to handle big endian encodings
 //  - Replace the comment generation with something like this: https://github.com/udoprog/genco/issues/53#issuecomment-1821318498
+//  - Move the type Enumeration out of lib.rs and into a new file. Move over any functions that handle enumeration.
+//  - Is access.rs required?
 // use serde::Deserialize;
 use std::{fs::File, path::PathBuf};
 

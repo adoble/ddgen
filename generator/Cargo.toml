@@ -23,4 +23,5 @@ toml         = { version = "0.8.10", features = ["parse"] }
 bit-lang     = { path = "../bit-lang" }
 
 [dev-dependencies]
-tempfile = "3.10.1"
+tempfile          = "3.10.1"
+pretty_assertions = "1.4.0"
