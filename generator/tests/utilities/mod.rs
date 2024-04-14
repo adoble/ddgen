@@ -10,12 +10,13 @@ pub fn clean_spaces_tabs(input: &str) -> String {
 
     for c in input.chars() {
         match c {
-            ' ' | '\t' => {
+            ' ' | '\t' | '\n' => {
                 if last_char != Some(' ') {
                     result.push(' ');
                 }
                 last_char = Some(' ');
             }
+            '\r' => (),
             _ => {
                 result.push(c);
                 last_char = Some(c);
