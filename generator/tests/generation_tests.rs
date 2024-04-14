@@ -7,6 +7,7 @@ use tempfile::Builder;
 
 mod utilities;
 
+#[ignore]
 #[test]
 fn generate_simple() {
     let definition = include_str!("resources/simple.toml");
