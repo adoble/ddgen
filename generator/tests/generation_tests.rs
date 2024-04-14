@@ -7,7 +7,6 @@ use tempfile::Builder;
 
 mod utilities;
 
-#[ignore]
 #[test]
 fn generate_simple() {
     let definition = include_str!("resources/simple.toml");
@@ -37,7 +36,6 @@ fn generate_simple() {
     assert_eq!(actual_clean, expected_clean);
 }
 
-#[ignore]
 #[test]
 fn generate_bits_fields_types() {
     let definition = include_str!("resources/bits_fields_types.toml");
