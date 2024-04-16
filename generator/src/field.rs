@@ -4,22 +4,8 @@ use convert_case::{Case, Casing};
 use genco::prelude::*;
 use serde::{de::Error, Deserialize, Deserializer};
 
-//use crate::{bit_range::BitRange, doc_comment::DocComment};
 use crate::doc_comment::DocComment;
 use bit_lang::{BitRange, BitSpec, Repeat, Word};
-
-// #[derive(Deserialize, Debug)]
-// #[serde(deny_unknown_fields)]
-// pub struct Field {
-//     #[serde(rename = "bits")]
-//     #[serde(deserialize_with = "from_bit_spec")]
-//     pub(crate) bit_range: BitSpec,
-//     #[serde(default)]
-//     pub(crate) access: Access,
-//     #[serde(rename = "enum")]
-//     pub(crate) enumeration: Option<String>,
-//     pub(crate) description: Option<String>,
-// }
 
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(deny_unknown_fields)]
@@ -28,22 +14,21 @@ pub enum Field {
     Structure {
         #[serde(rename = "struct")]
         common_structure_name: String,
+        description: Option<String>,
+        #[serde(rename = "bits")]
+        #[serde(deserialize_with = "from_bit_spec")]
+        bit_spec: BitSpec,
     },
     BitField {
         #[serde(rename = "bits")]
         #[serde(deserialize_with = "from_bit_spec")]
         bit_spec: BitSpec,
-        // #[serde(rename = "enum")]
-        // enumeration: Option<String>,
-        // #[serde(rename = "type", default)]
+
         #[serde(rename = "type")]
         #[serde(deserialize_with = "from_type_spec")]
         #[serde(default)]
         target_type: Option<TargetType>,
         description: Option<String>,
-        // // The symbolic name of the field. This is the field name assigned to in the toml
-        // #[serde(skip_deserializing)]
-        // symbolic_name: Option<String>,
     },
 }
 
@@ -136,7 +121,7 @@ where
 }
 
 enum FunctionType {
-    Enumeration(String, String), // paramter name, parameter type
+    Enumeration(String, String), // parameter name, parameter type
     SingleBit,
     Value(String), // parameter_name
 }
@@ -148,9 +133,23 @@ impl Field {
         match self {
             Field::Structure {
                 common_structure_name,
+                description,
+                ..
             } => {
                 println!("Commmon structure name {common_structure_name}");
-                todo!()
+                if description.is_some() {
+                    let comments = DocComment::from_string(description.as_deref().unwrap());
+                    quote_in!(*tokens =>
+                        $(comments.as_string())
+                        $['\r']
+                    );
+                }
+
+                let normalised_common_struct_name = common_structure_name.to_case(Case::UpperCamel);
+
+                quote_in!(*tokens =>
+                    $(name): $(normalised_common_struct_name),$['\r']
+                );
             }
             Field::BitField {
                 target_type,
@@ -197,6 +196,7 @@ impl Field {
 
             Field::Structure {
                 common_structure_name,
+                ..
             } => self.generate_header_field_serialization(common_structure_name),
         };
 
@@ -217,6 +217,7 @@ impl Field {
 
             Field::Structure {
                 common_structure_name,
+                ..
             } => self.generate_header_field_deserialization(common_structure_name),
         };
 
@@ -431,10 +432,10 @@ impl Field {
     }
 
     fn generate_header_field_serialization(&self, _common_structure_name: &str) -> String {
-        todo!("Cmplete generate_header_field_serialization")
+        format!("todo!(\"Complete generate_header_field_serialization\")")
     }
 
     fn generate_header_field_deserialization(&self, _common_structure_name: &str) -> String {
-        todo!("generate_header_field_deserialization")
+        format!("todo!(\"Complete generate_header_field_deserialization\")")
     }
 }

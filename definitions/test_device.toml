@@ -52,24 +52,24 @@ a_status       = { bits = "0[0]" }
 a_fixed_repeat = { bits = "1[];5" }
 # Still have to think about where to place the opcode.
 
-# [commands.TEST_COMMON_STRUCT]
-# opcode      = 0x23
-# description = "Test a common structure "
+[commands.TEST_COMMON_STRUCT]
+opcode      = 0x23
+description = "Test a common structure "
 
-# [commands.TEST_COMMON_STRUCT.request]
-# status = { struct = "Header" }
-# a_u8   = { bits = "2[]" }
+[commands.TEST_COMMON_STRUCT.request]
+status = { bits = "[]", struct = "Header" }
+a_u8   = { bits = "2[]" }
 
-# [commands.TEST_COMMON_STRUCT.response]
-# status = { struct = "Header" }
-# an_i8  = { bits = "2[]", type = "i8" }
+[commands.TEST_COMMON_STRUCT.response]
+status = { bits = "0[]..1[]", struct = "Header" }
+an_i8  = { bits = "2[]", type = "i8" }
 
-# [struct.header]
-# status_flag = { bits = "0[1]" }
-# pwr_status  = { bits = "0[3.5}", type = "power_status" }
-# version     = { bits = "1[]" }
+[struct.header]
+status_flag = { bits = "0[1]" }
+pwr_status  = { bits = "0[3.5}", type = "power_status" }
+version     = { bits = "1[]" }
 
-# [enum.power_status]
-# standby     = 0
-# powering_up = 1
-# powered     = 2
+[enum.power_status]
+standby     = 0
+powering_up = 1
+powered     = 2

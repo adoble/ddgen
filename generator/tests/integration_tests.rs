@@ -2,7 +2,7 @@ use std::fs::{self};
 use std::path::{Path, PathBuf};
 use std::str;
 
-//use pretty_assertions::assert_eq;
+use pretty_assertions::assert_eq;
 use tempfile::Builder;
 
 mod utilities;

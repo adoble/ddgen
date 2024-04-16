@@ -15,13 +15,8 @@ impl CommonStructure {
     pub fn generate(&self, tokens: &mut Tokens<Rust>, name: String) {
         let struct_name = name.to_case(Case::UpperCamel);
         quote_in!(*tokens =>
-            struct $struct_name {$['\r']
-
-
+            pub struct $struct_name {
                 $(for (name, field) in &self.0 => $(ref toks {field.generate_struct_member(toks, name)}) )
-
-
-
             }
         );
     }
