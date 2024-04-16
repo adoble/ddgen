@@ -172,7 +172,9 @@ impl Field {
 
                 let type_string = match bit_spec.repeat {
                     Repeat::Fixed(limit) => format!("[{}; {}]", type_string, limit),
-                    Repeat::Variable { limit, .. } => format!("[{}; {}]", type_string, limit),
+                    Repeat::Variable { limit, .. } => {
+                        format!("[{}; {}]", type_string, limit)
+                    }
                     Repeat::None => type_string,
                 };
 
