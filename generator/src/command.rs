@@ -95,24 +95,9 @@ impl Command {
     }
 
     fn generate_members(&self, tokens: &mut Tokens<Rust>, members: &IndexMap<String, Field>) {
-        // TODO
-        // Sort the members
-        //
-
-        // Use a vec to sort the members
-        let mut sorted_vec = Vec::new();
         for (name, field) in members {
-            sorted_vec.push((name, field));
+            field.generate_struct_member(tokens, name);
         }
-        sorted_vec.sort();
-
-        for entry in sorted_vec {
-            entry.1.generate_struct_member(tokens, entry.0);
-        }
-
-        // for (name, field) in members {
-        //     field.generate_struct_member(tokens, name);
-        // }
     }
 
     fn generate_serializations(
