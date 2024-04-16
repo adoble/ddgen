@@ -95,6 +95,10 @@ impl Command {
     }
 
     fn generate_members(&self, tokens: &mut Tokens<Rust>, members: &IndexMap<String, Field>) {
+        // TODO
+        // Sort the members
+        //
+
         for (name, field) in members {
             field.generate_struct_member(tokens, name);
         }
