@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub enum LiteralType {
     Hex(String),
     Bin(String),
@@ -15,7 +15,7 @@ impl fmt::Display for LiteralType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub enum BitRange {
     Single(u8),
     Range(u8, u8),
@@ -35,7 +35,7 @@ impl fmt::Display for BitRange {
 }
 
 //#[derive(Debug, PartialEq, Copy, Clone)]
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct Word {
     // No index refers to index = 0
     pub index: usize,
@@ -56,7 +56,7 @@ pub enum Condition {
 }
 
 // #[derive(Debug, PartialEq, Copy, Clone)]
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub enum Repeat {
     // A simple fixed number of repetitions
     Fixed(usize),
@@ -89,7 +89,7 @@ impl fmt::Display for Repeat {
 }
 
 // #[derive(Debug, PartialEq, Copy, Clone)]
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, PartialOrd, Ord)]
 pub struct BitSpec {
     /// The word at the start of a word range. If a
     /// a single word is specified then this is the
@@ -182,6 +182,144 @@ impl fmt::Display for BitSpec {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Checking how PartialOrd works for BitRange
+    #[test]
+    fn bit_range_ordering() {
+        let lower = BitRange::Single(3);
+        let upper = BitRange::Single(4);
+        assert!(upper > lower);
+
+        let lower = BitRange::Range(2, 5);
+        let upper = BitRange::Range(5, 7);
+        assert!(upper > lower);
+
+        let lower = BitRange::Range(2, 5);
+        let upper = BitRange::Range(4, 7);
+        assert!(upper > lower);
+
+        let lower = BitRange::WholeWord;
+        let upper = BitRange::WholeWord;
+        assert!(upper == lower);
+
+        let lower = BitRange::Literal(LiteralType::Hex("0x02".to_string()));
+        let upper = BitRange::Literal(LiteralType::Hex("0xF5".to_string()));
+        assert!(upper > lower);
+    }
+
+    // Checking how PartialOrd works for Word
+    #[test]
+    fn simple_word_ordering() {
+        let lower = Word {
+            index: 1,
+            bit_range: BitRange::WholeWord,
+        };
+
+        let upper = Word {
+            index: 2,
+            bit_range: BitRange::WholeWord,
+        };
+
+        assert!(upper > lower);
+    }
+
+    #[test]
+    fn bit_spec_ordering() {
+        let lower_bit_spec = BitSpec {
+            start: Word {
+                index: 1,
+                bit_range: BitRange::WholeWord,
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+
+        let upper_bit_spec = BitSpec {
+            start: Word {
+                index: 2,
+                bit_range: BitRange::WholeWord,
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+
+        assert!(upper_bit_spec > lower_bit_spec);
+    }
+
+    #[test]
+    fn bit_spec_with_ranges_ordering() {
+        let lower_bit_spec = BitSpec {
+            start: Word {
+                index: 1,
+                bit_range: BitRange::WholeWord,
+            },
+            end: Some(Word {
+                index: 3,
+                bit_range: BitRange::WholeWord,
+            }),
+            repeat: Repeat::None,
+        };
+
+        let upper_bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: Some(Word {
+                index: 5,
+                bit_range: BitRange::WholeWord,
+            }),
+            repeat: Repeat::None,
+        };
+
+        assert!(upper_bit_spec > lower_bit_spec);
+    }
+
+    #[test]
+    fn bit_spec_with_bit_ordering() {
+        let lower_bit_spec = BitSpec {
+            start: Word {
+                index: 1,
+                bit_range: BitRange::Single(4),
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+
+        let upper_bit_spec = BitSpec {
+            start: Word {
+                index: 1,
+                bit_range: BitRange::Single(5),
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+
+        assert!(upper_bit_spec > lower_bit_spec);
+    }
+
+    #[test]
+    fn ordering_bit_ranges() {
+        let lower_bit_spec = BitSpec {
+            start: Word {
+                index: 1,
+                bit_range: BitRange::Range(2, 5),
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+
+        let upper_bit_spec = BitSpec {
+            start: Word {
+                index: 1,
+                bit_range: BitRange::Range(6, 7),
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+
+        assert!(upper_bit_spec > lower_bit_spec);
+    }
 
     #[test]
     fn test_max_repeats() {
