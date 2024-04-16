@@ -21,7 +21,7 @@ use bit_lang::{BitRange, BitSpec, Repeat, Word};
 //     pub(crate) description: Option<String>,
 // }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum Field {
@@ -58,7 +58,7 @@ impl Field {
 }
 
 // TODO merge this with BitSpecType in  BitSpec.
-#[derive(Deserialize, Debug, Default, Clone, PartialEq)]
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TargetType {
     #[default]
     U8,
