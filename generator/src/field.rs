@@ -7,7 +7,7 @@ use serde::{de::Error, Deserialize, Deserializer};
 use crate::doc_comment::DocComment;
 use bit_lang::{BitRange, BitSpec, Repeat, Word};
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum Field {
@@ -43,7 +43,7 @@ impl Field {
 }
 
 // TODO merge this with BitSpecType in  BitSpec.
-#[derive(Deserialize, Debug, Default, Clone, PartialEq)]
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TargetType {
     #[default]
     U8,
@@ -171,7 +171,9 @@ impl Field {
 
                 let type_string = match bit_spec.repeat {
                     Repeat::Fixed(limit) => format!("[{}; {}]", type_string, limit),
-                    Repeat::Variable { limit, .. } => format!("[{}; {}]", type_string, limit),
+                    Repeat::Variable { limit, .. } => {
+                        format!("[{}; {}]", type_string, limit)
+                    }
                     Repeat::None => type_string,
                 };
 
