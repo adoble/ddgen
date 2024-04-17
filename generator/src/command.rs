@@ -128,16 +128,21 @@ impl Command {
             };
         }
 
+        let mut sorted_members: Vec<_> = members.iter().collect();
+
+        // Sort by fields, not by the name
+        sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
+
         let serialization_buffer_size = self.buffer_size(members);
 
         quote_in!(*tokens =>
             impl Serialize for $(struct_name) {
                 fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
-                let mut data = [0u8; N];
+                  let mut data = [0u8; N];
 
-                $(for (name, field) in members => $(ref toks {field.generate_field_serialization(toks,  name,  &symbol_table)}) )
+                  $(for (name, field) in sorted_members => $(ref toks {field.generate_field_serialization(toks,  name,  &symbol_table)}) )
 
-                ($(serialization_buffer_size), data)
+                  ($(serialization_buffer_size), data)
                 }
 
 
@@ -163,15 +168,18 @@ impl Command {
             }
         }
 
+        let mut sorted_members: Vec<_> = members.iter().collect();
+
+        // Sort by fields, not by the name
+        sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
+
         quote_in!(*tokens=>
            impl Deserialize<$(struct_name)> for [u8] {
 
                fn deserialize(&self) -> Result<$(struct_name), DeviceError> { $['\r']
 
                     Ok($(struct_name) {$['\r']
-
-                        $(for (name, field) in members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name, &symbol_table)}) ) $['\r']
-
+                        $(for (name, field) in sorted_members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name, &symbol_table)}) ) $['\r']
                     })$['\r']
 
 

@@ -1,6 +1,9 @@
 #![allow(unused_imports)]
+
 /// Command BFT_TEST_COMMAND
+
 /// Use to test bits, fields and basic types
+
 /// Generated with version 0.1.0 of ddgen
 
 use crate::deserialize::Deserialize;
@@ -47,6 +50,7 @@ pub struct BftTestCommandResponse {
 impl Deserialize<BftTestCommandResponse> for [u8] {
 
     fn deserialize(&self) -> Result<BftTestCommandResponse, DeviceError> {
+
         Ok(BftTestCommandResponse {
             a_bit: self[0].deserialize_bit(4),
             a_field: self[0].deserialize_field(5, 6).try_into()?,
@@ -54,5 +58,7 @@ impl Deserialize<BftTestCommandResponse> for [u8] {
             a_u8: self[3].deserialize_word(),
             a_i16: self[4..=5].deserialize_word(),
         })
+
     }
+
 }
