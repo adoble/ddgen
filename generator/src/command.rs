@@ -94,19 +94,12 @@ impl Command {
     }
 
     fn generate_members(&self, tokens: &mut Tokens<Rust>, members: &HashMap<String, Field>) {
-        // for (name, field) in members {
-        //     field.generate_struct_member(tokens, name);
-
-        // }
-        let mut sorted_members = Vec::new();
-        for (name, field) in members {
-            sorted_members.push((name, field));
-        }
+        let mut sorted_members: Vec<_> = members.iter().collect();
 
         // Sort by fields, not by the name
-        sorted_members.sort_by(|a, b| a.1.cmp(b.1));
+        sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
 
-        for (name, field) in sorted_members.iter() {
+        for (name, field) in sorted_members {
             field.generate_struct_member(tokens, name);
         }
     }
