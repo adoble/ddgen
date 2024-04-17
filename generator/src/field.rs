@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
 use convert_case::{Case, Casing};
 use genco::prelude::*;
@@ -7,7 +7,7 @@ use serde::{de::Error, Deserialize, Deserializer};
 use crate::doc_comment::DocComment;
 use bit_lang::{BitRange, BitSpec, Repeat, Word};
 
-#[derive(Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Deserialize, Debug, Eq)]
 #[serde(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum Field {
@@ -39,6 +39,44 @@ impl Field {
 
     pub fn is_structure(&self) -> bool {
         matches!(self, Field::Structure { .. })
+    }
+}
+
+impl Ord for Field {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let bit_spec = match self {
+            Field::Structure { bit_spec, .. } => bit_spec,
+            Field::BitField { bit_spec, .. } => bit_spec,
+        };
+
+        let bit_spec_other = match other {
+            Field::Structure { bit_spec, .. } => bit_spec,
+            Field::BitField { bit_spec, .. } => bit_spec,
+        };
+
+        bit_spec.cmp(bit_spec_other)
+    }
+}
+
+impl PartialOrd for Field {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Field {
+    fn eq(&self, other: &Self) -> bool {
+        let bit_spec = match self {
+            Field::Structure { bit_spec, .. } => bit_spec,
+            Field::BitField { bit_spec, .. } => bit_spec,
+        };
+
+        let bit_spec_other = match other {
+            Field::Structure { bit_spec, .. } => bit_spec,
+            Field::BitField { bit_spec, .. } => bit_spec,
+        };
+
+        bit_spec == bit_spec_other
     }
 }
 
@@ -120,11 +158,11 @@ where
     Ok(Some(target_type))
 }
 
-enum FunctionType {
-    Enumeration(String, String), // parameter name, parameter type
-    SingleBit,
-    Value(String), // parameter_name
-}
+// enum FunctionType {
+//     Enumeration(String, String), // parameter name, parameter type
+//     SingleBit,
+//     Value(String), // parameter_name
+// }
 
 impl Field {
     pub fn generate_struct_member(&self, tokens: &mut Tokens<Rust>, name: &str) {
@@ -439,5 +477,69 @@ impl Field {
 
     fn generate_header_field_deserialization(&self, _common_structure_name: &str) -> String {
         format!("todo!(\"Complete generate_header_field_deserialization\")")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bit_lang::parse;
+    #[test]
+    fn test_order() {
+        let lower = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let upper = Field::BitField {
+            bit_spec: parse("2[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        assert!(upper > lower);
+
+        let lower = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: Some(TargetType::I16),
+            description: None,
+        };
+
+        let upper = Field::BitField {
+            bit_spec: parse("2[]").unwrap(),
+            target_type: Some(TargetType::U16),
+            description: None,
+        };
+
+        assert!(upper > lower);
+
+        let lower = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: Some(TargetType::U16),
+            description: None,
+        };
+
+        let upper = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: Some(TargetType::I16),
+            description: None,
+        };
+
+        assert!(upper == lower);
+
+        let lower = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: Some(TargetType::U16),
+            description: Some("ZZZZ".to_string()),
+        };
+
+        let upper = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: Some(TargetType::I16),
+            description: Some("AAAA".to_string()),
+        };
+
+        assert!(upper == lower);
     }
 }
