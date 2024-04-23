@@ -19,13 +19,35 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
+pub struct Members(HashMap<String, Field>);
+
+impl Members {
+    pub fn to_vec(&self) -> Vec<(&String, &Field)> {
+        let v = self.0.iter().collect();
+        v
+    }
+
+    //std::collections::hash_map::Values<'_, std::string::String, Field>
+    pub fn fields(&self) -> impl Iterator<Item = &Field> {
+        self.0.values()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &Field)> {
+        self.0.iter()
+    }
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Command {
     opcode: u8,
 
     description: Option<String>,
 
-    request: HashMap<String, Field>,
-    response: HashMap<String, Field>,
+    // request: HashMap<String, Field>,
+    // response: HashMap<String, Field>,
+    request: Members,
+    response: Members,
 }
 
 impl Command {
@@ -93,8 +115,9 @@ impl Command {
         Ok(())
     }
 
-    fn generate_members(&self, tokens: &mut Tokens<Rust>, members: &HashMap<String, Field>) {
-        let mut sorted_members: Vec<_> = members.iter().collect();
+    fn generate_members(&self, tokens: &mut Tokens<Rust>, members: &Members) {
+        // let mut sorted_members: Vec<_> = members.iter().collect();
+        let mut sorted_members = members.to_vec();
 
         // Sort by fields, not by the name
         sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
@@ -108,14 +131,14 @@ impl Command {
         &self,
         tokens: &mut Tokens<Rust>,
         struct_name: &str,
-        members: &HashMap<String, Field>,
+        members: &Members,
     ) {
         // Generate a table that maps bitspecs to symbols. Note this is
         // only for the request/serialization as the response may have
         // different symbols
         let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
 
-        for (name, field) in members {
+        for (name, field) in members.iter() {
             match field {
                 Field::BitField { bit_spec, .. } => {
                     symbol_table.insert(bit_spec.clone(), name.to_string())
@@ -128,7 +151,7 @@ impl Command {
             };
         }
 
-        let mut sorted_members: Vec<_> = members.iter().collect();
+        let mut sorted_members: Vec<_> = members.to_vec();
 
         // Sort by fields, not by the name
         sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
@@ -154,13 +177,13 @@ impl Command {
         &self,
         tokens: &mut Tokens<Rust>,
         struct_name: &str,
-        members: &HashMap<String, Field>,
+        members: &Members,
     ) {
         // Generate a table that maps bitspecs to symbols. Note this is
         // only for the response/deserialization as the request may have
         // different symbols
         let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
-        for (name, field) in members {
+        for (name, field) in members.iter() {
             if let Field::BitField { bit_spec, .. } = field {
                 symbol_table.insert(bit_spec.clone(), name.to_string());
             } else {
@@ -168,7 +191,8 @@ impl Command {
             }
         }
 
-        let mut sorted_members: Vec<_> = members.iter().collect();
+        //let mut sorted_members: Vec<_> = members.iter().collect();
+        let mut sorted_members: Vec<_> = members.to_vec();
 
         // Sort by fields, not by the name
         sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
@@ -199,9 +223,9 @@ impl Command {
         todo!();
     }
 
-    pub fn buffer_size(&self, members: &HashMap<String, Field>) -> usize {
+    pub fn buffer_size(&self, members: &Members) -> usize {
         let mut positions: HashMap<usize, usize> = HashMap::new();
-        for f in members.values() {
+        for f in members.fields() {
             // Implementing this with a hashmap as more than one bit spec can reference the
             // same position in the buffer. The key is the position and the value is the size.
             match f {
