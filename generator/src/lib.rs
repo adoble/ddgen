@@ -16,6 +16,7 @@ mod definition;
 mod doc_comment;
 mod error_reporting;
 mod field;
+mod members;
 mod output;
 
 // TODO move this to another file as for the other serde structs.

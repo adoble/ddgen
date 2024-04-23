@@ -57,11 +57,11 @@ opcode      = 0x23
 description = "Test a common structure "
 
 [commands.TEST_COMMON_STRUCT.request]
-status = { bits = "[]", struct = "Header" }
+status = { bits = "[]", struct = "header" }
 a_u8   = { bits = "2[]" }
 
 [commands.TEST_COMMON_STRUCT.response]
-status = { bits = "0[]..1[]", struct = "Header" }
+status = { bits = "0[]..1[]", struct = "header" }
 an_i8  = { bits = "2[]", type = "i8" }
 
 [struct.header]

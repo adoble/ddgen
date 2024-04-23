@@ -33,8 +33,11 @@ pub struct Definition {
     //pub(crate) registers: HashMap<String, Register>,
     pub(crate) commands: HashMap<String, Command>,
 
-    #[serde(rename = "struct")]
-    pub(crate) common_structures: Option<HashMap<String, CommonStructure>>,
+    // Note: Using default here rathert tha Option as the default - an empty hash map -
+    // make the logic easier.
+    #[serde(rename = "struct", default)]
+    //pub(crate) common_structures: Option<HashMap<String, CommonStructure>>,  See line 86
+    pub(crate) common_structures: HashMap<String, CommonStructure>,
 
     #[serde(rename = "enum")]
     pub(crate) enumerations: Option<HashMap<String, Enumeration>>,
@@ -82,11 +85,12 @@ impl Definition {
 
         self.generate_common(source_path)?;
 
-        if let Some(common_structures) = &self.common_structures {
-            self.generate_common_structure_files(source_path, common_structures)?;
-        }
+        // if let Some(common_structures) = &self.common_structures {
+        //     self.generate_common_structure_files(source_path, common_structures)?;
+        // }
+        self.generate_common_structure_files(source_path, &self.common_structures)?;
 
-        self.generate_commands(source_path)?;
+        self.generate_commands(source_path, &self.common_structures)?;
 
         // let _tokens = rust::Tokens::new();
 
@@ -174,9 +178,13 @@ impl Definition {
         Ok(())
     }
 
-    fn generate_commands(&self, out_path: &Path) -> anyhow::Result<()> {
+    fn generate_commands(
+        &self,
+        out_path: &Path,
+        common_structures: &HashMap<String, CommonStructure>,
+    ) -> anyhow::Result<()> {
         for (command_name, command) in &self.commands {
-            command.generate_command(command_name, out_path)?;
+            command.generate_command(command_name, common_structures, out_path)?;
         }
 
         Ok(())
@@ -287,7 +295,9 @@ impl Definition {
                 $(doc_comment.as_string())$['\r']
                 $(DocComment::empty())$['\r']
                 $(generated_doc_comment.as_string())$['\r']
-                $['\n']
+
+                use crate::types::*;
+
                 $(ref toks {structure.generate(toks, name)})
 
 

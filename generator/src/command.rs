@@ -7,8 +7,10 @@ use convert_case::{Case, Casing};
 use genco::prelude::*;
 use serde::Deserialize;
 
+use crate::common_structure::CommonStructure;
 use crate::doc_comment::DocComment;
 use crate::field::Field;
+use crate::members::Members;
 use crate::output::output_file;
 use bit_lang::BitSpec;
 
@@ -16,26 +18,6 @@ use bit_lang::BitSpec;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 // const PKG_NAME: &str = env!("CARGO_PKG_NAME");
-
-#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct Members(HashMap<String, Field>);
-
-impl Members {
-    pub fn to_vec(&self) -> Vec<(&String, &Field)> {
-        let v = self.0.iter().collect();
-        v
-    }
-
-    //std::collections::hash_map::Values<'_, std::string::String, Field>
-    pub fn fields(&self) -> impl Iterator<Item = &Field> {
-        self.0.values()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = (&String, &Field)> {
-        self.0.iter()
-    }
-}
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -51,7 +33,12 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn generate_command(&self, name: &str, out_path: &Path) -> anyhow::Result<()> {
+    pub fn generate_command(
+        &self,
+        name: &str,
+        common_structures: &HashMap<String, CommonStructure>,
+        out_path: &Path,
+    ) -> anyhow::Result<()> {
         println!("Generating command files ...");
 
         let command_file_name = format!("{}.rs", name.to_lowercase());
@@ -96,7 +83,7 @@ impl Command {
                 $(ref toks => self.generate_members(toks, &self.request))$['\r']
             }
             $['\n']
-            $(ref toks => self.generate_serializations(toks, &request_struct_name, &self.request))$['\r']
+            $(ref toks => self.generate_serializations(toks, &request_struct_name, &self.request, &common_structures))$['\r']
 
             $['\n']
             #[derive(Debug, PartialEq)]$['\r']
@@ -104,7 +91,7 @@ impl Command {
                 $(ref toks => self.generate_members(toks,  &self.response))$['\r']
             }
             $['\n']
-            $(ref toks => self.generate_deserializations(toks, &response_struct_name,&self.response))$['\r']
+            $(ref toks => self.generate_deserializations(toks, &response_struct_name,&self.response, &common_structures))$['\r']
 
 
 
@@ -132,6 +119,7 @@ impl Command {
         tokens: &mut Tokens<Rust>,
         struct_name: &str,
         members: &Members,
+        common_structures: &HashMap<String, CommonStructure>,
     ) {
         // Generate a table that maps bitspecs to symbols. Note this is
         // only for the request/serialization as the response may have
@@ -156,7 +144,7 @@ impl Command {
         // Sort by fields, not by the name
         sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
 
-        let serialization_buffer_size = self.buffer_size(members);
+        let serialization_buffer_size = self.buffer_size(members, &common_structures);
 
         quote_in!(*tokens =>
             impl Serialize for $(struct_name) {
@@ -178,17 +166,23 @@ impl Command {
         tokens: &mut Tokens<Rust>,
         struct_name: &str,
         members: &Members,
+        common_structures: &HashMap<String, CommonStructure>,
     ) {
         // Generate a table that maps bitspecs to symbols. Note this is
         // only for the response/deserialization as the request may have
         // different symbols
         let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
         for (name, field) in members.iter() {
-            if let Field::BitField { bit_spec, .. } = field {
-                symbol_table.insert(bit_spec.clone(), name.to_string());
-            } else {
-                todo!("Handle structures");
-            }
+            match field {
+                Field::BitField { bit_spec, .. } => {
+                    symbol_table.insert(bit_spec.clone(), name.to_string())
+                }
+                Field::Structure {
+                    common_structure_name,
+                    bit_spec,
+                    ..
+                } => symbol_table.insert(bit_spec.clone(), name.to_string()),
+            };
         }
 
         //let mut sorted_members: Vec<_> = members.iter().collect();
@@ -223,23 +217,42 @@ impl Command {
         todo!();
     }
 
-    pub fn buffer_size(&self, members: &Members) -> usize {
+    /// Calculates the max size in bytes of a set of members. This is required
+    /// so that the buffers for the structures can be sized to cater for
+    /// largest size.
+    pub fn buffer_size(
+        &self,
+        members: &Members,
+        common_structures: &HashMap<String, CommonStructure>,
+    ) -> usize {
         let mut positions: HashMap<usize, usize> = HashMap::new();
         for f in members.fields() {
             // Implementing this with a hashmap as more than one bit spec can reference the
             // same position in the buffer. The key is the position and the value is the size.
             match f {
-                Field::BitField { bit_spec: bit_range, .. } => {
-                    positions.entry(bit_range.start.index).or_insert_with(|| bit_range.max_size());
+                Field::BitField {
+                    bit_spec: bit_range,
+                    ..
+                } => {
+                    positions
+                        .entry(bit_range.start.index)
+                        .or_insert_with(|| bit_range.max_size());
                     // if !positions.contains_key(&bit_range.start.index) {
                     //     positions.insert(bit_range.start.index, bit_range.max_size());
                     // }
                     //buffer_size += bit_range.max_size()
                 }
                 Field::Structure {
-                    //common_structure_name,
+                    common_structure_name,
+                    bit_spec,
                     ..
-                } => todo!(),
+                } => {
+                    println!("           Common structure name: {common_structure_name}");
+                    let common_structure = common_structures.get(common_structure_name).unwrap();
+                    positions
+                        .entry(bit_spec.start.index)
+                        .or_insert_with(|| common_structure.buffer_size());
+                }
             }
         }
 
