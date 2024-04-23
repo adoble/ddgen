@@ -6,14 +6,14 @@
 # 
 
 # TODO ABNF description of this (see https://github.com/toml-lang/toml/blob/1.0.0/toml.abnf) 
-version = "0.0.1"
+version = "0.0.2"
 
 [device]
 name      = "si468x"
 endian    = "le"     # or little_endian, be, big_endianname      = "Si468x"
 word_size = 8        ## word size. Default is 8. Other sizes not currently supported 
 
-[struct.header.fields]
+[struct.header]
 cts     = { bits = "7" }
 err_cmd = { bits = "6" }
 dacqint = { bits = "5", description = "Digital radio link change interrupt indicator." }
@@ -22,7 +22,7 @@ stcint  = { bits = "0", description = "Seek / tune complete" }
 
 devntint = { bits = "1[5]", description = "Digital radio event change interrupt indicator." }
 
-pup_state        = { bits = "3[6..7]", enum = "power_up_state" }
+pup_state        = { bits = "3[6..7]", type = "power_up_state" }
 dsp_err          = { bits = "3[4]", description = "The DSP has encountered a frame overrun." }
 repo_fatal_error = { bits = "3[3]" }
 cmdo_fatal_error = { bits = "3[2]" }
@@ -53,7 +53,7 @@ arg1 = { bits = "1[0x00]" }
 
 [commands.GET_SYS_STATE.response]
 header = { struct = "header" }
-image  = { bits = "4[0..7]", enum = "active_processing_image" }
+image  = { bits = "4[0..7]", type = "active_processing_image" }
 dummy  = { bits = "5[]" }
 
 [enum.active_processing_image]
@@ -78,7 +78,7 @@ description = """DAB_TUNE_FREQ sets the DAB Receiver to tune to a frequency betw
 by the table through DAB_SET_FREQ_LIST."""
 
 [commands.DAB_TUNE_FREQ.request]
-injection           = { bits = "0[0..1]", enum = "injection" }
+injection           = { bits = "0[0..1]", type = "injection" }
 freq_index          = { bits = "1[]" }                         # Uses all 8 bits
 antenna_capacitance = { bits = "3[]..4[]" }                    # 16 bit value range 0-128. Bits not specified so use whole word
 
