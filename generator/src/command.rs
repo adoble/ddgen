@@ -77,6 +77,8 @@ impl Command {
             use crate::serialize::Serialize;
             use crate::types::*;
 
+            $(for name in common_structures.keys() => use crate::$(name.to_lowercase())::$(name.to_case(Case::UpperCamel));)
+
             $['\n']
             #[derive(Debug, PartialEq)]$['\r']
             pub struct $(&request_struct_name) {$['\r']
@@ -247,7 +249,6 @@ impl Command {
                     bit_spec,
                     ..
                 } => {
-                    println!("           Common structure name: {common_structure_name}");
                     let common_structure = common_structures.get(common_structure_name).unwrap();
                     positions
                         .entry(bit_spec.start.index)
