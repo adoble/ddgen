@@ -33,7 +33,7 @@ pub struct Definition {
     //pub(crate) registers: HashMap<String, Register>,
     pub(crate) commands: HashMap<String, Command>,
 
-    // Note: Using default here rathert tha Option as the default - an empty hash map -
+    // Note: Using default here rather than Option as the default - an empty hash map -
     // make the logic easier.
     #[serde(rename = "struct", default)]
     //pub(crate) common_structures: Option<HashMap<String, CommonStructure>>,  See line 86
@@ -141,7 +141,7 @@ impl Definition {
         let mut tokens = rust::Tokens::new();
 
         quote_in!(tokens =>
-            #![cfg_attr(not(test), no_std)]
+           #![cfg_attr(not(test), no_std)]
 
             //Reexports  TODO have this as a comment in the code
 
@@ -150,22 +150,18 @@ impl Definition {
            pub use crate::error::DeviceError;
 
 
-            $(for name in self.commands.keys() join(;$['\r'])=>  pub mod $(name.to_lowercase()) );
+           $(for name in self.common_structures.keys() join(;$['\r'])=>  pub mod $(name.to_lowercase()) );
 
             // $(if self.enumerations.is_some() => $['\n']pub mod types;  )  TODO
+           $(for name in self.commands.keys() join(;$['\r'])=>  pub mod $(name.to_lowercase()) );
 
-            pub mod error;
-            mod types;
-            mod deserialize;
-            mod serialize;
-            mod request;
-            mod response;
-            mod bits;
-
-
-        //     mod readable;
-        //     mod writable;
-        //     mod register;
+           pub mod error;
+           mod types;
+           mod deserialize;
+           mod serialize;
+           mod request;
+           mod response;
+           mod bits;
 
         //     $(if tests => $['\n']  #[cfg(test)] $['\n'] mod tests;)
 
@@ -296,10 +292,19 @@ impl Definition {
                 $(DocComment::empty())$['\r']
                 $(generated_doc_comment.as_string())$['\r']
 
+                use crate::deserialize::Deserialize;
+                use crate::error::DeviceError;
+                use crate::request::{RequestArray, RequestBit, RequestField, RequestWord};
+                use crate::response::{ResponseArray, ResponseBit, ResponseField, ResponseWord};
+                use crate::serialize::Serialize;
+
                 use crate::types::*;
 
                 $(ref toks {structure.generate(toks, name)})
 
+                $(ref toks {structure.generate_serializations(toks, name)})
+
+                $(ref toks {structure.generate_deserializations(toks, name)})
 
             );
 
