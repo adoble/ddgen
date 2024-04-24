@@ -3,6 +3,18 @@
 // TODO:
 // - Add some more integration tests
 // - Common structure serialisation
+// - Common structure file names and struct name could confiict with common file names.
+//   Move them to a seperate module to avoid this.
+// - The bit_spec definition for a common structure can lead to conflicts  with how the specification writer
+//   defines the bit_spec for a command. For instance:
+//       [commands.TUNE.request]
+//       a_header = {bits = "0[]", type = "header"}
+//       [struct.header]
+//       status = {bits = "0[]"}
+//       extra_status = {bits = "1[]"}
+//   Need to think about this. Consider that the position where a struct is placed in the bit stream
+//   has to be specified. Maybe need a position  attribute, e.g. a_header = {struct = "header", position = 0}?.
+//   And also checks that enough space is left.
 // - Run clippy
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
 // - Often need to passs HashMap<String, Field> into functions as this forms the symbol table.
