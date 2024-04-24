@@ -85,7 +85,8 @@ impl Command {
                 $(ref toks => self.generate_members(toks, &self.request))$['\r']
             }
             $['\n']
-            $(ref toks => self.generate_serializations(toks, &request_struct_name, &self.request, &common_structures))$['\r']
+            //$(ref toks => self.generate_serializations(toks, &request_struct_name, &self.request, &common_structures))$['\r']
+            $(ref toks => self.request.generate_serializations(toks, &request_struct_name,  &common_structures))$['\r']
 
             $['\n']
             #[derive(Debug, PartialEq)]$['\r']
@@ -93,7 +94,7 @@ impl Command {
                 $(ref toks => self.generate_members(toks,  &self.response))$['\r']
             }
             $['\n']
-            $(ref toks => self.generate_deserializations(toks, &response_struct_name,&self.response, &common_structures))$['\r']
+            $(ref toks => self.response.generate_deserializations(toks, &response_struct_name, &common_structures))$['\r']
 
 
 
@@ -116,98 +117,96 @@ impl Command {
         }
     }
 
-    fn generate_serializations(
-        &self,
-        tokens: &mut Tokens<Rust>,
-        struct_name: &str,
-        members: &Members,
-        common_structures: &HashMap<String, CommonStructure>,
-    ) {
-        // Generate a table that maps bitspecs to symbols. Note this is
-        // only for the request/serialization as the response may have
-        // different symbols
-        let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
+    // fn generate_serializationsX(
+    //     &self,
+    //     tokens: &mut Tokens<Rust>,
+    //     struct_name: &str,
+    //     members: &Members,
+    //     common_structures: &HashMap<String, CommonStructure>,
+    // ) {
+    //     // Generate a table that maps bitspecs to symbols. Note this is
+    //     // only for the request/serialization as the response may have
+    //     // different symbols
+    //     let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
 
-        for (name, field) in members.iter() {
-            match field {
-                Field::BitField { bit_spec, .. } => {
-                    symbol_table.insert(bit_spec.clone(), name.to_string())
-                }
-                Field::Structure {
-                    common_structure_name,
-                    bit_spec,
-                    ..
-                } => symbol_table.insert(bit_spec.clone(), name.to_string()),
-            };
-        }
+    //     for (name, field) in members.iter() {
+    //         match field {
+    //             Field::BitField { bit_spec, .. } => {
+    //                 symbol_table.insert(bit_spec.clone(), name.to_string())
+    //             }
+    //             Field::Structure {
+    //                 common_structure_name,
+    //                 bit_spec,
+    //                 ..
+    //             } => symbol_table.insert(bit_spec.clone(), name.to_string()),
+    //         };
+    //     }
 
-        let mut sorted_members: Vec<_> = members.to_vec();
+    //     let mut sorted_members: Vec<_> = members.to_vec();
 
-        // Sort by fields, not by the name
-        sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
+    //     // Sort by fields, not by the name
+    //     sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
 
-        let serialization_buffer_size = self.buffer_size(members, &common_structures);
+    //     let serialization_buffer_size = self.buffer_size(members, &common_structures);
 
-        quote_in!(*tokens =>
-            impl Serialize for $(struct_name) {
-                fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
-                  let mut data = [0u8; N];
+    //     quote_in!(*tokens =>
+    //         impl Serialize for $(struct_name) {
+    //             fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
+    //               let mut data = [0u8; N];
 
-                  $(for (name, field) in sorted_members => $(ref toks {field.generate_field_serialization(toks,  name,  &symbol_table)}) )
+    //               $(for (name, field) in sorted_members => $(ref toks {field.generate_field_serialization(toks,  name,  &symbol_table)}) )
 
-                  ($(serialization_buffer_size), data)
-                }
+    //               ($(serialization_buffer_size), data)
+    //             }
 
+    //         }
+    //     );
+    // }
 
-            }
-        );
-    }
+    // fn generate_deserializationsX(
+    //     &self,
+    //     tokens: &mut Tokens<Rust>,
+    //     struct_name: &str,
+    //     members: &Members,
+    //     common_structures: &HashMap<String, CommonStructure>,
+    // ) {
+    //     // Generate a table that maps bitspecs to symbols. Note this is
+    //     // only for the response/deserialization as the request may have
+    //     // different symbols
+    //     let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
+    //     for (name, field) in members.iter() {
+    //         match field {
+    //             Field::BitField { bit_spec, .. } => {
+    //                 symbol_table.insert(bit_spec.clone(), name.to_string())
+    //             }
+    //             Field::Structure {
+    //                 common_structure_name,
+    //                 bit_spec,
+    //                 ..
+    //             } => symbol_table.insert(bit_spec.clone(), name.to_string()),
+    //         };
+    //     }
 
-    fn generate_deserializations(
-        &self,
-        tokens: &mut Tokens<Rust>,
-        struct_name: &str,
-        members: &Members,
-        common_structures: &HashMap<String, CommonStructure>,
-    ) {
-        // Generate a table that maps bitspecs to symbols. Note this is
-        // only for the response/deserialization as the request may have
-        // different symbols
-        let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
-        for (name, field) in members.iter() {
-            match field {
-                Field::BitField { bit_spec, .. } => {
-                    symbol_table.insert(bit_spec.clone(), name.to_string())
-                }
-                Field::Structure {
-                    common_structure_name,
-                    bit_spec,
-                    ..
-                } => symbol_table.insert(bit_spec.clone(), name.to_string()),
-            };
-        }
+    //     //let mut sorted_members: Vec<_> = members.iter().collect();
+    //     let mut sorted_members: Vec<_> = members.to_vec();
 
-        //let mut sorted_members: Vec<_> = members.iter().collect();
-        let mut sorted_members: Vec<_> = members.to_vec();
+    //     // Sort by fields, not by the name
+    //     sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
 
-        // Sort by fields, not by the name
-        sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
+    //     quote_in!(*tokens=>
+    //        impl Deserialize<$(struct_name)> for [u8] {
 
-        quote_in!(*tokens=>
-           impl Deserialize<$(struct_name)> for [u8] {
+    //            fn deserialize(&self) -> Result<$(struct_name), DeviceError> { $['\r']
 
-               fn deserialize(&self) -> Result<$(struct_name), DeviceError> { $['\r']
+    //                 Ok($(struct_name) {$['\r']
+    //                     $(for (name, field) in sorted_members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name, &symbol_table)}) ) $['\r']
+    //                 })$['\r']
 
-                    Ok($(struct_name) {$['\r']
-                        $(for (name, field) in sorted_members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name, &symbol_table)}) ) $['\r']
-                    })$['\r']
+    //            }$['\r']
 
-
-               }$['\r']
-
-           }$['\r']
-        );
-    }
+    //        }$['\r']
+    //     );
+    // }
 
     pub fn generate_enums(_tokens: &mut Tokens<Rust>, _name: &str) {
         // quote_in!(*tokens =>
@@ -222,7 +221,7 @@ impl Command {
     /// Calculates the max size in bytes of a set of members. This is required
     /// so that the buffers for the structures can be sized to cater for
     /// largest size.
-    pub fn buffer_size(
+    pub fn buffer_sizeX(
         &self,
         members: &Members,
         common_structures: &HashMap<String, CommonStructure>,

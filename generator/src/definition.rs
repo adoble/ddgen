@@ -302,9 +302,9 @@ impl Definition {
 
                 $(ref toks {structure.generate(toks, name)})
 
-                $(ref toks {structure.generate_serializations(toks, name)})
+                //$(ref toks {structure.generate_serializations(toks, name)})
 
-                $(ref toks {structure.generate_deserializations(toks, name)})
+                //$(ref toks {structure.generate_deserializations(toks, name)})
 
             );
 

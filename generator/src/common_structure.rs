@@ -15,9 +15,25 @@ impl CommonStructure {
     pub fn generate(&self, tokens: &mut Tokens<Rust>, name: String) {
         let struct_name = name.to_case(Case::UpperCamel);
         quote_in!(*tokens =>
+            #[derive(Debug, PartialEq)]
             pub struct $struct_name {
                 $(for (name, field) in self.0.iter() => $(ref toks {field.generate_struct_member(toks, name)}) )
             }
+        );
+    }
+
+    pub fn generate_serializations(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        common_structure_name: String,
+        common_structures: &HashMap<String, CommonStructure>,
+    ) {
+        // Note: Common structure cannot contain other common structures
+
+        quote_in!(*tokens =>
+
+           $(ref toks => self.0.generate_serializations(toks, &common_structure_name, &common_structures))$['\r']
+
         );
     }
 
