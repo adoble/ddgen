@@ -11,6 +11,18 @@ use crate::field::Field;
 pub struct Members(HashMap<String, Field>);
 
 impl Members {
+    pub fn generate_members(&self, tokens: &mut Tokens<Rust>) {
+        // let mut sorted_members: Vec<_> = members.iter().collect();
+        let mut sorted_members = self.to_vec();
+
+        // Sort by fields, not by the name
+        sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
+
+        for (name, field) in sorted_members {
+            field.generate_struct_member(tokens, name);
+        }
+    }
+
     pub fn generate_serializations(
         &self,
         tokens: &mut Tokens<Rust>,
