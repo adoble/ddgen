@@ -300,7 +300,7 @@ impl Definition {
 
                 use crate::types::*;
 
-                $(ref toks {structure.generate(toks, name)})
+                $(ref toks {structure.generate(toks, name, common_structures)})
 
                 //$(ref toks {structure.generate_serializations(toks, name)})
 

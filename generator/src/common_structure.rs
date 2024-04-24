@@ -12,13 +12,22 @@ use crate::{field::Field, members::Members};
 pub struct CommonStructure(Members);
 
 impl CommonStructure {
-    pub fn generate(&self, tokens: &mut Tokens<Rust>, name: String) {
+    pub fn generate(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        name: String,
+        common_structures: &HashMap<String, CommonStructure>,
+    ) {
         let struct_name = name.to_case(Case::UpperCamel);
         quote_in!(*tokens =>
             #[derive(Debug, PartialEq)]
-            pub struct $struct_name {
+            pub struct $(struct_name.clone()) {
                 $(for (name, field) in self.0.iter() => $(ref toks {field.generate_struct_member(toks, name)}) )
             }
+
+            $(ref toks => self.0.generate_serializations(toks, &struct_name, &common_structures))$['\r']
+
+            $(ref toks => self.0.generate_deserializations(toks, &struct_name, &common_structures))$['\r']
         );
     }
 

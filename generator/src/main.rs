@@ -16,6 +16,8 @@
 //   has to be specified. Maybe need a position  attribute, e.g. a_header = {struct = "header", position = 0}?.
 //   And also checks that enough space is left.
 // - Run clippy
+// - Incorrect bit_specs seem to be processed without giving an error leading to incorrectly generated code
+//   ( e.g. incorrect syntax with bit fields)
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
 // - Often need to passs HashMap<String, Field> into functions as this forms the symbol table.
 //   Could change this to a new type (e.g. SymbolTable(<HashMap<String, Field>)), but need to
