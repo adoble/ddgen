@@ -174,7 +174,6 @@ impl Field {
                 description,
                 ..
             } => {
-                println!("Commmon structure name {common_structure_name}");
                 if description.is_some() {
                     let comments = DocComment::from_string(description.as_deref().unwrap());
                     quote_in!(*tokens =>
