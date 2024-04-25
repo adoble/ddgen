@@ -1,6 +1,8 @@
 // TODO make the word size generic
 
+//use serde::Deserialize;
 use crate::bits::Bits;
+
 pub trait ResponseBit {
     // a_bit: data[0].deserialize_bit(4),
     fn deserialize_bit(&self, position: usize) -> bool;
@@ -28,6 +30,17 @@ pub trait ResponseWord<T> {
     fn deserialize_word(&self) -> T;
 }
 
+impl ResponseWord<u8> for u8 {
+    fn deserialize_word(&self) -> u8 {
+        *self
+    }
+}
+
+// impl ResponseWord<i8> for u8 {
+//     fn deserialize_word(&self) -> i8 {
+//         *self as i8
+//     }
+// }
 impl ResponseWord<u16> for [u8] {
     fn deserialize_word(&self) -> u16 {
         u16::from_le_bytes([self[0], self[1]])
@@ -40,11 +53,6 @@ impl ResponseWord<i16> for [u8] {
     }
 }
 
-impl ResponseWord<u8> for u8 {
-    fn deserialize_word(&self) -> u8 {
-        *self
-    }
-}
 pub trait ResponseArray<T> {
     //  a_repeating_u8: data[0..=1].deserialize_repeating_word(2),
     // self is the u8 stream
@@ -128,6 +136,10 @@ impl<const TARGET_LEN: usize> ResponseArray<[i32; TARGET_LEN]> for [u8] {
 
 #[cfg(test)]
 mod tests {
+
+    use crate::deserialize::Deserialize;
+    use crate::error::DeviceError;
+
     use super::*;
     #[test]
     fn response_bits() {
@@ -225,5 +237,59 @@ mod tests {
 
         a.data_i32 = source[6..].deserialize_repeating_words(2);
         assert_eq!(a.data_i32, expected_data_i32);
+    }
+
+    #[derive(Debug, PartialEq)]
+    struct TestCommonStruct {
+        c_bool: bool,
+        c_test_field: CommonTestField,
+        c_u16: u16,
+    }
+
+    impl Deserialize<TestCommonStruct> for [u8] {
+        fn deserialize(&self) -> Result<TestCommonStruct, DeviceError> {
+            Ok(TestCommonStruct {
+                c_bool: self[0].deserialize_bit(1),
+                c_test_field: self[0].deserialize_field(3, 5).try_into()?,
+                c_u16: self[1..=2].deserialize_word(),
+            })
+        }
+    }
+
+    #[allow(dead_code)]
+    #[derive(PartialEq, Debug, Copy, Clone)]
+    enum CommonTestField {
+        TestZero = 0,
+        TestOne = 1,
+        TestTwo = 2,
+        TestThree = 3,
+    }
+
+    impl TryFrom<u8> for CommonTestField {
+        type Error = DeviceError;
+        fn try_from(value: u8) -> Result<Self, Self::Error> {
+            match value {
+                0 => Ok(Self::TestZero),
+                1 => Ok(Self::TestOne),
+                2 => Ok(Self::TestTwo),
+                3 => Ok(Self::TestThree),
+                _ => Err(DeviceError::EnumConversion),
+            }
+        }
+    }
+
+    #[test]
+    fn test_common_struct_deserialization() {
+        let source_data = [0b0000_1010 as u8, 0x6E, 0xB2];
+
+        let expected_struct = TestCommonStruct {
+            c_bool: true,
+            c_test_field: CommonTestField::TestOne,
+            c_u16: 45678,
+        };
+
+        let actual_struct: TestCommonStruct = source_data[0..3].deserialize().unwrap();
+
+        assert_eq!(actual_struct, expected_struct);
     }
 }

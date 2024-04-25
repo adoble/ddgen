@@ -92,7 +92,6 @@ impl<T: Serialize> RequestStruct<T> for [u8] {
 mod tests {
     // use serde::Serialize;
 
-    use crate::deserialize::Deserialize;
     use crate::serialize::Serialize;
 
     use super::{RequestArray, RequestBit, RequestField, RequestStruct, RequestWord};
