@@ -1,62 +1,4 @@
-use crate::bits::Bits;
-
-// pub trait RequestWord {
-
-// fn new(bits: u8) -> Self;
-// fn bits(&self) -> u8;
-
-// // TODO this should be private?
-// fn set_bits(&mut self, bits: u8) -> &mut Self;
-
-// // Default implementations
-// fn modify_bit(&mut self, position: u8, state: bool) -> &mut Self {
-//     let mut mask: u8 = 1 << position;
-
-//     let modified_bits = if state {
-//         // setting the bit
-//         self.bits() | mask
-//     } else {
-//         // clear the bit{
-//         mask = !mask;
-//         self.bits() & mask
-//     };
-
-//     self.set_bits(modified_bits);
-
-//     self
-// }
-
-// /// Modify the field as specified by the start and end bit positions.
-// ///
-// /// Warning: Attempting to modify the whole word or having end less then start
-// /// will cause the function to panic!
-// fn modify_field(&mut self, value: u8, start: u8, end: u8) -> &mut Self {
-//     let mask = ((1 << (end - start + 1)) - 1) << start;
-//     let cleared_bits = self.bits() & !mask;
-//     let new_bits = value << start;
-//     self.set_bits(cleared_bits | new_bits);
-
-//     self
-// }
-// }
-
-// impl RequestWord for u8 {
-//     fn new(bits: u8) -> Self {
-//         bits
-//     }
-
-//     fn bits(&self) -> u8 {
-//         *self
-//     }
-
-//     fn set_bits(&mut self, bits: u8) -> &mut Self {
-//         *self = bits;
-//         self
-//     }
-//     // fn word(&self) -> &u8 {
-//     //     self
-//     // }
-// }
+use crate::{bits::Bits, serialize::Serialize};
 
 pub trait RequestBit {
     fn serialize_bit(&mut self, source: bool, position: usize);
@@ -111,10 +53,7 @@ impl RequestWord<i16> for [u8] {
 
 pub trait RequestArray<T> {
     // Usage : data[5..=10].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
-
     fn serialize_repeating_words(&mut self, source: T, number: usize);
-
-    //fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N];
 }
 
 impl<const SOURCE_LEN: usize> RequestArray<[u16; SOURCE_LEN]> for [u8] {
@@ -127,37 +66,36 @@ impl<const SOURCE_LEN: usize> RequestArray<[u16; SOURCE_LEN]> for [u8] {
             target_position += 1;
         }
     }
-    //     impl<const SOURCE_LEN: usize> RequestArray for [u16; SOURCE_LEN] {
-    // fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N] {
-    //     let mut data = [0u8; N];
-    //     let mut target_position = 0;
-    //     for i in 0..number {
-    //         data[target_position + i] = self[i].to_le_bytes()[0];
-    //         data[target_position + i + 1] = self[i].to_le_bytes()[1];
-    //         target_position += 1;
-    //     }
-    //     data
-    // }
 }
 
 impl<const SOURCE_LEN: usize> RequestArray<[u8; SOURCE_LEN]> for [u8] {
     fn serialize_repeating_words(&mut self, source: [u8; SOURCE_LEN], number: usize) {
         self.copy_from_slice(&source[0..number]);
     }
-    //impl<const SOURCE_LEN: usize> RequestArray for [u8; SOURCE_LEN] {
-    // fn serialize_repeating_words<const N: usize>(&self, number: usize) -> [u8; N] {
-    //     let mut data = [0u8; N];
+}
 
-    //     data.copy_from_slice(&self[0..number]);
-    //     data
-    // }
+pub trait RequestStruct<T: Serialize> {
+    // Usage : data[0..].serialize_struct(self.a_struct, 0);
+    fn serialize_struct<const TARGET_LEN: usize>(&mut self, source: T);
+}
+
+impl<T: Serialize> RequestStruct<T> for [u8] {
+    fn serialize_struct<const TARGET_LEN: usize>(&mut self, source: T) {
+        let (size, data): (u8, [u8; TARGET_LEN]) = source.serialize();
+        self.copy_from_slice(&data[0..size as usize]);
+        // TODO consider changing the Serialize trait so that the
+        // size is returned a usize. Question: Does this work with no-std?
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::request::RequestArray;
+    // use serde::Serialize;
 
-    use super::{RequestBit, RequestWord};
+    use crate::deserialize::Deserialize;
+    use crate::serialize::Serialize;
+
+    use super::{RequestArray, RequestBit, RequestField, RequestStruct, RequestWord};
 
     #[test]
     fn test_serialize_bool() {
@@ -222,5 +160,46 @@ mod tests {
         let expected_data: [u8; 4] = [123, 33, 0, 0];
 
         assert_eq!(serial_data, expected_data);
+    }
+
+    struct TestCommonStruct {
+        c_bool: bool,
+        c_test_field: CommonTestField,
+        c_u16: u16,
+    }
+
+    impl Serialize for TestCommonStruct {
+        fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
+            let mut data = [0u8; N];
+
+            data[0].serialize_bit(self.c_bool, 1);
+            data[0].serialize_field(self.c_test_field as u8, 3, 5);
+            data[1..=2].serialize_word(self.c_u16);
+
+            (3, data)
+        }
+    }
+    #[allow(dead_code)]
+    #[derive(PartialEq, Debug, Copy, Clone)]
+    enum CommonTestField {
+        TestZero = 0,
+        TestOne = 1,
+        TestTwo = 2,
+        TestThree = 3,
+    }
+
+    #[test]
+    fn test_common_struct_serialization() {
+        let test_common_struct = TestCommonStruct {
+            c_bool: true,
+            c_test_field: CommonTestField::TestOne,
+            c_u16: 45678,
+        };
+
+        let mut data: [u8; 3] = [0; 3];
+        // data[0..].serialize_struct::<3>(test_common_struct);
+        data[0..].serialize_struct::<3>(test_common_struct);
+
+        assert_eq!([0b0000_1010, 0x6E, 0xB2], data);
     }
 }
