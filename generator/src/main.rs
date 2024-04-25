@@ -19,10 +19,11 @@
 // - Incorrect bit_specs seem to be processed without giving an error leading to incorrectly generated code
 //   ( e.g. incorrect syntax with bit fields)
 // - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
-// - Often need to passs HashMap<String, Field> into functions as this forms the symbol table.
+// - Often need to pass HashMap<String, Field> into functions as this forms the symbol table.
 //   Could change this to a new type (e.g. SymbolTable(<HashMap<String, Field>)), but need to
 //   see if this can be done easily with serde (see https://github.com/softprops/dynomite/pull/145).
 //  - Merge field::TargetType with bit_spec::BitSpecType
+//  - Move common/src/test/.. into common/tests (as was dome for generator)
 //  - Ensure that all types are handled in serailize and deserialize
 //  - Need to handle big endian encodings
 //  - Replace the comment generation with something like this: https://github.com/udoprog/genco/issues/53#issuecomment-1821318498
