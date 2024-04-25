@@ -76,14 +76,16 @@ impl Serialize for TestStruct {
 
 impl Deserialize<TestStruct> for [u8] {
     fn deserialize(&self) -> Result<TestStruct, DeviceError> {
+        let a_count: u8 = self[4].deserialize_word();
+
         let test_struct = TestStruct {
             a_bit: self[0].deserialize_bit(4),
             a_field: self[0].deserialize_field(5, 6).try_into()?,
             a_u16: self[1..=2].deserialize_word(),
             a_u8: self[3].deserialize_word(),
-            a_count: self[4].deserialize_word(),
-            a_repeating_u16: self[5..(5 + self[4].deserialize_word() * 2) as usize]
-                .deserialize_repeating_words(self[4].deserialize_word() as usize),
+            a_count,
+            a_repeating_u16: self[5..(5 + a_count * 2) as usize]
+                .deserialize_repeating_words(a_count as usize),
         };
         Ok(test_struct)
     }
