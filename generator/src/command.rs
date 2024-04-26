@@ -9,12 +9,8 @@ use serde::Deserialize;
 
 use crate::common_structure::CommonStructure;
 use crate::doc_comment::DocComment;
-use crate::field::Field;
 use crate::members::Members;
 use crate::output::output_file;
-use bit_lang::BitSpec;
-
-//use crate::generate::output_file; //TODO need to place this in it's own module
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 // const PKG_NAME: &str = env!("CARGO_PKG_NAME");
@@ -85,7 +81,6 @@ impl Command {
                 $(ref toks => self.request.generate_members(toks))$['\r']
             }
             $['\n']
-            //$(ref toks => self.generate_serializations(toks, &request_struct_name, &self.request, &common_structures))$['\r']
             $(ref toks => self.request.generate_serializations(toks, &request_struct_name,  &common_structures))$['\r']
 
             $['\n']
