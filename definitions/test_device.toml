@@ -40,14 +40,14 @@ disabled = 0
 enabled  = 1
 tristate = 2
 
-[commands.TEST_ANOTHER_COMMAND]
+[commands.TEST_FIXED_REPEAT_COMMAND]
 opcode      = 0x0A
 description = "test command with a fixed repeating field"
 
-[commands.TEST_ANOTHER_COMMAND.request]
+[commands.TEST_FIXED_REPEAT_COMMAND.request]
 a_fixed_repeat = { bits = "[];5" }
 
-[commands.TEST_ANOTHER_COMMAND.response]
+[commands.TEST_FIXED_REPEAT_COMMAND.response]
 a_status       = { bits = "0[0]" }
 a_fixed_repeat = { bits = "1[];5" }
 # Still have to think about where to place the opcode.
