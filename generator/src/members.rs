@@ -104,8 +104,10 @@ impl Members {
 
                fn deserialize(&self) -> Result<$(struct_name), DeviceError> { $['\r']
 
+                    $(for (name, field) in &sorted_members => let $(*name) = $(ref toks {field.generate_field_deserialization(toks,  name, &symbol_table)}) ) $['\r']
+
                     Ok($(struct_name) {$['\r']
-                        $(for (name, field) in sorted_members => $(name): $(ref toks {field.generate_field_deserialization(toks,  name, &symbol_table)}) ) $['\r']
+                        $(for (name, field) in &sorted_members => $(*name),$['\r'])
                     })$['\r']
 
 

@@ -261,7 +261,7 @@ impl Field {
         };
 
         quote_in!(*tokens =>
-            $(field_deserialize_code),$['\r']
+            $(field_deserialize_code);$['\r']
         );
     }
 
@@ -325,7 +325,7 @@ impl Field {
                 repeat: Repeat::Fixed(limit),
                 ..
             } => {
-                format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit})",)
+                format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit})")
             }
             BitSpec {
                 start:
@@ -352,6 +352,7 @@ impl Field {
                     repeat: Repeat::None,
                 };
                 let count_symbol_name = symbol_table.get(&repeat_bit_spec);
+
                 if count_symbol_name.is_some() {
                     format!(
                         "data[{start_index}..].serialize_repeating_words(self.{}, self.{} as usize)",
@@ -450,16 +451,21 @@ impl Field {
                 // it needs to cover all symbols. What follows is a workaround, but ultimately the parser
                 //  should recognise full bit specs for variable repeat words.
                 // TODO do we need the symbol_table?
-                let repeat_bit_spec = BitSpec {
-                    start: repeat_word.clone(),
-                    end: None,
-                    repeat: Repeat::None,
-                };
-                let count_symbol_name = symbol_table.get(&repeat_bit_spec);
+
+                // let repeat_bit_spec = BitSpec {
+                //     start: repeat_word.clone(),
+                //     end: None,
+                //     repeat: Repeat::None,
+                // };
+                // let count_symbol_name = symbol_table.get(&repeat_bit_spec);
+                let count_symbol_name = symbol_table.get(&BitSpec::from_word(repeat_word));
+
                 if count_symbol_name.is_some() {
                     format!(
-                        "self[{start_index}..].deserialize_repeating_words(self[{}].deserialize_word() as usize)",
-                        repeat_word.index
+                        //"self[{start_index}..].deserialize_repeating_words(self[{}].deserialize_word() as usize)",
+                        "self[{start_index}..].deserialize_repeating_words({} as usize)",
+                        //repeat_word.index
+                        count_symbol_name.unwrap()
                     )
                 } else {
                     println!("Cannot find bit_spec {}", bit_spec);
