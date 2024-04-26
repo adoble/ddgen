@@ -102,6 +102,15 @@ pub struct BitSpec {
 }
 
 impl BitSpec {
+    /// From a simple word, create a complete bit spec.
+    pub fn from_word(word: &Word) -> BitSpec {
+        BitSpec {
+            start: word.clone(),
+            end: None,
+            repeat: Repeat::None,
+        }
+    }
+
     /// Get the max size in bytes of an array that could
     /// contain the bit specification.
     pub fn max_size(&self) -> usize {
@@ -182,6 +191,27 @@ impl fmt::Display for BitSpec {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_from_word() {
+        let word = Word {
+            index: 5,
+            bit_range: BitRange::Range(5, 7),
+        };
+
+        let expected = BitSpec {
+            start: Word {
+                index: 5,
+                bit_range: BitRange::Range(5, 7),
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+
+        let bit_spec = BitSpec::from_word(&word);
+
+        assert_eq!(bit_spec, expected);
+    }
 
     // Checking how PartialOrd works for BitRange
     #[test]
