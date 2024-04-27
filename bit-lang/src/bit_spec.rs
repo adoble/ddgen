@@ -132,6 +132,44 @@ impl BitSpec {
         n_words * repeats
     }
 
+    /// Determine how many bytes this bit spec would need. It returns a tuple
+    /// with the fixed size of the element and an optional Word showing
+    /// where the multiplier is located.
+    pub fn size(&self) -> (usize, Option<Word>) {
+        match self {
+            BitSpec {
+                start: _,
+                end: None,
+                repeat: Repeat::None,
+            } => (1, None),
+            BitSpec {
+                start,
+                end: Some(end),
+                repeat: Repeat::None,
+            } => (end.index - start.index + 1, None),
+            BitSpec {
+                start: _,
+                end: None,
+                repeat: Repeat::Fixed(repeats),
+            } => (*repeats, None),
+            BitSpec {
+                start,
+                end: Some(end),
+                repeat: Repeat::Fixed(repeats),
+            } => ((end.index - start.index + 1) * repeats, None),
+            BitSpec {
+                start: _,
+                end: None,
+                repeat: Repeat::Variable { word, .. },
+            } => (1, Some(word.clone())),
+            BitSpec {
+                start,
+                end: Some(end),
+                repeat: Repeat::Variable { word, .. },
+            } => (end.index - start.index + 1, Some(word.clone())),
+        }
+    }
+
     /// Suggest a type for a variable to hold the value
     /// specified by the bit spec.
     pub fn suggested_word_type(&self) -> String {
@@ -191,6 +229,8 @@ impl fmt::Display for BitSpec {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::parse;
 
     #[test]
     fn test_from_word() {
@@ -508,5 +548,66 @@ mod tests {
         assert_eq!(bit_spec.suggested_word_type(), "u64");
 
         //todo!("more tests");
+    }
+
+    #[test]
+    fn test_size_with_bit() {
+        let bit_spec = parse("3").unwrap();
+        let size = bit_spec.size();
+
+        assert_eq!(size, (1, None));
+    }
+
+    #[test]
+    fn test_size_with_word() {
+        let bit_spec = parse("3[]").unwrap();
+        let size = bit_spec.size();
+        assert_eq!(size, (1, None));
+    }
+
+    #[test]
+    fn test_size_with_word_range() {
+        let bit_spec = parse("3[]..5[]").unwrap();
+        let size = bit_spec.size();
+        assert_eq!(size, (3, None));
+    }
+
+    #[test]
+    fn test_size_with_fixed_repeating_word() {
+        let bit_spec = parse("3[];4").unwrap();
+        let size = bit_spec.size();
+        assert_eq!(size, (4, None));
+    }
+
+    #[test]
+    fn test_size_with_variable_repeating_word() {
+        let bit_spec = parse("3[];(1[])<=4").unwrap();
+        let size = bit_spec.size();
+        assert_eq!(
+            size,
+            (
+                1,
+                Some(Word {
+                    index: 1,
+                    bit_range: BitRange::WholeWord,
+                }),
+            )
+        );
+    }
+
+    #[test]
+    fn test_size_with_variable_repeating_word_range() {
+        let bit_spec = parse("3[]..6[];(1[])<=4").unwrap();
+        let size = bit_spec.size();
+        assert_eq!(
+            size,
+            (
+                4,
+                Some(Word {
+                    index: 1,
+                    bit_range: BitRange::WholeWord,
+                }),
+            )
+        );
     }
 }
