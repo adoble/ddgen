@@ -46,7 +46,7 @@ struct TestStruct {
 }
 
 impl Serialize for TestStruct {
-    fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
+    fn serialize<const N: usize>(&self) -> (usize, [u8; N]) {
         // The size is calculated from the bit specs.
         let mut data = [0u8; N];
 
@@ -61,7 +61,7 @@ impl Serialize for TestStruct {
         //data[5..=10].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
         data[5..].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
 
-        ((self.a_count * 2) + 5, data)
+        (((self.a_count * 2) + 5).into() , data)
     }
 }
 

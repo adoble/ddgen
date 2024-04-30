@@ -81,10 +81,8 @@ pub trait RequestStruct<T: Serialize> {
 
 impl<T: Serialize> RequestStruct<T> for [u8] {
     fn serialize_struct<const TARGET_LEN: usize>(&mut self, source: T) {
-        let (size, data): (u8, [u8; TARGET_LEN]) = source.serialize();
-        self.copy_from_slice(&data[0..size as usize]);
-        // TODO consider changing the Serialize trait so that the
-        // size is returned a usize. Question: Does this work with no-std?
+        let (size, data): (usize, [u8; TARGET_LEN]) = source.serialize();
+        self.copy_from_slice(&data[0..size]);
     }
 }
 
@@ -168,7 +166,7 @@ mod tests {
     }
 
     impl Serialize for TestCommonStruct {
-        fn serialize<const N: usize>(&self) -> (u8, [u8; N]) {
+        fn serialize<const N: usize>(&self) -> (usize, [u8; N]) {
             let mut data = [0u8; N];
 
             data[0].serialize_bit(self.c_bool, 1);
