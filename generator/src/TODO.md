@@ -19,7 +19,7 @@
     Need to think about this. Consider that the position where a struct is placed in the bit stream
     has to be specified. Maybe need a position  attribute, e.g. `a_header = {struct = "header", position = 0}?`.
     And also checks that enough space is left.
-   
+  - Bit spec with fixed range 0 shoudl not be allowed   
   - Add a license to the manifest (see  https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields)
   - Run clippy
   - Incorrect bit_specs seem to be processed without giving an error leading to incorrectly generated code
