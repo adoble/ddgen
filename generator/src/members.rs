@@ -1,3 +1,4 @@
+use bit_lang::bit_spec::WordRange;
 use bit_lang::{BitSpec, Repeat, Word};
 use genco::prelude::*;
 use serde::Deserialize;
@@ -94,8 +95,6 @@ impl Members {
             .iter()
             .map(|s| format!(" + ({} * self.{} as usize)", s.0, s.1))
             .collect();
-
-        dbg!("variable_size_expression: {variable_size_expression}");
 
         //let common_structure_sizes = todo!();
 
@@ -203,19 +202,36 @@ impl Members {
     pub fn size(&self) -> MembersSize {
         let fixed_size = self
             .iter()
-            .inspect(|x| println!("Member: {}", x.0))
             .filter_map(|f| match f.1 {
                 Field::Structure { .. } => None,
                 Field::BitField { bit_spec, .. } => Some((f.0, bit_spec)),
             })
-            .map(|b| b.1.size())
-            .filter_map(|b| match b.1 {
-                Some(_) => None,
-                None => Some(b.0),
+            .filter_map(|f| {
+                if let WordRange::Fixed(_start, end) = f.1.word_range() {
+                    Some(end + 1)
+                } else {
+                    None
+                }
             })
-            .inspect(|x| println!("member size: {x}"))
-            .reduce(|acc, s| acc + s)
+            .max()
             .unwrap_or(0);
+
+        // ...
+        // let fixed_size = self
+        //     .iter()
+        //     .filter_map(|f| match f.1 {
+        //         Field::Structure { .. } => None,
+        //         Field::BitField { bit_spec, .. } => Some((f.0, bit_spec)),
+        //     })
+        //     //.filter_map(|f| )
+        //     .map(|b| b.1.size())
+        //     .filter_map(|b| match b.1 {
+        //         Some(_) => None,
+        //         None => Some(b.0),
+        //     })
+        //     .inspect(|x| println!("member size: {x}"))
+        //     .reduce(|acc, s| acc + s)
+        //     .unwrap_or(0);
 
         let variable_sizes: Vec<(usize, String)> = self
             .iter()

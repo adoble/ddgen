@@ -87,6 +87,11 @@ impl fmt::Display for Repeat {
         }
     }
 }
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum WordRange {
+    Fixed(usize, usize),
+    Variable(usize, usize, Word),
+}
 
 // #[derive(Debug, PartialEq, Copy, Clone)]
 #[derive(Debug, Eq, PartialEq, Clone, Hash, PartialOrd, Ord)]
@@ -167,6 +172,20 @@ impl BitSpec {
                 end: Some(end),
                 repeat: Repeat::Variable { word, .. },
             } => (end.index - start.index + 1, Some(word.clone())),
+        }
+    }
+
+    pub fn word_range(&self) -> WordRange {
+        let start = self.start.index;
+
+        let end = self.end.as_ref().map_or(start, |end_word| end_word.index);
+
+        match &self.repeat {
+            Repeat::Fixed(repeats) => {
+                WordRange::Fixed(start, start + ((end - start + 1) * repeats) - 1)
+            }
+            Repeat::Variable { word, .. } => WordRange::Variable(start, end, word.clone()),
+            Repeat::None => WordRange::Fixed(start, end),
         }
     }
 
@@ -608,6 +627,78 @@ mod tests {
                     bit_range: BitRange::WholeWord,
                 }),
             )
+        );
+    }
+
+    #[test]
+    fn test_range_simple() {
+        let bit_spec = parse("3[]").unwrap();
+
+        let WordRange::Fixed(start, end) = bit_spec.word_range() else {
+            panic!("Word range is variable")
+        };
+        assert!(start == 3);
+        assert!(end == 3);
+
+        let bit_spec = parse("4[]..6[]").unwrap();
+        let WordRange::Fixed(start, end) = bit_spec.word_range() else {
+            panic!("Word range is variable")
+        };
+        assert!(start == 4);
+        assert!(end == 6);
+    }
+
+    #[test]
+    fn test_range_repeating() {
+        let bit_spec = parse("4[];5").unwrap();
+        let WordRange::Fixed(start, end) = bit_spec.word_range() else {
+            panic!("Word range is variable")
+        };
+
+        assert_eq!(start, 4);
+        assert_eq!(end, 8);
+
+        let bit_spec = parse("4[]..5[];5").unwrap();
+        let WordRange::Fixed(start, end) = bit_spec.word_range() else {
+            panic!("Word range is variable")
+        };
+
+        assert_eq!(start, 4);
+        assert_eq!(end, 13);
+
+        let bit_spec = parse("0[];6").unwrap();
+        let WordRange::Fixed(start, end) = bit_spec.word_range() else {
+            panic!("Word range is variable")
+        };
+
+        assert_eq!(start, 0);
+        assert_eq!(end, 5);
+
+        let bit_spec = parse("0[];1").unwrap();
+        let WordRange::Fixed(start, end) = bit_spec.word_range() else {
+            panic!("Word range is variable")
+        };
+
+        assert_eq!(start, 0);
+        assert_eq!(end, 0);
+    }
+
+    #[test]
+    fn test_range_variable() {
+        let bit_spec = parse("6[];(5[])<4").unwrap();
+
+        let WordRange::Variable(start, end, repeat_word) = bit_spec.word_range() else {
+            panic!("Word range is not variable")
+        };
+
+        assert_eq!(start, 6);
+        assert_eq!(end, 6);
+        assert_eq!(
+            repeat_word,
+            Word {
+                index: 5,
+                bit_range: BitRange::WholeWord
+            }
         );
     }
 }
