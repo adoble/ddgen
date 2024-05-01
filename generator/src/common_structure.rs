@@ -1,9 +1,10 @@
 use serde::Deserialize;
+use std::collections::HashMap;
 
 use convert_case::{Case, Casing};
 use genco::prelude::*;
 
-use std::collections::HashMap;
+use bit_lang::Word;
 
 use crate::{field::Field, members::Members};
 
@@ -20,7 +21,7 @@ impl CommonStructure {
     ) {
         let struct_name = name.to_case(Case::UpperCamel);
         quote_in!(*tokens =>
-            #[derive(Debug, PartialEq)]
+            #[derive(Debug, PartialEq, Copy, Clone)]
             pub struct $(struct_name.clone()) {
                 $(for (name, field) in self.0.iter() => $(ref toks {field.generate_struct_member(toks, name)}) )
             }
@@ -44,6 +45,21 @@ impl CommonStructure {
            $(ref toks => self.0.generate_serializations(toks, &common_structure_name, &common_structures))$['\r']
 
         );
+    }
+
+    /// Determine how many bytes this structure would need.
+    /// Note: Common Structrues cannot contain varaible fields.
+    // In the future this should
+    // return a Vec of tuples - `Vec<(usize, Option<String>)>` - each containing the
+    // fixed size of the repeating elements and an optional String with the symbolic name
+    // of the mutiplieing field
+    pub fn size(&self) -> usize {
+        let size = self.0.size();
+        assert!(
+            size.1.len() == 0,
+            "Fatal Error: Common structures should not contain varaible fields."
+        );
+        size.0
     }
 
     /// Calculates the size in bytes required to hold a common structure.

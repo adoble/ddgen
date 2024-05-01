@@ -4,7 +4,9 @@ use convert_case::{Case, Casing};
 use genco::prelude::*;
 use serde::{de::Error, Deserialize, Deserializer};
 
+use crate::common_structure::CommonStructure;
 use crate::doc_comment::DocComment;
+use crate::members::Members;
 use bit_lang::{BitRange, BitSpec, Repeat, Word};
 
 #[derive(Deserialize, Debug, Eq)]
@@ -138,6 +140,8 @@ impl Into<String> for TargetType {
     }
 }
 
+type CommonStructures = HashMap<String, CommonStructure>;
+
 fn from_bit_spec<'de, D>(deserializer: D) -> Result<BitSpec, D::Error>
 where
     D: Deserializer<'de>,
@@ -226,17 +230,22 @@ impl Field {
         &self,
         tokens: &mut Tokens<Rust>,
         name: &str,
-        symbol_table: &HashMap<BitSpec, String>,
+        members: &Members,
+        common_structures: &CommonStructures,
     ) {
         let field_serialize_code = match self {
             Field::BitField { bit_spec, .. } => {
-                self.generate_word_field_serialization(name, bit_spec, symbol_table)
+                self.generate_word_field_serialization(name, bit_spec, members)
             }
 
             Field::Structure {
                 common_structure_name,
                 ..
-            } => self.generate_header_field_serialization(common_structure_name),
+            } => self.generate_header_field_serialization(
+                name,
+                common_structure_name,
+                common_structures,
+            ),
         };
 
         quote_in!(*tokens =>
@@ -247,11 +256,12 @@ impl Field {
         &self,
         tokens: &mut Tokens<Rust>,
         name: &str,
-        symbol_table: &HashMap<BitSpec, String>,
+        //symbol_table: &HashMap<BitSpec, String>,
+        members: &Members,
     ) {
         let field_deserialize_code = match self {
             Field::BitField { bit_spec, .. } => {
-                self.generate_word_field_deserialization(name, bit_spec, symbol_table)
+                self.generate_word_field_deserialization(name, bit_spec, members)
             }
 
             Field::Structure {
@@ -269,7 +279,7 @@ impl Field {
         &self,
         name: &str,
         bit_spec: &BitSpec,
-        symbol_table: &HashMap<BitSpec, String>,
+        members: &Members,
     ) -> String {
         match bit_spec {
             BitSpec {
@@ -343,26 +353,37 @@ impl Field {
                 // The parser assumes that the repeat word is a simple word (i.e. no range, no repeats) -
                 // for example, a byte.
                 // This excludes repeat words that are, for instance, a u16 that using two words.
-                // In most cases this is enough, however the symbol table maps full bit_specs to symbols as
-                // it needs to cover all symbols. What follows is a workaround, but ultimately the parser
+                // What follows is a workaround, but ultimately the parser
                 //  should recognise full bit specs for variable repeat words.
                 let repeat_bit_spec = BitSpec {
                     start: repeat_word.clone(),
                     end: None,
                     repeat: Repeat::None,
                 };
-                let count_symbol_name = symbol_table.get(&repeat_bit_spec);
-
-                if count_symbol_name.is_some() {
+                // let count_symbol_name = symbol_table.get(&repeat_bit_spec);
+                if let Some((count_symbol_name, _)) =
+                    members.find_field_by_bitspec(&repeat_bit_spec)
+                {
                     format!(
                         "data[{start_index}..].serialize_repeating_words(self.{}, self.{} as usize)",
                         name,
-                        count_symbol_name.unwrap()
+                        count_symbol_name
                     )
                 } else {
-                    println!("Cannot find bit_spec {}", bit_spec);
-                    todo!("Proper error handling");
+                    // TODO This is a fatel error
+                    format!("Cannot find bit spec {bit_spec}")
                 }
+
+                // if count_symbol_name.is_some() {
+                //     format!(
+                //         "data[{start_index}..].serialize_repeating_words(self.{}, self.{} as usize)",
+                //         name,
+                //         count_symbol_name.unwrap()
+                //     )
+                // } else {
+                //     println!("Cannot find bit_spec {}", bit_spec);
+                //     todo!("Proper error handling");
+                // }
             }
             _ => format!("todo!(\"{name}\")"),
         }
@@ -372,7 +393,8 @@ impl Field {
         &self,
         name: &str,
         bit_spec: &BitSpec,
-        symbol_table: &HashMap<BitSpec, String>,
+        //symbol_table: &HashMap<BitSpec, String>,
+        members: &Members,
     ) -> String {
         match bit_spec {
             BitSpec {
@@ -458,14 +480,18 @@ impl Field {
                 //     repeat: Repeat::None,
                 // };
                 // let count_symbol_name = symbol_table.get(&repeat_bit_spec);
-                let count_symbol_name = symbol_table.get(&BitSpec::from_word(repeat_word));
+                //let count_symbol_name = symbol_table.get(&BitSpec::from_word(repeat_word));
+                let count_symbol_name =
+                    members.find_field_by_bitspec(&BitSpec::from_word(repeat_word));
 
-                if count_symbol_name.is_some() {
+                if let Some((count_symbol_name, _)) =
+                    members.find_field_by_bitspec(&BitSpec::from_word(repeat_word))
+                {
                     format!(
                         //"self[{start_index}..].deserialize_repeating_words(self[{}].deserialize_word() as usize)",
                         "self[{start_index}..].deserialize_repeating_words({} as usize)",
                         //repeat_word.index
-                        count_symbol_name.unwrap()
+                        count_symbol_name
                     )
                 } else {
                     println!("Cannot find bit_spec {}", bit_spec);
@@ -476,12 +502,45 @@ impl Field {
         }
     }
 
-    fn generate_header_field_serialization(&self, _common_structure_name: &str) -> String {
-        format!("todo!(\"Complete generate_header_field_serialization\")")
+    fn generate_header_field_serialization(
+        &self,
+        field_name: &str,
+        common_structure_name: &str,
+        common_structures: &CommonStructures,
+    ) -> String {
+        // e.g data[0..=1].serialize_struct::<2>(self.status);
+
+        // Get the size of the common structure. Note that common structures can only have a fixed size.
+
+        let common_structure = common_structures
+            .get(common_structure_name)
+            .expect(format!("Fatal Error: Common structure {common_structure_name} is not found! Check that the names of common structures are the same.").as_str());
+        let size = common_structure.size();
+
+        // Position of the common structure
+        let bit_spec = self.bit_spec();
+        let start = format!("{}", &bit_spec.start.index);
+        let end = bit_spec
+            .clone()
+            .end
+            .map(|w| format!("..={}", w.index))
+            .unwrap_or(String::new());
+
+        //         data[0..=1].serialize_struct::<2>(self.status);
+        format!("data[{start}{end}].serialize_struct::<{size}>(self.{field_name})")
+
+        //format!("todo!(\"Complete generate_header_field_serialization\")")
     }
 
     fn generate_header_field_deserialization(&self, _common_structure_name: &str) -> String {
         format!("todo!(\"Complete generate_header_field_deserialization\")")
+    }
+
+    fn bit_spec(&self) -> &BitSpec {
+        match self {
+            Field::Structure { bit_spec, .. } => bit_spec,
+            Field::BitField { bit_spec, .. } => bit_spec,
+        }
     }
 }
 

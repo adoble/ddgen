@@ -68,7 +68,7 @@ impl Command {
 
             use crate::deserialize::Deserialize;
             use crate::error::DeviceError;
-            use crate::request::{RequestArray, RequestBit, RequestField, RequestWord};
+            use crate::request::{RequestArray, RequestBit, RequestField, RequestWord, RequestStruct};
             use crate::response::{ResponseArray, ResponseBit, ResponseField, ResponseWord};
             use crate::serialize::Serialize;
             use crate::types::*;
