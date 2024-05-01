@@ -56,8 +56,9 @@ a_fixed_repeat = { bits = "1[];5" }
 opcode      = 0x23
 description = "Test a common structure "
 
+# TODO test this with an incorrect bit spec!
 [commands.TEST_COMMON_STRUCT.request]
-status = { bits = "[]", struct = "header" }
+status = { bits = "0[]..1[]", struct = "header" }
 a_u8   = { bits = "2[]" }
 
 [commands.TEST_COMMON_STRUCT.response]
