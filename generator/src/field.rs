@@ -7,7 +7,7 @@ use serde::{de::Error, Deserialize, Deserializer};
 use crate::common_structure::CommonStructure;
 use crate::doc_comment::DocComment;
 use crate::members::Members;
-use bit_lang::{BitRange, BitSpec, Repeat, Word};
+use bit_lang::{bit_spec::WordRange, BitRange, BitSpec, Repeat, Word};
 
 #[derive(Deserialize, Debug, Eq)]
 #[serde(deny_unknown_fields)]
@@ -335,7 +335,12 @@ impl Field {
                 repeat: Repeat::Fixed(limit),
                 ..
             } => {
-                format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit})")
+                let word_range = bit_spec.word_range();
+                let WordRange::Fixed(start_index, end_index) = bit_spec.word_range() else {
+                    panic!("Repeating bit specification shoudl have been a fixed repeat")
+                };
+                format!("data[{start_index}..{end_index}].serialize_repeating_words(self.{name}, {limit})")
+                //format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit})")
             }
             BitSpec {
                 start:
