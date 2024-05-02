@@ -81,7 +81,7 @@ impl Command {
                 $(ref toks => self.request.generate_members(toks))$['\r']
             }
             $['\n']
-            $(ref toks => self.request.generate_serializations(toks, &request_struct_name,  &common_structures))$['\r']
+            $(ref toks => self.request.generate_serializations(toks, &request_struct_name,  common_structures))$['\r']
 
             $['\n']
             #[derive(Debug, PartialEq)]$['\r']

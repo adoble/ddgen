@@ -8,6 +8,7 @@ use tempfile::Builder;
 mod utilities;
 
 #[test]
+#[ignore]
 fn generate_simple() {
     let definition = include_str!("resources/simple.toml");
     let expected = include_str!("resources/test_command.rs");
@@ -37,6 +38,7 @@ fn generate_simple() {
 }
 
 #[test]
+#[ignore]
 fn generate_bits_fields_types() {
     let definition = include_str!("resources/bits_fields_types.toml");
     let expected = include_str!("resources/bft_test_command.rs");

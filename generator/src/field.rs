@@ -498,7 +498,8 @@ impl Field {
 
         let common_structure = common_structures
             .get(common_structure_name)
-            .expect(format!("Fatal Error: Common structure {common_structure_name} is not found! Check that the names of common structures are the same.").as_str());
+            //.expect(format!("Fatal Error: Common structure {common_structure_name} is not found! Check that the names of common structures are the same.").as_str());
+            .unwrap_or_else(|| panic!("Fatal Error: Common structure {common_structure_name} is not found! Check that the names of common structures are the same."));
         let size = common_structure.size();
 
         // Position of the common structure
@@ -508,7 +509,7 @@ impl Field {
             .clone()
             .end
             .map(|w| format!("..={}", w.index))
-            .unwrap_or(String::new());
+            .unwrap_or_default();
 
         //         data[0..=1].serialize_struct::<2>(self.status);
         format!("data[{start}{end}].serialize_struct::<{size}>(self.{field_name})")

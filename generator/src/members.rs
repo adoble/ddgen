@@ -83,10 +83,15 @@ impl Members {
     fn generate_serialization_size_expression(&self) -> String {
         let (fixed_size, variable_sizes) = self.size();
 
+        // let variable_size_expression: String = variable_sizes
+        //     .iter()
+        //     .map(|s| format!(" + ({} * self.{} as usize)", s.0, s.1))
+        //     .collect();
+
         let variable_size_expression: String = variable_sizes
             .iter()
             .map(|s| format!(" + ({} * self.{} as usize)", s.0, s.1))
-            .collect();
+            .fold(String::new(), |acc, s| acc + s.as_str());
 
         format!("{fixed_size}{variable_size_expression}")
     }
@@ -120,7 +125,7 @@ impl Members {
 
                fn deserialize(&self) -> Result<$(struct_name), DeviceError> { $['\r']
 
-                    $(for (name, field) in &sorted_members => let $(*name) = $(ref toks {field.generate_field_deserialization(toks,  name, &self)}) ) $['\r']
+                    $(for (name, field) in &sorted_members => let $(*name) = $(ref toks {field.generate_field_deserialization(toks,  name, self)}) ) $['\r']
 
                     Ok($(struct_name) {$['\r']
                         $(for (name, _) in &sorted_members => $(*name),$['\r'])

@@ -24,7 +24,7 @@ impl CommonStructure {
                 $(for (name, field) in self.0.iter() => $(ref toks {field.generate_struct_member(toks, name)}) )
             }
 
-            $(ref toks => self.0.generate_serializations(toks, &struct_name, &common_structures))$['\r']
+            $(ref toks => self.0.generate_serializations(toks, &struct_name, common_structures))$['\r']
 
             $(ref toks => self.0.generate_deserializations(toks, &struct_name))$['\r']
         );
@@ -54,7 +54,7 @@ impl CommonStructure {
     pub fn size(&self) -> usize {
         let size = self.0.size();
         assert!(
-            size.1.len() == 0,
+            size.1.is_empty(),
             "Fatal Error: Common structures should not contain varaible fields."
         );
         size.0
