@@ -537,8 +537,19 @@ impl Field {
         //format!("todo!(\"Complete generate_header_field_serialization\")")
     }
 
-    fn generate_header_field_deserialization(&self, _common_structure_name: &str) -> String {
-        format!("todo!(\"Complete generate_header_field_deserialization\")")
+    fn generate_header_field_deserialization(&self, common_structure_name: &str) -> String {
+        // data.deserialize().unwrap()
+
+        let bit_spec = self.bit_spec();
+
+        let WordRange::Fixed(start, end) = bit_spec.word_range() else {
+            panic!(
+                "Common structure {} should have fixed size",
+                common_structure_name
+            );
+        };
+
+        format!("self[{start}..{end}].deserialize().unwrap()")
     }
 
     fn bit_spec(&self) -> &BitSpec {
