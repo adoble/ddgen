@@ -21,6 +21,24 @@ use crate::Enumeration;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 
+use std::error::Error;
+use std::fmt;
+
+#[derive(Debug)]
+struct UnsupportedFeatureError(String);
+
+impl fmt::Display for UnsupportedFeatureError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Error for UnsupportedFeatureError {
+    fn description(&self) -> &str {
+        &self.0
+    }
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Definition {
@@ -68,6 +86,37 @@ pub struct Device {
     pub(crate) endian: Endian,
 }
 
+impl Device {
+    pub fn check_limitations(&self) -> anyhow::Result<()> {
+        let mut feature_errors: Vec<&str> = Vec::new();
+
+        if self.word_size != 8 {
+            feature_errors.push("word_size should be 8");
+        };
+
+        match self.endian {
+            Endian::Little => (),
+            Endian::Big => feature_errors.push("only little endian format is supported"),
+        }
+
+        let mut msg = String::from("Error: Unsupported features specified: ");
+        for (index, error_msg) in feature_errors.iter().enumerate() {
+            if index < feature_errors.len() - 1 {
+                msg.push_str(error_msg);
+                msg.push_str(", ");
+            } else {
+                msg.push_str(error_msg);
+            }
+        }
+
+        if feature_errors.is_empty() {
+            Ok(())
+        } else {
+            Err(UnsupportedFeatureError(msg).into())
+        }
+    }
+}
+
 impl Definition {
     pub fn generate_code(
         &self,
@@ -79,6 +128,8 @@ impl Definition {
             "Generating code".bold(),
             out_path.as_os_str().to_str().unwrap()
         );
+
+        self.device.check_limitations()?;
 
         let source_path_buf = self.generate_package_structure(out_path)?;
         let source_path = &source_path_buf.as_path();
@@ -344,6 +395,7 @@ impl Definition {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn generate_tests(&self, _out_path: &Path, _test_code_path: &Path) -> anyhow::Result<()> {
         // println!("{}", "Transferring test code over".yellow());
         // // Test code files are small so just reading into a string
@@ -383,6 +435,7 @@ impl Definition {
         todo!()
     }
 
+    #[allow(dead_code)]
     fn default_version() -> String {
         "0.0.0".to_string()
     }
