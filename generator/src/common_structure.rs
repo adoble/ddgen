@@ -26,7 +26,7 @@ impl CommonStructure {
 
             $(ref toks => self.0.generate_serializations(toks, &struct_name, &common_structures))$['\r']
 
-            $(ref toks => self.0.generate_deserializations(toks, &struct_name, &common_structures))$['\r']
+            $(ref toks => self.0.generate_deserializations(toks, &struct_name))$['\r']
         );
     }
 
@@ -62,7 +62,7 @@ impl CommonStructure {
 
     /// Calculates the size in bytes required to hold a common structure.
     /// Common structures cannot contain other common structures
-    // TODO this is repeated in Command.buffer_size()
+    #[allow(dead_code)]
     pub fn buffer_size(&self) -> usize {
         let mut positions: HashMap<usize, usize> = HashMap::new();
         for f in self.0.fields() {

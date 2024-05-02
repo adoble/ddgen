@@ -89,7 +89,7 @@ impl Command {
                 $(ref toks => self.response.generate_members(toks))$['\r']
             }
             $['\n']
-            $(ref toks => self.response.generate_deserializations(toks, &response_struct_name, &common_structures))$['\r']
+            $(ref toks => self.response.generate_deserializations(toks, &response_struct_name))$['\r']
 
 
 
@@ -98,15 +98,5 @@ impl Command {
         output_file(file, tokens)?;
 
         Ok(())
-    }
-
-    pub fn generate_enums(_tokens: &mut Tokens<Rust>, _name: &str) {
-        // quote_in!(*tokens =>
-        //     $['\n']
-        //     /// Enumerations
-        //     todo!()
-
-        // );
-        todo!();
     }
 }

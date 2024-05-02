@@ -1,5 +1,5 @@
 use bit_lang::bit_spec::WordRange;
-use bit_lang::{BitSpec, Repeat, Word};
+use bit_lang::BitSpec;
 use genco::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -59,11 +59,8 @@ impl Members {
         // always give the same results.
         sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
 
-        let serialization_buffer_size = self.buffer_size(&common_structures);
-
         // Generate the expresssion required to calculate the actual nmber of bytes serialized
-        let serialization_size_expression =
-            self.generate_serialization_size_expression(&common_structures);
+        let serialization_size_expression = self.generate_serialization_size_expression();
 
         quote_in!(*tokens =>
             impl Serialize for $(struct_name) {
@@ -83,12 +80,7 @@ impl Members {
     }
 
     /// Generate the expresssion required to calculate the actual number of bytes serialized
-    fn generate_serialization_size_expression(
-        &self,
-        common_structures: &CommonStructures,
-    ) -> String {
-        let mut sizes: Vec<(usize, Option<Word>)> = Vec::new();
-
+    fn generate_serialization_size_expression(&self) -> String {
         let (fixed_size, variable_sizes) = self.size();
 
         let variable_size_expression: String = variable_sizes
@@ -96,18 +88,10 @@ impl Members {
             .map(|s| format!(" + ({} * self.{} as usize)", s.0, s.1))
             .collect();
 
-        //let common_structure_sizes = todo!();
-
         format!("{fixed_size}{variable_size_expression}")
     }
 
-    pub fn generate_deserializations(
-        &self,
-        tokens: &mut Tokens<Rust>,
-        struct_name: &str,
-
-        common_structures: &HashMap<String, CommonStructure>,
-    ) {
+    pub fn generate_deserializations(&self, tokens: &mut Tokens<Rust>, struct_name: &str) {
         // // Generate a table that maps bitspecs to symbols. Note this is
         // // only for the response/deserialization as the request may have
         // // different symbols
@@ -139,7 +123,7 @@ impl Members {
                     $(for (name, field) in &sorted_members => let $(*name) = $(ref toks {field.generate_field_deserialization(toks,  name, &self)}) ) $['\r']
 
                     Ok($(struct_name) {$['\r']
-                        $(for (name, field) in &sorted_members => $(*name),$['\r'])
+                        $(for (name, _) in &sorted_members => $(*name),$['\r'])
                     })$['\r']
 
 
@@ -152,6 +136,7 @@ impl Members {
     /// Calculates the max size in bytes of a set of members. This is required
     /// so that the buffers for the structures can be sized to cater for
     /// largest size.
+    #[allow(dead_code)]
     pub fn buffer_size(&self, common_structures: &HashMap<String, CommonStructure>) -> usize {
         let mut positions: HashMap<usize, usize> = HashMap::new();
         for f in self.fields() {

@@ -34,16 +34,6 @@ pub enum Field {
     },
 }
 
-impl Field {
-    pub fn is_bitfield(&self) -> bool {
-        matches!(self, Field::BitField { .. })
-    }
-
-    pub fn is_structure(&self) -> bool {
-        matches!(self, Field::Structure { .. })
-    }
-}
-
 impl Ord for Field {
     fn cmp(&self, other: &Self) -> Ordering {
         let bit_spec = match self {
@@ -328,14 +318,13 @@ impl Field {
             BitSpec {
                 start:
                     Word {
-                        index: start_index,
+                        index: _,
                         bit_range: BitRange::WholeWord,
                     },
 
                 repeat: Repeat::Fixed(limit),
                 ..
             } => {
-                let word_range = bit_spec.word_range();
                 let WordRange::Fixed(start_index, end_index) = bit_spec.word_range() else {
                     panic!("Repeating bit specification shoudl have been a fixed repeat")
                 };
@@ -478,16 +467,6 @@ impl Field {
                 // it needs to cover all symbols. What follows is a workaround, but ultimately the parser
                 //  should recognise full bit specs for variable repeat words.
                 // TODO do we need the symbol_table?
-
-                // let repeat_bit_spec = BitSpec {
-                //     start: repeat_word.clone(),
-                //     end: None,
-                //     repeat: Repeat::None,
-                // };
-                // let count_symbol_name = symbol_table.get(&repeat_bit_spec);
-                //let count_symbol_name = symbol_table.get(&BitSpec::from_word(repeat_word));
-                let count_symbol_name =
-                    members.find_field_by_bitspec(&BitSpec::from_word(repeat_word));
 
                 if let Some((count_symbol_name, _)) =
                     members.find_field_by_bitspec(&BitSpec::from_word(repeat_word))

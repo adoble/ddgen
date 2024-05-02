@@ -33,10 +33,12 @@ impl DocComment {
     }
 
     /// Gets a iterator over all the doc comment lines.
+    #[allow(dead_code)]
     pub fn lines(&self) -> std::slice::Iter<'_, std::string::String> {
         self.0.iter()
     }
 
+    #[allow(dead_code)]
     pub fn number_lines(&self) -> usize {
         self.0.len()
     }
