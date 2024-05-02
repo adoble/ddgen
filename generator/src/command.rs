@@ -90,6 +90,13 @@ impl Command {
             }
             $['\n']
             $(ref toks => self.response.generate_deserializations(toks, &response_struct_name))$['\r']
+            $['\n']
+
+            pub fn opcode() -> u8 {
+                $(self.opcode)
+            }
+
+
 
 
 
