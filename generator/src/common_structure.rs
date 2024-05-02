@@ -30,23 +30,23 @@ impl CommonStructure {
         );
     }
 
-    pub fn generate_serializations(
-        &self,
-        tokens: &mut Tokens<Rust>,
-        common_structure_name: String,
-        common_structures: &HashMap<String, CommonStructure>,
-    ) {
-        // Note: Common structure cannot contain other common structures
+    // pub fn generate_serializations(
+    //     &self,
+    //     tokens: &mut Tokens<Rust>,
+    //     common_structure_name: String,
+    //     common_structures: &HashMap<String, CommonStructure>,
+    // ) {
+    //     // Note: Common structure cannot contain other common structures
 
-        quote_in!(*tokens =>
+    //     quote_in!(*tokens =>
 
-           $(ref toks => self.0.generate_serializations(toks, &common_structure_name, &common_structures))$['\r']
+    //        $(ref toks => self.0.generate_serializations(toks, &common_structure_name, &common_structures))$['\r']
 
-        );
-    }
+    //     );
+    // }
 
     /// Determine how many bytes this structure would need.
-    /// Note: Common Structrues cannot contain varaible fields.
+    /// Note: Common Structures cannot contain variable fields.
     // In the future this should
     // return a Vec of tuples - `Vec<(usize, Option<String>)>` - each containing the
     // fixed size of the repeating elements and an optional String with the symbolic name
