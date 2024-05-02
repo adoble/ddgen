@@ -12,8 +12,6 @@ use nom::{
     IResult,
 };
 
-use crate::bit_spec::{BitRange, BitSpec, Condition};
-
 // Parse function follow ...
 
 fn index(input: &str) -> IResult<&str, u8> {

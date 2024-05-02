@@ -4,8 +4,6 @@ use std::collections::HashMap;
 use convert_case::{Case, Casing};
 use genco::prelude::*;
 
-use bit_lang::Word;
-
 use crate::{field::Field, members::Members};
 
 #[derive(Deserialize, Debug)]
