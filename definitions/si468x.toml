@@ -99,3 +99,55 @@ frequencies        = { bits = "3[]..4[];(0[])<=48", type = "u16" }
 
 [commands.DAB_SET_FREQ_LIST.response]
 header = { bits = "0[]..3[]", struct = "header" }
+
+[commands.POWER_UP]
+opcode      = 0x01
+description = """The POWER_UP initiates the boot process to move the device from power down to power up mode. """
+
+[commands.POWER_UP.request]
+ibias_run      = { bits = "12[0..6]", description = "TAL IBIAS current at runtime, after the XTAL oscillator has stabilized" }
+cts_is_enabled = { bits = "0[7]", description = "The bootloader will toggle a host interrupt line when CTS is available." }
+clock_mode     = { bits = "1[4..5}", type = "clock_mode" }
+tr_size        = { bits = "1[0..3]", type = "u8", description = "Range 1-15" }
+ibais          = { bits = "2[0..6]", type = "u8", description = "XTAL IBIAS current at startup. Range 0-127" }
+xtal_frequency = { bits = "3[]..6[]", type = "u32", description = "XTAL frequency in Hz" }
+ctun           = { bits = "7[0..5]", type = "u8", description = "Range 0-63" }
+arg9           = { bits = "8[0b00010000]" }
+
+[commands.POWER_UP.response]
+header = { bits = "0[]..3[]", struct = "header" }
+
+[enum.clock_mode]
+powered_down                       = 0
+xtal_mode                          = 1
+oscillator_off_single_ended_buffer = 2
+oscillator_off_differential_buffer = 3
+
+
+# Commands used in the DABShield C++ driver
+# POWER_UP       X
+# HOST_LOAD
+# FLASH_LOAD
+# LOAD_INIT
+# BOOT
+# GET_PART_INFO
+# READ_OFFSET
+# GET_FUNC_INFO
+# SET_PROPERTY
+# FM_TUNE_FREQ
+# FM_SEEK_START
+# FM_RSQ_STATUS
+# FM_RDS_STATUS
+# DAB_GET_DIGITAL_SERVICE_LIST
+# DAB_START_DIGITAL_SERVICE
+# GET_DIGITAL_SERVICE_DATA
+# DAB_TUNE_FREQ
+# DAB_DIGRAD_STATUS
+# DAB_GET_EVENT_STATUS
+# DAB_GET_ENSEMBLE_INFO
+# DAB_SET_FREQ_LIST
+# DAB_GET_ENSEMBLE_INFO
+# GET_TIME
+# DAB_GET_AUDIO_INFO
+# DAB_GET_SUBCHAN_INFO
+# DAB_GET_SERVICE_INFO
