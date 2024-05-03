@@ -35,7 +35,7 @@ impl Command {
         common_structures: &HashMap<String, CommonStructure>,
         out_path: &Path,
     ) -> anyhow::Result<()> {
-        println!("Generating command files ...");
+        println!("Generating command file for {name}");
 
         let command_file_name = format!("{}.rs", name.to_lowercase());
         let target_path = out_path.join(command_file_name.clone());
