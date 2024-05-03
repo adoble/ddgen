@@ -30,21 +30,6 @@ impl CommonStructure {
         );
     }
 
-    // pub fn generate_serializations(
-    //     &self,
-    //     tokens: &mut Tokens<Rust>,
-    //     common_structure_name: String,
-    //     common_structures: &HashMap<String, CommonStructure>,
-    // ) {
-    //     // Note: Common structure cannot contain other common structures
-
-    //     quote_in!(*tokens =>
-
-    //        $(ref toks => self.0.generate_serializations(toks, &common_structure_name, &common_structures))$['\r']
-
-    //     );
-    // }
-
     /// Determine how many bytes this structure would need.
     /// Note: Common Structures cannot contain variable fields.
     // In the future this should
