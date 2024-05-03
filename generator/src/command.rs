@@ -93,7 +93,7 @@ impl Command {
             $['\n']
 
             pub fn opcode() -> u8 {
-                $(self.opcode)
+                $(format!("0x{:X}", self.opcode))
             }
 
 
