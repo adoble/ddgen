@@ -1,7 +1,6 @@
   # TODO
 
   - Add some more integration tests
-  - Common structure serialisation
   - Common structures cannot be variable length. Also varabiable repeating arrays need to be at the end of 
     the data stream. All of these problems woudl go away if we had labeled fields and follows field syntax
     in bit_lang.
@@ -19,16 +18,12 @@
     Need to think about this. Consider that the position where a struct is placed in the bit stream
     has to be specified. Maybe need a position  attribute, e.g. `a_header = {struct = "header", position = 0}?`.
     And also checks that enough space is left.
-  - Bit spec with fixed range 0 shoudl not be allowed   
-  - Add a license to the manifest (see  https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields)
+  - Bit spec with fixed range 0 shouls not be allowed   
   - Run clippy
   - Incorrect bit_specs seem to be processed without giving an error leading to incorrectly generated code
     ( e.g. incorrect syntax with bit fields)
   - The generated Cargo.toml file needs to have means to update the depedendency version numbers.
-  - Often need to pass `HashMap<String, Field>` into functions as this forms the symbol table.
-    Could change this to a new type (e.g. `SymbolTable(<HashMap<String, Field>)`), but need to
-    see if this can be done easily with serde (see https://github.com/softprops/dynomite/pull/145).
-   - Merge field::`TargetType` with `bit_spec::BitSpecType`
+  - Merge field::`TargetType` with `bit_spec::BitSpecType`
    - Move `common/src/test/..` into `common/tests` (as was done for generator)
    - Ensure that all types are handled in serailize and deserialize ( a lot of impl fors)
    - Read this  https://mmapped.blog/posts/12-rust-error-handling.html and then redesign the error handling
