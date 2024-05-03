@@ -1,6 +1,6 @@
 [package]
-name    = "generator"
-version = "0.1.0"
+name    = "ddgen"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 
@@ -9,7 +9,7 @@ name = "generate"
 path = "src/lib.rs"
 
 [[bin]]
-name = "generator"
+name = "ddgen"
 path = "src/main.rs"
 
 [dependencies]

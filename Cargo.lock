@@ -193,6 +193,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "ddgen"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "bit-lang",
+ "clap",
+ "convert_case",
+ "crossterm",
+ "genco",
+ "indexmap",
+ "pretty_assertions",
+ "semver",
+ "serde",
+ "tempfile",
+ "toml",
+]
+
+[[package]]
 name = "defmt"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -321,24 +339,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.58",
-]
-
-[[package]]
-name = "generator"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bit-lang",
- "clap",
- "convert_case",
- "crossterm",
- "genco",
- "indexmap",
- "pretty_assertions",
- "semver",
- "serde",
- "tempfile",
- "toml",
 ]
 
 [[package]]
