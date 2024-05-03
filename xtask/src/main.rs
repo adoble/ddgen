@@ -34,7 +34,7 @@ fn gen(definition: &str) -> Result<(), anyhow::Error> {
     println!("Generating for definition {}", definition);
 
     // Generate the driver for the specified definition file under <root>/generated/<device name>
-    cmd!("cargo run --bin generator --   ./definitions/{definition}.toml ./generated").run()?;
+    cmd!("cargo run --bin ddgen --   ./definitions/{definition}.toml ./generated").run()?;
 
     // Need to add the generated project to the workspace members
     // ASSUMING that the device name and the definition name are the same
