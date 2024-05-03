@@ -2,6 +2,7 @@
 name    = "generator"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
 [lib]
 name = "generate"
@@ -21,7 +22,7 @@ semver       = { version = "1.0.22", features = ["serde"] }
 serde        = { version = "1.0.197", features = ["derive"] }
 toml         = { version = "0.8.10", features = ["parse"] }
 bit-lang     = { path = "../bit-lang" }
-indexmap = { version = "2.2.6", features = ["std", "serde"] }
+indexmap     = { version = "2.2.6", features = ["std", "serde"] }
 
 [dev-dependencies]
 tempfile          = "3.10.1"
