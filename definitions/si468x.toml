@@ -10,8 +10,8 @@ version = "0.0.2"
 
 [device]
 name      = "si468x"
-endian    = "le"     # or little_endian, be, big_endianname      = "Si468x"
-word_size = 8        ## word size. Default is 8. Other sizes not currently supported 
+endian    = "le"
+word_size = 8
 
 [struct.header]
 cts     = { bits = "7" }
@@ -30,13 +30,6 @@ arb_error        = { bits = "3[1]" }
 error_nr         = { bits = "3[0]" }
 # rsvd_stat: Reserved for future use 
 
-# Maybe easier for the user to have a definition such as 
-# cts = 7  
-# Meaning word 0, bit 7. 
-# To be able to parse both the simple form and the compley struct see
-# "Handling a value that can take on more than one type" in Software Tools wiki
-# file:///C:/Users/T440s/Dropbox/SoftwareTools/SoftwareTools.html#Handling%20a%20value%20that%20can%20take%20on%20more%20than%20one%20type
-
 
 [commands.GET_SYS_STATE]
 opcode = 0x09
@@ -52,7 +45,7 @@ revision A0A."""
 arg1 = { bits = "1[0x00]" }
 
 [commands.GET_SYS_STATE.response]
-header = { struct = "header" }
+header = { bits = "0[]..3[]", struct = "header" }
 image  = { bits = "4[0..7]", type = "active_processing_image" }
 dummy  = { bits = "5[]" }
 
@@ -83,7 +76,7 @@ freq_index          = { bits = "1[]" }                         # Uses all 8 bits
 antenna_capacitance = { bits = "3[]..4[]" }                    # 16 bit value range 0-128. Bits not specified so use whole word
 
 [commands.DAB_TUNE_FREQ.response]
-header = { struct = "header" }
+header = { bits = "0[]..3[]", struct = "header" }
 
 
 [enum.injection]
@@ -100,10 +93,9 @@ set. The ERR bit (and optional interrupt) is set if an invalid argument is sent.
 if both the CTS and ERR bits are set. The command may only be sent in powerup mode"""
 
 [commands.DAB_SET_FREQ_LIST.request]
-number_frequencies = { bits = "0[0..7]" }
-#frequencies        = { words = "3.*", bits = "0..15", max = 48, count = "number_frequencies" } # Bits value implies that the value is spread over two bytes. This is a litte tricky to derive
-frequencies = { bits = "3[]..4[];(0[0..7])<=48", type = "u16" }
+number_frequencies = { bits = "0[]" }
+frequencies        = { bits = "3[]..4[];(0[])<=48", type = "u16" }
 
 
 [commands.DAB_SET_FREQ_LIST.response]
-header = { struct = "header" }
+header = { bits = "0[]..3[]", struct = "header" }
