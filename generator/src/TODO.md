@@ -1,5 +1,5 @@
   # TODO
-
+  - Correcty generate literals
   - Add some more integration tests
   - Common structures cannot be variable length. Also varabiable repeating arrays need to be at the end of 
     the data stream. All of these problems woudl go away if we had labeled fields and follows field syntax
@@ -31,3 +31,4 @@
    - Replace the comment generation with something like this:  https://github.com/udoprog/genco/issues/53#issuecomment-1821318498
    - Move the type Enumeration out of lib.rs and into a new file. Move over any functions that handle enumeration.
    - Is access.rs required?
+   - A field is not always an enum, but a value with a limited range (e.g. 0-15). Need a way to specify the range.
