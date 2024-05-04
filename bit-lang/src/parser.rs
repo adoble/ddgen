@@ -78,15 +78,15 @@ fn literal_word(input: &str) -> IResult<&str, Word> {
         remaining,
         Word {
             index: index.unwrap_or(0).into(),
-            bit_range: BitRange::Literal(literal),
+            bit_range: BitRange::Literal(literal.to_string()),
         },
     ))
 }
 
 // word = bit_range | [index] "[" [bit_range] "]" | index "[" literal "]";   (* NEW *)
-// TODO Ignore literals for the time being
 fn word(input: &str) -> IResult<&str, Word> {
-    let (remaining, word) = alt((fully_qualified_word, bit_range_as_word, literal_word))(input)?;
+    // Order of parsers is important as literal words could be initially mistaken for bit ranges
+    let (remaining, word) = alt((literal_word, fully_qualified_word, bit_range_as_word))(input)?;
 
     Ok((remaining, word))
 }
@@ -141,23 +141,13 @@ fn repeat(input: &str) -> IResult<&str, Repeat> {
     Ok((remaining, repeat))
 }
 
-fn hexadecimal(input: &str) -> IResult<&str, LiteralType> {
-    // preceded(
-    //     alt((tag("0x"), tag("0X"))),
-    //     recognize(many1(terminated(
-    //         one_of("0123456789abcdefABCDEF"),
-    //         many0(char('_')),
-    //     ))),
-    // )
-    // .parse(input)
-
+fn hexadecimal_literal(input: &str) -> IResult<&str, String> {
     let (input, _) = alt((tag("0x"), tag("0X")))(input)?;
-    //let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
-    let (remaining, hex) =
-        // recognize(all_consuming(many1(one_of("0123456789abcdefABCDEF_"))))(input)?;
-        recognize(many1(one_of("0123456789abcdefABCDEF_")))(input)?;
 
-    Ok((remaining, LiteralType::Hex(hex.to_string())))
+    let (remaining, hex) = recognize(many1(one_of("0123456789abcdefABCDEF_")))(input)?;
+
+    let literal = format!("0x{hex}");
+    Ok((remaining, literal))
 }
 
 fn separater(input: &str) -> IResult<&str, char> {
@@ -180,35 +170,21 @@ fn binary(input: &str) -> IResult<&str, &str> {
         many0(tuple((opt(separater), many1(boolean_char)))),
     )))(input)?;
 
-    // // This is based on the definition in the rust reference documentation
-    // let (input, binary_number) = recognize(tuple((
-    //     many0(alt((boolean_char, separater))),
-    //     boolean_char,
-    //     many0(alt((boolean_char, separater))),
-    // )))(input)?;
-
     Ok((input, binary_number))
 }
 
-// fn binary(input: &str) -> IResult<&str, LiteralType> {
-//     let (input, _) = alt((tag("0b"), tag("0B")))(input)?;
-//     //let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
-//     let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
-
-//     Ok((remaining, LiteralType::Bin(bin.to_string())))
-// }
-
-fn binary_literal(input: &str) -> IResult<&str, LiteralType> {
+fn binary_literal(input: &str) -> IResult<&str, String> {
     let (input, _) = alt((tag("0b"), tag("0B")))(input)?;
     //let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
     //let (remaining, bin) = recognize(many1(one_of("01_")))(input)?;
     let (remaining, bin) = recognize(binary)(input)?;
 
-    Ok((remaining, LiteralType::Bin(bin.to_string())))
+    let literal = format!("0b{bin}");
+    Ok((remaining, literal))
 }
 
-fn literal(input: &str) -> IResult<&str, LiteralType> {
-    let (remaining, literal) = alt((hexadecimal, binary_literal))(input)?;
+fn literal(input: &str) -> IResult<&str, String> {
+    let (remaining, literal) = alt((hexadecimal_literal, binary_literal))(input)?;
     Ok((remaining, literal))
 }
 
@@ -271,7 +247,7 @@ mod tests {
         let (_, r) = literal_word(data).unwrap();
         let expected = Word {
             index: 0,
-            bit_range: BitRange::Literal(LiteralType::Hex("1234".to_string())),
+            bit_range: BitRange::Literal("0x1234".to_string()),
         };
         assert_eq!(r, expected);
 
@@ -279,7 +255,7 @@ mod tests {
         let (_, r) = literal_word(data).unwrap();
         let expected = Word {
             index: 4,
-            bit_range: BitRange::Literal(LiteralType::Bin("0011_1100".to_string())),
+            bit_range: BitRange::Literal("0b0011_1100".to_string()),
         };
         assert_eq!(r, expected);
 
@@ -292,12 +268,9 @@ mod tests {
         assert_eq!(BitRange::Single(5).to_string(), "5");
         assert_eq!(BitRange::Single(5).to_string(), "5");
         assert_eq!(BitRange::WholeWord.to_string(), "");
+        assert_eq!(BitRange::Literal("0x2E".to_string()).to_string(), "0x2E");
         assert_eq!(
-            BitRange::Literal(LiteralType::Hex("2E".to_string())).to_string(),
-            "0x2E"
-        );
-        assert_eq!(
-            BitRange::Literal(LiteralType::Bin("1100".to_string())).to_string(),
+            BitRange::Literal("0b1100".to_string()).to_string(),
             "0b1100"
         );
     }
@@ -330,7 +303,7 @@ mod tests {
         );
         assert_eq!(
             Word {
-                bit_range: BitRange::Literal(LiteralType::Hex("340A".to_string())),
+                bit_range: BitRange::Literal("0x340A".to_string()),
                 index: 4
             }
             .to_string(),
@@ -762,11 +735,11 @@ mod tests {
     fn test_literal() {
         let data = "0xABCD";
         let (_, r) = literal(data).unwrap();
-        assert_eq!(r, LiteralType::Hex("ABCD".to_string()));
+        assert_eq!(r, "0xABCD".to_string());
 
         let data = "0b1011_1100";
         let (_, r) = literal(data).unwrap();
-        assert_eq!(r, LiteralType::Bin("1011_1100".to_string()));
+        assert_eq!(r, "0b1011_1100".to_string());
 
         let data = "0b_1011_11b0";
         assert!(literal(data).is_err());
@@ -776,24 +749,41 @@ mod tests {
     }
 
     #[test]
-    fn test_hexadecimal() {
+    fn test_hexadecimal_literal() {
         let data = "0x45B7";
-        let (_, hex) = hexadecimal(data).unwrap();
-        assert_eq!(hex, LiteralType::Hex("45B7".to_string()));
+        let (_, hex) = hexadecimal_literal(data).unwrap();
+        assert_eq!(hex, "0x45B7".to_string());
 
         let data = "0X45_B7";
-        let (_, hex) = hexadecimal(data).unwrap();
-        assert_eq!(hex, LiteralType::Hex("45_B7".to_string()));
+        let (_, hex) = hexadecimal_literal(data).unwrap();
+        assert_eq!(hex, "0x45_B7".to_string());
+
+        let data = "45B7";
+        assert!(hexadecimal_literal(data).is_err());
+
+        let data = "0xZZ";
+        assert!(hexadecimal_literal(data).is_err());
+
+        let data = "0x45ZZ";
+        let (_, hex) = hexadecimal_literal(data).unwrap();
+        assert_eq!(hex, "0x45".to_string());
     }
 
     #[test]
     fn test_binary_literal() {
         let data = "0b10001100";
         let (_, bin) = binary_literal(data).unwrap();
-        assert_eq!(bin, LiteralType::Bin("10001100".to_string()));
+        assert_eq!(bin, "0b10001100".to_string());
 
         let data = "0b1000_1100";
         let (_, bin) = binary_literal(data).unwrap();
-        assert_eq!(bin, LiteralType::Bin("1000_1100".to_string()));
+        assert_eq!(bin, "0b1000_1100".to_string());
+
+        let data = "0b100155";
+        let (_, bin) = binary_literal(data).unwrap();
+        assert_eq!(bin, "0b1001".to_string());
+
+        let data = "0101";
+        assert!(binary_literal(data).is_err())
     }
 }

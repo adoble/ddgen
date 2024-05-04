@@ -1,26 +1,26 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub enum LiteralType {
-    Hex(String),
-    Bin(String),
-}
+// #[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
+// pub enum LiteralType {
+//     Hex(String),
+//     Bin(String),
+// }
 
-impl fmt::Display for LiteralType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            LiteralType::Bin(literal) => write!(f, "0b{literal}"),
-            LiteralType::Hex(literal) => write!(f, "0x{literal}"),
-        }
-    }
-}
+// impl fmt::Display for LiteralType {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         match self {
+//             LiteralType::Bin(literal) => write!(f, "0b{literal}"),
+//             LiteralType::Hex(literal) => write!(f, "0x{literal}"),
+//         }
+//     }
+// }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub enum BitRange {
     Single(u8),
     Range(u8, u8),
     WholeWord,
-    Literal(LiteralType),
+    Literal(String),
 }
 
 impl fmt::Display for BitRange {
@@ -306,8 +306,8 @@ mod tests {
         let upper = BitRange::WholeWord;
         assert!(upper == lower);
 
-        let lower = BitRange::Literal(LiteralType::Hex("0x02".to_string()));
-        let upper = BitRange::Literal(LiteralType::Hex("0xF5".to_string()));
+        let lower = BitRange::Literal("0x02".to_string());
+        let upper = BitRange::Literal("0xF5".to_string());
         assert!(upper > lower);
     }
 
@@ -584,7 +584,7 @@ mod tests {
         let bit_spec = BitSpec {
             start: Word {
                 index: 4,
-                bit_range: BitRange::Literal(LiteralType::Hex("B9".to_string())),
+                bit_range: BitRange::Literal("0xB9".to_string()),
             },
             end: None,
             repeat: Repeat::None,

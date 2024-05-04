@@ -395,4 +395,15 @@ mod tests {
         let bit_spec = parse("4[]..5[];(3[])<=6").unwrap();
         assert_eq!(bit_spec.max_size(), 12);
     }
+
+    #[test]
+    fn test_literal() {
+        let bit_spec = parse("4[0xBA]").unwrap();
+
+        assert_eq!(bit_spec.start.index, 4);
+        assert_eq!(
+            bit_spec.start.bit_range,
+            BitRange::Literal("0xBA".to_string())
+        );
+    }
 }
