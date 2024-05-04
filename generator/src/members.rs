@@ -17,7 +17,6 @@ type MembersSize = (usize, Vec<(usize, FieldName)>);
 
 impl Members {
     pub fn generate_members(&self, tokens: &mut Tokens<Rust>) {
-        // let mut sorted_members: Vec<_> = members.iter().collect();
         let mut sorted_members = self.to_vec();
 
         // Sort by fields, not by the name
@@ -34,24 +33,6 @@ impl Members {
         struct_name: &str,
         common_structures: &CommonStructures,
     ) {
-        // Generate a table that maps bitspecs to symbols. Note this is
-        // only for the request/serialization as the response may have
-        // different symbols
-        // let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
-
-        // for (name, field) in self.0.iter() {
-        //     match field {
-        //         Field::BitField { bit_spec, .. } => {
-        //             symbol_table.insert(bit_spec.clone(), name.to_string())
-        //         }
-        //         Field::Structure {
-        //             common_structure_name,
-        //             bit_spec,
-        //             ..
-        //         } => symbol_table.insert(bit_spec.clone(), name.to_string()),
-        //     };
-        // }
-
         let mut sorted_members: Vec<_> = self.to_vec();
 
         // Sort by fields, not by the name. This should give an order that is closer to what woudl be in a
@@ -83,11 +64,6 @@ impl Members {
     fn generate_serialization_size_expression(&self) -> String {
         let (fixed_size, variable_sizes) = self.size();
 
-        // let variable_size_expression: String = variable_sizes
-        //     .iter()
-        //     .map(|s| format!(" + ({} * self.{} as usize)", s.0, s.1))
-        //     .collect();
-
         let variable_size_expression: String = variable_sizes
             .iter()
             .map(|s| format!(" + ({} * self.{} as usize)", s.0, s.1))
@@ -97,24 +73,6 @@ impl Members {
     }
 
     pub fn generate_deserializations(&self, tokens: &mut Tokens<Rust>, struct_name: &str) {
-        // // Generate a table that maps bitspecs to symbols. Note this is
-        // // only for the response/deserialization as the request may have
-        // // different symbols
-        // let mut symbol_table: HashMap<BitSpec, String> = HashMap::new();
-        // for (name, field) in self.iter() {
-        //     match field {
-        //         Field::BitField { bit_spec, .. } => {
-        //             symbol_table.insert(bit_spec.clone(), name.to_string())
-        //         }
-        //         Field::Structure {
-        //             common_structure_name,
-        //             bit_spec,
-        //             ..
-        //         } => symbol_table.insert(bit_spec.clone(), name.to_string()),
-        //     };
-        // }
-
-        //let mut sorted_members: Vec<_> = members.iter().collect();
         let mut sorted_members: Vec<_> = self.to_vec();
 
         // Sort by fields, not by the name
@@ -155,10 +113,6 @@ impl Members {
                     positions
                         .entry(bit_range.start.index)
                         .or_insert_with(|| bit_range.max_size());
-                    // if !positions.contains_key(&bit_range.start.index) {
-                    //     positions.insert(bit_range.start.index, bit_range.max_size());
-                    // }
-                    //buffer_size += bit_range.max_size()
                 }
                 Field::Structure {
                     common_structure_name,
@@ -206,23 +160,6 @@ impl Members {
             .max()
             .unwrap_or(0);
 
-        // ...
-        // let fixed_size = self
-        //     .iter()
-        //     .filter_map(|f| match f.1 {
-        //         Field::Structure { .. } => None,
-        //         Field::BitField { bit_spec, .. } => Some((f.0, bit_spec)),
-        //     })
-        //     //.filter_map(|f| )
-        //     .map(|b| b.1.size())
-        //     .filter_map(|b| match b.1 {
-        //         Some(_) => None,
-        //         None => Some(b.0),
-        //     })
-        //     .inspect(|x| println!("member size: {x}"))
-        //     .reduce(|acc, s| acc + s)
-        //     .unwrap_or(0);
-
         let variable_sizes: Vec<(usize, String)> = self
             .iter()
             .filter_map(|f| match f.1 {
@@ -238,8 +175,6 @@ impl Members {
             .map(|s| (s.0, s.1 .0.to_string()))
             //.map(|s| format!(" + ({} * self.{} as usize)", s.0, s.1))
             .collect();
-
-        //let common_structure_sizes = todo!();
 
         (fixed_size, variable_sizes)
     }
