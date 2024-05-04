@@ -1,0 +1,24 @@
+# Device defintion to test literals
+version = "0.0.1"
+
+[device]
+name      = "test_literals"
+endian    = "le"
+word_size = 8
+
+
+[commands.TEST_LITERAL]
+opcode      = 0x01
+description = "A test command"
+
+[commands.TEST_LITERAL.request]
+a_u8           = { bits = "0[]" }
+a_hex_literal  = { bits = "1[0xFF]", description = "A test literal. Hex format" }
+a_bits_literal = { bits = "2[0b01010101]", description = "A test literal, boolean format" }
+a_u16          = { bits = "3[]" }
+
+[commands.TEST_LITERAL.response]
+a_status       = { bits = "0[5]" }
+a_hex_literal  = { bits = "1[0x55]", description = "A test literal. Hex format" }
+a_bits_literal = { bits = "2[0b11110000]", description = "A test literal, boolean format" }
+a_u16          = { bits = "3[]" }
