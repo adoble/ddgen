@@ -191,8 +191,23 @@ impl BitSpec {
 
     /// Suggest a type for a variable to hold the value
     /// specified by the bit spec.
+
     pub fn suggested_word_type(&self) -> String {
-        //if let Self::BitField { bit_spec, .. } = self {
+        // First cover the special case of a literal. Handling this
+        // first reduces the compexisty of the match statements.
+        match self {
+            BitSpec {
+                start:
+                    Word {
+                        bit_range: BitRange::Literal(_),
+                        ..
+                    },
+                ..
+            } => return "u8".to_string(),
+            _ => (),
+        };
+
+        // Now cover the rest of the cases
         match self {
             BitSpec {
                 start:
@@ -565,6 +580,16 @@ mod tests {
             repeat: Repeat::None,
         };
         assert_eq!(bit_spec.suggested_word_type(), "u64");
+
+        let bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::Literal(LiteralType::Hex("B9".to_string())),
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+        assert_eq!(bit_spec.suggested_word_type(), "u8");
 
         //todo!("more tests");
     }
