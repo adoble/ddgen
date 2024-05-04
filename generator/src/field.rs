@@ -160,8 +160,6 @@ where
 
 impl Field {
     pub fn generate_struct_member(&self, tokens: &mut Tokens<Rust>, name: &str) {
-        // Add field comment
-
         match self {
             Field::Structure {
                 common_structure_name,
@@ -364,21 +362,18 @@ impl Field {
                         count_symbol_name
                     )
                 } else {
-                    // TODO This is a fatel error
+                    // TODO This is a fatal error
                     format!("Cannot find bit spec {bit_spec}")
                 }
-
-                // if count_symbol_name.is_some() {
-                //     format!(
-                //         "data[{start_index}..].serialize_repeating_words(self.{}, self.{} as usize)",
-                //         name,
-                //         count_symbol_name.unwrap()
-                //     )
-                // } else {
-                //     println!("Cannot find bit_spec {}", bit_spec);
-                //     todo!("Proper error handling");
-                // }
             }
+            BitSpec {
+                start:
+                    Word {
+                        index: start_index,
+                        bit_range: BitRange::Literal(literal),
+                    },
+                ..
+            } => format!("data[{start_index}] = {literal}"),
             _ => format!("todo!(\"{name}\")"),
         }
     }
@@ -482,6 +477,14 @@ impl Field {
                     todo!("Proper error handling");
                 }
             }
+            BitSpec {
+                start:
+                    Word {
+                        index: _start_index,
+                        bit_range: BitRange::Literal(literal),
+                    },
+                ..
+            } => format!("{literal}"),
             _ => format!("todo!(\"{name}\")"),
         }
     }
