@@ -124,6 +124,20 @@ oscillator_off_single_ended_buffer = 2
 oscillator_off_differential_buffer = 3
 
 
+[commands.HOST_LOAD]
+opcode      = 0x04
+description = "HOST_LOAD loads an image from HOST over command interface"
+
+[commands.HOST_LOAD.request]
+arg1       = { bits = "0[0x00]" }
+arg2       = { bits = "1[0x00]" }
+arg3       = { bits = "2[0x00]" }
+image_data = { bits = "3[];4096" } # This is actually variable repeat with NO count word
+
+[commands.HOST_LOAD.response]
+header = { bits = "0[];4", struct = "header" } # Trying out a different bit lang expression here to see if it still works. 
+
+
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
 # HOST_LOAD
