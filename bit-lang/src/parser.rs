@@ -3,7 +3,8 @@ use crate::bit_spec::*;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::u8 as u8_parser,
+    character::complete::u16 as u16_parser,
+    //character::complete::u8 as u8_parser,
     character::complete::{char, one_of},
     combinator::{map, opt, recognize, value},
     multi::{many0, many1},
@@ -14,8 +15,8 @@ use nom::{
 
 // Parse function follow ...
 
-fn index(input: &str) -> IResult<&str, u8> {
-    (u8_parser)(input)
+fn index(input: &str) -> IResult<&str, u16> {
+    (u16_parser)(input)
 }
 
 fn single_bit(input: &str) -> IResult<&str, BitRange> {
@@ -103,7 +104,7 @@ fn condition(input: &str) -> IResult<&str, Condition> {
 fn fixed_repeat(input: &str) -> IResult<&str, Repeat> {
     //let (remaining, repeat) = map(u8_parser, |value| Repeat::Fixed(value))(input)?;
     //let (remaining, repeat) = map(u8_parser,  Repeat::Fixed)(input)?;
-    let (remaining, repeat) = map(u8_parser, |r| Repeat::Fixed(r.into()))(input)?;
+    let (remaining, repeat) = map(u16_parser, |r| Repeat::Fixed(r.into()))(input)?;
 
     Ok((remaining, repeat))
 }
@@ -118,7 +119,7 @@ fn variable_word(input: &str) -> IResult<&str, Word> {
 // variable_repeat = variable_word condition limit;
 fn variable_repeat(input: &str) -> IResult<&str, Repeat> {
     let (remaining, (word, condition, limit)) =
-        tuple((variable_word, condition, u8_parser))(input)?;
+        tuple((variable_word, condition, u16_parser))(input)?;
 
     let adjusted_limit = match condition {
         Condition::Lte => limit,

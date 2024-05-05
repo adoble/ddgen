@@ -326,7 +326,7 @@ impl Field {
                 let WordRange::Fixed(start_index, end_index) = bit_spec.word_range() else {
                     panic!("Repeating bit specification shoudl have been a fixed repeat")
                 };
-                format!("data[{start_index}..{end_index}].serialize_repeating_words(self.{name}, {limit})")
+                format!("data[{start_index}..={end_index}].serialize_repeating_words(self.{name}, {limit})")
                 //format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit})")
             }
             BitSpec {
