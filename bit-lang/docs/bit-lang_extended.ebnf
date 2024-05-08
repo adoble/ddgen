@@ -22,7 +22,7 @@
 
 <spaces> ::=  <white_space>+
 
-/* Max. 255 */
+/* Max. 65 535 */
 <number> ::= <digit>+ 
 
 <index> ::= <number> 
@@ -44,15 +44,17 @@
 
 <follows_index> ::= "(>" <symbol> ")"
 
-<fixed_repeat> ::= <number>
+<fixed_repeat> ::= <number> | "=" <number>
 
 <limit> ::= <number> 
 
 <condition> ::=  "<" | "<="  
 
-<variable_repeat> ::=  <variable> <condition> <limit>
+<dependent_repeat> ::=  <variable> <condition> <limit>  /* Change from variable_repeat  to dependent_repeat */
 
-<repeat> ::=  <fixed_repeat>  | <variable_repeat>
+<variable_repeat> ::=  <condition> <number>
+
+<repeat> ::=  <fixed_repeat>  | <dependent_repeat> | variable_repeat
 
 <literal> ::= <hex_literal> | <binary_literal>
 
