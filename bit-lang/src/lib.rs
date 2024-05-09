@@ -59,7 +59,7 @@
 //!```
 //! To refer to the whole of word `0`  use one of the following:
 //!```text
-//!` [] == 0[]
+//! [] == 0[]
 //!```
 //! ## Word Ranges
 //!
@@ -92,7 +92,7 @@
 //!
 //! ## Repeating Words
 //!
-//! To specify that as word repeats there are a number of opions:
+//! To specify that as word repeats there are a number of options:
 //!
 //! ### Fixed Number of Repeats
 //!
@@ -100,21 +100,21 @@
 //!```text
 //! w[];n
 //!```
-//! Where 'n` is the number of words.
+//! Where `n` is the number of words.
 //!
 //! For instance to specify 48 complete words from word 3, use:
 //!```text
 //! 3[];48
 //!```
 //!
-//! ### Variable Number of Repeats
+//! ### Dependent Number of Repeats
 //!
-//! The number of words is often given by a fields that comes before the repeat. This can be specifed by:
+//! The number of words is often given by a field that comes before the repeat. This can be specifed by:
 //!```text
 //! w[];(v[])⁑n
 //!```
 //!
-//! Where `v` i the word containing the number of repeats, ⁑ is a condition and n is number. Conditions allowed are `<` (less then) and `<=` (less than or equal). Note that is highly recommanded that a limit is set so that any clients can set maximum buffer sizes.
+//! Where `v` is the word containing the number of repeats, `⁑` is a condition and `n` is the limit. Conditions allowed are `<` (less then) and `<=` (less than or equal). Note that is highly recommanded that a limit is set so that any clients can set maximum buffer sizes.
 //!
 //! For instance, if word 2 contains the number of repeated words and this is followed by the repeated word up to a max of 48 then use:
 //!```text
@@ -122,10 +122,33 @@
 //!```
 //!
 //!
-//! Alternativly one could another condition to mean the same thing:
+//! Alternatively one could another condition to mean the same thing:
 //!```text
 //! 3[];(2[])<=48
 //!```
+//!
+//! ### Variable Number of Repeats
+//! The number of words is variable and only a limit is known.
+//!
+//! This can be specified as:
+//!
+//! ```text
+//! w[];⁑n
+//! ```
+//! or, if a range of words repeats, as:
+//!
+//! ```text
+//! w[]..v[];⁑n
+//! ```
+//! Where `v` is the word containing the number of repeats, `⁑` is a condition and `n` is the limit.
+//! Conditions allowed are `<` (less then) and `<=` (less than or equal). Note that is highly recommanded that a limit is set so that any clients can set maximum buffer sizes.
+//!
+//! For instance a repeating list of u16 values starting at  word 3 and limited to 1024 values would be
+//! represented as:
+//!
+//! ```text
+//! 3[]..4[];<=1024
+//! ```
 //!
 //! ### Literals
 //! The actual state of the bits can be set using a literal. This can be shown with the following examples:
@@ -164,6 +187,8 @@
 //   use abolution positions at all?).
 //   If using something like ddgen then the symbolic names do not need to be specified, but
 //   are the same as the field name..#[allow(dead_code)]
+// TODO
+// Update the docs to include the new variable repeats
 
 pub mod bit_spec;
 pub mod parser;
@@ -272,13 +297,13 @@ mod tests {
                 index: 6,
                 bit_range: BitRange::Range(0, 5),
             }),
-            repeat: Repeat::Fixed(48),
+            repeat: Repeat::Fixed { number: 48 },
         };
         assert_eq!(bit_spec, expected);
 
         let data = "4[]..7[];(3[])<49";
         let bit_spec = parse(data).unwrap();
-        let expected_repeat = Repeat::Variable {
+        let expected_repeat = Repeat::Dependent {
             word: Word {
                 index: 3,
                 bit_range: BitRange::WholeWord,

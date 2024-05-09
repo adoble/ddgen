@@ -102,24 +102,39 @@ fn condition(input: &str) -> IResult<&str, Condition> {
 }
 
 fn fixed_repeat(input: &str) -> IResult<&str, Repeat> {
-    //let (remaining, repeat) = map(u8_parser, |value| Repeat::Fixed(value))(input)?;
-    //let (remaining, repeat) = map(u8_parser,  Repeat::Fixed)(input)?;
-    let (remaining, repeat) = map(u16_parser, |r| Repeat::Fixed(r.into()))(input)?;
+    let (remaining, repeat) = map(u16_parser, |r| Repeat::Fixed { number: r.into() })(input)?;
 
     Ok((remaining, repeat))
 }
 
 // variable_word = "(" word ")";
-fn variable_word(input: &str) -> IResult<&str, Word> {
+fn dependent_word(input: &str) -> IResult<&str, Word> {
     // TODO see if  we can also use take_until() to solve ambiguity
     let (remaining, word) = delimited(char('('), word, char(')'))(input)?;
     Ok((remaining, word))
 }
 
 // variable_repeat = variable_word condition limit;
-fn variable_repeat(input: &str) -> IResult<&str, Repeat> {
+fn dependent_repeat(input: &str) -> IResult<&str, Repeat> {
     let (remaining, (word, condition, limit)) =
-        tuple((variable_word, condition, u16_parser))(input)?;
+        tuple((dependent_word, condition, u16_parser))(input)?;
+
+    let adjusted_limit = match condition {
+        Condition::Lte => limit,
+        Condition::Lt => limit - 1,
+    };
+    Ok((
+        remaining,
+        Repeat::Dependent {
+            word,
+            limit: adjusted_limit.into(),
+        },
+    ))
+}
+
+// Example:  3[];<100
+fn variable_repeat(input: &str) -> IResult<&str, Repeat> {
+    let (remaining, (condition, limit)) = tuple((condition, u16_parser))(input)?;
 
     let adjusted_limit = match condition {
         Condition::Lte => limit,
@@ -128,7 +143,6 @@ fn variable_repeat(input: &str) -> IResult<&str, Repeat> {
     Ok((
         remaining,
         Repeat::Variable {
-            word,
             limit: adjusted_limit.into(),
         },
     ))
@@ -137,7 +151,10 @@ fn variable_repeat(input: &str) -> IResult<&str, Repeat> {
 // repeat = ";" (fixed_repeat  | variable_repeat)  ;
 fn repeat(input: &str) -> IResult<&str, Repeat> {
     //let (remaining, (_, repeat)) = tuple((tag(";"), alt((variable_repeat, fixed_repeat))))(input)?;
-    let (remaining, repeat) = preceded(tag(";"), alt((variable_repeat, fixed_repeat)))(input)?;
+    let (remaining, repeat) = preceded(
+        tag(";"),
+        alt((dependent_repeat, variable_repeat, fixed_repeat)),
+    )(input)?;
 
     Ok((remaining, repeat))
 }
@@ -316,11 +333,11 @@ mod tests {
     fn test_repeat() {
         let data = ";12";
         let (_, r) = repeat(data).unwrap();
-        assert_eq!(r, Repeat::Fixed(12));
+        assert_eq!(r, Repeat::Fixed { number: 12 });
 
         let data = ";6";
         let (_, r) = repeat(data).unwrap();
-        assert_eq!(r, Repeat::Fixed(6));
+        assert_eq!(r, Repeat::Fixed { number: 6 });
 
         let data = ";(4[])<49";
         let (_, r) = repeat(data).unwrap();
@@ -329,7 +346,7 @@ mod tests {
             bit_range: BitRange::WholeWord,
         };
 
-        let expected = Repeat::Variable { word, limit: 48 };
+        let expected = Repeat::Dependent { word, limit: 48 };
         assert_eq!(r, expected);
 
         let data = ";(4[])";
@@ -338,12 +355,12 @@ mod tests {
 
     #[test]
     fn test_repeat_to_string() {
-        assert_eq!(Repeat::Fixed(12).to_string(), "12");
+        assert_eq!(Repeat::Fixed { number: 12 }.to_string(), "12");
 
         assert_eq!(Repeat::None.to_string(), "");
 
         assert_eq!(
-            Repeat::Variable {
+            Repeat::Dependent {
                 word: Word {
                     index: 4,
                     bit_range: BitRange::WholeWord,
@@ -356,32 +373,43 @@ mod tests {
     }
 
     #[test]
-    fn test_variable_repeat() {
+    fn test_dependent_repeat() {
         let data = "(4[])<=48";
-        let (_, r) = variable_repeat(data).unwrap();
+        let (_, r) = dependent_repeat(data).unwrap();
         let word = Word {
             index: 4,
             bit_range: BitRange::WholeWord,
         };
 
-        let expected = Repeat::Variable { word, limit: 48 };
+        let expected = Repeat::Dependent { word, limit: 48 };
         assert_eq!(r, expected);
 
         let data = "(4[0..7])<49";
-        let (_, r) = variable_repeat(data).unwrap();
+        let (_, r) = dependent_repeat(data).unwrap();
         let word = Word {
             index: 4,
             bit_range: BitRange::Range(0, 7),
         };
 
-        let expected = Repeat::Variable { word, limit: 48 };
+        let expected = Repeat::Dependent { word, limit: 48 };
         assert_eq!(r, expected);
     }
     #[test]
     fn test_fixed_repeat() {
         let data = "48";
         let (_, r) = fixed_repeat(data).unwrap();
-        assert_eq!(r, Repeat::Fixed(48));
+        assert_eq!(r, Repeat::Fixed { number: 48 });
+    }
+
+    #[test]
+    fn test_variable_repeat() {
+        let data = "<42";
+        let (_, r) = variable_repeat(data).unwrap();
+        assert_eq!(r, Repeat::Variable { limit: 41 });
+
+        let data = "<=42";
+        let (_, r) = variable_repeat(data).unwrap();
+        assert_eq!(r, Repeat::Variable { limit: 42 });
     }
 
     #[test]
@@ -479,13 +507,13 @@ mod tests {
                 index: 6,
                 bit_range: BitRange::Range(0, 5),
             }),
-            repeat: Repeat::Fixed(48),
+            repeat: Repeat::Fixed { number: 48 },
         };
         assert_eq!(r, expected);
 
         let data = "4[]..7[];(3[])<49";
         let (_, r) = bit_spec(data).unwrap();
-        let repeat = Repeat::Variable {
+        let repeat = Repeat::Dependent {
             word: Word {
                 index: 3,
                 bit_range: BitRange::WholeWord,
