@@ -107,7 +107,7 @@ description = """The POWER_UP initiates the boot process to move the device from
 [commands.POWER_UP.request]
 ibias_run      = { bits = "12[0..6]", description = "TAL IBIAS current at runtime, after the XTAL oscillator has stabilized" }
 cts_is_enabled = { bits = "0[7]", description = "The bootloader will toggle a host interrupt line when CTS is available." }
-clock_mode     = { bits = "1[4..5}", type = "clock_mode" }
+clock_mode     = { bits = "1[4..5]", type = "clock_mode" }
 tr_size        = { bits = "1[0..3]", type = "u8", description = "Range 1-15" }
 ibais          = { bits = "2[0..6]", type = "u8", description = "XTAL IBIAS current at startup. Range 0-127" }
 xtal_frequency = { bits = "3[]..6[]", type = "u32", description = "XTAL frequency in Hz" }
