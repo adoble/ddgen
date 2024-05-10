@@ -157,7 +157,7 @@ header = { bits = "0[]..3[]", struct = "header" }
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
 # HOST_LOAD      X
-# FLASH_LOAD
+# FLASH_LOAD     X
 # LOAD_INIT
 # BOOT
 # GET_PART_INFO
