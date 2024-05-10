@@ -1,8 +1,10 @@
   # TODO
   [ ] Variable fields without a dependency, e.g `5[];<100`
   [ ] This `data[1..=1].serialize_word(self.a_u8);` does work compile 
+  [ ] This incorrect bit spec compiles `"3[];(2[])10"`
   [ ] Ensure that all types are handled in serailize and deserialize ( a lot of impl fors)
   [ ] Add some more integration tests
+  [ ] Instead of returning  an array, could not the serialize function return the size and an iterator (or just an iterator)? Thsi makes the interface very simple. Need to see how this works with an SPI transmit  loop. 
   [ ] Common structures cannot be variable length. Also varabiable repeating arrays need to be at the end of 
     the data stream. All of these problems woudl go away if we had labeled fields and follows field syntax
     in bit_lang.
