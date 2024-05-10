@@ -137,6 +137,22 @@ image_data = { bits = "3[];<=4096", type = "HostLoader" } # This is actually var
 [commands.HOST_LOAD.response]
 header = { bits = "0[];4", struct = "header" } # Trying out a different bit lang expression here to see if it still works. 
 
+[commands.FLASH_LOAD]
+opcode      = 0x05
+description = "FLASH_LOAD loads the firmware image from an externally attached SPI flash over the secondary SPI bus."
+
+[commands.FLASH_LOAD.request]
+arg1                = { bits = "0[0x00]" }
+arg2                = { bits = "1[0x00]" }
+arg3                = { bits = "2[0x00]" }
+flash_start_address = { bits = "3[]..6[]", description = "Flash byte starting address of image to load" }
+arg8                = { bits = "7[0x00]" }
+arg9                = { bits = "8[0x00]" }
+arg10               = { bits = "9[0x00]" }
+arg11               = { bits = "10[0x00]" }
+
+[commands.FLASH_LOAD.response]
+header = { bits = "0[]..3[]", struct = "header" }
 
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
