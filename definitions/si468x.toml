@@ -140,7 +140,7 @@ header = { bits = "0[];4", struct = "header" } # Trying out a different bit lang
 
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
-# HOST_LOAD
+# HOST_LOAD      X
 # FLASH_LOAD
 # LOAD_INIT
 # BOOT
