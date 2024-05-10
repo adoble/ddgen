@@ -16,6 +16,16 @@ type FieldName = String;
 type MembersSize = (usize, Vec<(usize, FieldName)>);
 
 impl Members {
+    #[cfg(test)]
+    pub fn new() -> Members {
+        Members(HashMap::new())
+    }
+
+    #[cfg(test)]
+    pub fn add(&mut self, name: &str, field: Field) {
+        self.0.insert(name.to_string(), field);
+    }
+
     pub fn generate_members(&self, tokens: &mut Tokens<Rust>) {
         let mut sorted_members = self.to_vec();
 
@@ -45,14 +55,14 @@ impl Members {
 
         quote_in!(*tokens =>
             impl Serialize for $(struct_name) {
-                fn serialize<const N: usize>(&self) -> (usize, [u8; N]) {
+                fn serialize<const N: usize>(&self) -> (usize, [u8; N], impl Iterator<Item=u8>) {
                   let mut data = [0u8; N];
+                  #[allow(unused_variables)]
+                  let provider = core::iter::empty::<u8>();
 
                   $(for (name, field) in sorted_members => $(ref toks {field.generate_field_serialization(toks,  name,  self, common_structures)}) )
 
-                  // todo!("The following is wrong!");
-                  //($(serialization_buffer_size), data)
-                  ($(serialization_size_expression), data)
+                  ($(serialization_size_expression), data, provider)
                 }
 
 
@@ -164,7 +174,7 @@ impl Members {
             .iter()
             .filter_map(|f| match f.1 {
                 Field::Structure { .. } => None,
-                Field::BitField { bit_spec, .. } => Some(bit_spec.size()),
+                Field::BitField { bit_spec, .. } => bit_spec.size(),
             })
             .filter_map(|s| match s.1 {
                 Some(word) => Some((s.0, word)),

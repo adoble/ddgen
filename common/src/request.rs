@@ -81,7 +81,8 @@ pub trait RequestStruct<T: Serialize> {
 
 impl<T: Serialize> RequestStruct<T> for [u8] {
     fn serialize_struct<const TARGET_LEN: usize>(&mut self, source: T) {
-        let (size, data): (usize, [u8; TARGET_LEN]) = source.serialize();
+        // let (size, data): (usize, [u8; TARGET_LEN]) = source.serialize();
+        let (size, data, _): (usize, [u8; TARGET_LEN], _) = source.serialize();
         self.copy_from_slice(&data[0..size]);
     }
 }
@@ -166,14 +167,14 @@ mod tests {
     }
 
     impl Serialize for TestCommonStruct {
-        fn serialize<const N: usize>(&self) -> (usize, [u8; N]) {
+        fn serialize<const N: usize>(&self) -> (usize, [u8; N], impl Iterator<Item = u8>) {
             let mut data = [0u8; N];
 
             data[0].serialize_bit(self.c_bool, 1);
             data[0].serialize_field(self.c_test_field as u8, 3, 5);
             data[1..=2].serialize_word(self.c_u16);
 
-            (3, data)
+            (3, data, std::iter::empty::<u8>())
         }
     }
     #[allow(dead_code)]

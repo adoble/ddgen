@@ -46,7 +46,7 @@ struct TestStruct {
 }
 
 impl Serialize for TestStruct {
-    fn serialize<const N: usize>(&self) -> (usize, [u8; N]) {
+    fn serialize<const N: usize>(&self) -> (usize, [u8; N], impl Iterator<Item = u8>) {
         // The size is calculated from the bit specs.
         let mut data = [0u8; N];
 
@@ -61,7 +61,11 @@ impl Serialize for TestStruct {
         //data[5..=10].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
         data[5..].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
 
-        (((self.a_count * 2) + 5).into() , data)
+        (
+            ((self.a_count * 2) + 5).into(),
+            data,
+            std::iter::empty::<u8>(),
+        )
     }
 }
 
@@ -76,23 +80,21 @@ impl Serialize for TestStruct {
 
 impl Deserialize<TestStruct> for [u8] {
     fn deserialize(&self) -> Result<TestStruct, DeviceError> {
-      
-        let a_bit =  self[0].deserialize_bit(4);
-        let a_field =  self[0].deserialize_field(5, 6).try_into()?;
-        let a_u16 =  self[1..=2].deserialize_word();
-        let a_u8 =  self[3].deserialize_word();
-        let a_count =  self[4].deserialize_word();
-        let a_repeating_u16 =  self[5..5 + (a_count * 2) as usize]
-                .deserialize_repeating_words(a_count as usize);
-        
+        let a_bit = self[0].deserialize_bit(4);
+        let a_field = self[0].deserialize_field(5, 6).try_into()?;
+        let a_u16 = self[1..=2].deserialize_word();
+        let a_u8 = self[3].deserialize_word();
+        let a_count = self[4].deserialize_word();
+        let a_repeating_u16 =
+            self[5..5 + (a_count * 2) as usize].deserialize_repeating_words(a_count as usize);
 
         let test_struct = TestStruct {
-            a_bit, 
+            a_bit,
             a_field,
-            a_u16, 
-            a_u8, 
-            a_count, 
-            a_repeating_u16,  
+            a_u16,
+            a_u8,
+            a_count,
+            a_repeating_u16,
         };
         Ok(test_struct)
     }
@@ -219,7 +221,7 @@ fn test_serialize_struct() {
         0,
     ];
 
-    let (count, data) = test_request.serialize();
+    let (count, data, _) = test_request.serialize();
 
     assert_eq!(count, 11);
     assert_eq!(data, expected_data);

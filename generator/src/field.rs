@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::HashMap};
+use std::{cmp::Ordering, collections::HashMap, fmt};
 
 use convert_case::{Case, Casing};
 use genco::prelude::*;
@@ -87,7 +87,10 @@ pub enum TargetType {
     I64,
     I128,
     // The string is the name of the enumeration
-    Enumeration(String),
+    // Enumeration(String),
+    // The string is the name of the provider
+    // Provider(String),
+    TypeName(String),
 }
 
 impl From<String> for TargetType {
@@ -103,17 +106,39 @@ impl From<String> for TargetType {
             "i32" => TargetType::I32,
             "i64" => TargetType::I64,
             "i128" => TargetType::I128,
-            _ => TargetType::Enumeration(value),
+            //_ => TargetType::Enumeration(value),
+            _ => TargetType::TypeName(value),
         }
     }
 }
 
-// Need a seperate Into::into as the conversion is not symetric and cannot
-// be automatically handled by the compiler.
-#[allow(clippy::from_over_into)]
-impl Into<String> for TargetType {
-    fn into(self) -> String {
-        match self {
+// // Need a seperate Into::into as the conversion is not symetric and cannot
+// // be automatically handled by the compiler.
+// #[allow(clippy::from_over_into)]
+// impl Into<String> for TargetType {
+//     fn into(self) -> String {
+//         match self {
+//             TargetType::U8 => "u8".to_string(),
+//             TargetType::U16 => "u16".to_string(),
+//             TargetType::U32 => "u32".to_string(),
+//             TargetType::U64 => "u64".to_string(),
+//             TargetType::U128 => "u128".to_string(),
+//             TargetType::I8 => "i8".to_string(),
+//             TargetType::I16 => "i16".to_string(),
+//             TargetType::I32 => "i32".to_string(),
+//             TargetType::I64 => "i64".to_string(),
+//             TargetType::I128 => "i128".to_string(),
+//             // TODO this seems rather akward
+//             TargetType::TypeName(name) => name.to_string().to_case(Case::UpperCamel),
+//             // TargetType::Enumeration(name) => name.to_string().to_case(Case::UpperCamel),
+//             // TargetType::Provider(name) => name.to_string().to_case(Case::UpperCamel),
+//         }
+//     }
+// }
+
+impl fmt::Display for TargetType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let display_str = match self {
             TargetType::U8 => "u8".to_string(),
             TargetType::U16 => "u16".to_string(),
             TargetType::U32 => "u32".to_string(),
@@ -125,8 +150,11 @@ impl Into<String> for TargetType {
             TargetType::I64 => "i64".to_string(),
             TargetType::I128 => "i128".to_string(),
             // TODO this seems rather akward
-            TargetType::Enumeration(name) => name.to_string().to_case(Case::UpperCamel),
-        }
+            TargetType::TypeName(name) => name.to_string().to_case(Case::UpperCamel),
+            // TargetType::Enumeration(name) => name.to_string().to_case(Case::UpperCamel),
+            // TargetType::Provider(name) => name.to_string().to_case(Case::UpperCamel),
+        };
+        write!(f, "{display_str}",)
     }
 }
 
@@ -194,15 +222,19 @@ impl Field {
                 }
 
                 let type_string = match target_type {
-                    Some(t) => t.clone().into(),
+                    Some(t) => t.clone().to_string(),
                     None => bit_spec.suggested_word_type(),
                 };
 
                 let type_string = match bit_spec.repeat {
-                    Repeat::Fixed(limit) => format!("[{}; {}]", type_string, limit),
-                    Repeat::Variable { limit, .. } => {
+                    Repeat::Fixed { number } => format!("[{}; {}]", type_string, number),
+                    Repeat::Dependent { limit, .. } => {
                         format!("[{}; {}]", type_string, limit)
                     }
+                    Repeat::Variable { limit: _ } => match target_type {
+                        Some(target_type) => format!("{}", target_type),
+                        None => panic!("Variable repeat for {name} with no provider struct (in the type attribute) specified!"),
+                    },
                     Repeat::None => type_string,
                 };
 
@@ -222,8 +254,9 @@ impl Field {
         common_structures: &CommonStructures,
     ) {
         let field_serialize_code = match self {
-            Field::BitField { bit_spec, .. } => {
-                self.generate_word_field_serialization(name, bit_spec, members)
+            Field::BitField { bit_spec: _, .. } => {
+                //self.generate_word_field_serialization(name, bit_spec, members)
+                self.generate_word_field_serialization(name, members)
             }
 
             Field::Structure {
@@ -266,9 +299,11 @@ impl Field {
     fn generate_word_field_serialization(
         &self,
         name: &str,
-        bit_spec: &BitSpec,
+        //bit_spec: &BitSpec,
         members: &Members,
     ) -> String {
+        // match bit_spec {
+        let bit_spec = self.bit_spec();
         match bit_spec {
             BitSpec {
                 start:
@@ -320,13 +355,13 @@ impl Field {
                         bit_range: BitRange::WholeWord,
                     },
 
-                repeat: Repeat::Fixed(limit),
+                repeat: Repeat::Fixed { number },
                 ..
             } => {
                 let WordRange::Fixed(start_index, end_index) = bit_spec.word_range() else {
-                    panic!("Repeating bit specification shoudl have been a fixed repeat")
+                    panic!("Repeating bit specification should have been a fixed repeat")
                 };
-                format!("data[{start_index}..={end_index}].serialize_repeating_words(self.{name}, {limit})")
+                format!("data[{start_index}..={end_index}].serialize_repeating_words(self.{name}, {number})")
                 //format!("data[{start_index}..].serialize_repeating_words(self.{name}, {limit})")
             }
             BitSpec {
@@ -337,7 +372,7 @@ impl Field {
                     },
 
                 repeat:
-                    Repeat::Variable {
+                    Repeat::Dependent {
                         word: repeat_word, ..
                     },
                 ..
@@ -365,6 +400,12 @@ impl Field {
                     // TODO This is a fatal error
                     format!("Cannot find bit spec {bit_spec}")
                 }
+            }
+            BitSpec {
+                repeat: Repeat::Variable { .. },
+                ..
+            } => {
+                format!("let provider = self.{name}")
             }
             BitSpec {
                 start:
@@ -437,10 +478,10 @@ impl Field {
                         bit_range: BitRange::WholeWord,
                     },
 
-                repeat: Repeat::Fixed(limit),
+                repeat: Repeat::Fixed { number },
                 ..
             } => {
-                format!("self[{start_index}..].deserialize_repeating_words({limit})")
+                format!("self[{start_index}..].deserialize_repeating_words({number})")
             }
             BitSpec {
                 start:
@@ -450,7 +491,7 @@ impl Field {
                     },
 
                 repeat:
-                    Repeat::Variable {
+                    Repeat::Dependent {
                         word: repeat_word, ..
                     },
                 ..
@@ -604,5 +645,213 @@ mod tests {
         };
 
         assert!(upper == lower);
+    }
+
+    #[test]
+    fn test_generate_struct_member_bool() {
+        let field = Field::new_bitfield("4", None).unwrap();
+        let mut tokens = rust::Tokens::new();
+
+        field.generate_struct_member(&mut tokens, "a_bool");
+
+        assert_eq!(tokens.to_string().unwrap(), "a_bool: bool,");
+    }
+
+    #[test]
+    fn test_generate_struct_member_field() {
+        let field = Field::new_bitfield("5[1..4]", Some("AnEnum")).unwrap();
+        let mut tokens = rust::Tokens::new();
+
+        field.generate_struct_member(&mut tokens, "a_bool");
+
+        assert_eq!(tokens.to_string().unwrap(), "a_bool: AnEnum,");
+    }
+
+    #[test]
+    fn test_generate_struct_member_u8() {
+        let field = Field::new_bitfield("3[]", None).unwrap();
+        let mut tokens = rust::Tokens::new();
+
+        field.generate_struct_member(&mut tokens, "a_u8");
+
+        assert_eq!(tokens.to_string().unwrap(), "a_u8: u8,");
+    }
+
+    #[test]
+    fn test_generate_struct_member_u16() {
+        let field = Field::new_bitfield("3[]..4[]", None).unwrap();
+        let mut tokens = rust::Tokens::new();
+
+        field.generate_struct_member(&mut tokens, "a_u16");
+
+        assert_eq!(tokens.to_string().unwrap(), "a_u16: u16,");
+    }
+    #[test]
+    fn test_generate_struct_member_u32() {
+        let field = Field::new_bitfield("3[]..6[]", None).unwrap();
+        let mut tokens = rust::Tokens::new();
+
+        field.generate_struct_member(&mut tokens, "a_u32");
+
+        assert_eq!(tokens.to_string().unwrap(), "a_u32: u32,");
+    }
+
+    #[test]
+    fn test_generate_struct_member_fixed_repeat_u8() {
+        let field = Field::new_bitfield("5[];10", None).unwrap();
+        let mut tokens = rust::Tokens::new();
+
+        field.generate_struct_member(&mut tokens, "a_repeat");
+
+        assert_eq!(tokens.to_string().unwrap(), "a_repeat: [u8; 10],");
+    }
+
+    #[test]
+    fn test_generate_struct_member_fixed_repeat_u16() {
+        let field = Field::new_bitfield("5[]..6[];12", None).unwrap();
+        let mut tokens = rust::Tokens::new();
+
+        field.generate_struct_member(&mut tokens, "a_repeat");
+
+        assert_eq!(tokens.to_string().unwrap(), "a_repeat: [u16; 12],");
+    }
+
+    #[test]
+    fn test_generate_struct_member_dependent_repeat_u16() {
+        let field = Field::new_bitfield("5[]..6[];(1[])<12", None).unwrap();
+        let mut tokens = rust::Tokens::new();
+
+        field.generate_struct_member(&mut tokens, "a_dependent_repeat");
+
+        assert_eq!(
+            tokens.to_string().unwrap(),
+            "a_dependent_repeat: [u16; 11],"
+        );
+    }
+
+    #[test]
+    fn test_generate_struct_member_variable_repeat() {
+        let field = Field::new_bitfield("5[]..6[];<=1024", Some("ProviderStruct")).unwrap();
+
+        let mut tokens = rust::Tokens::new();
+
+        field.generate_struct_member(&mut tokens, "a_variable_repeat");
+
+        assert_eq!(
+            tokens.to_string().unwrap(),
+            "a_variable_repeat: ProviderStruct,"
+        );
+    }
+
+    #[test]
+    fn test_generate_word_field_serialization_bit() {
+        let field = Field::new_bitfield("5[7]", None).unwrap();
+
+        let fields = Members::new();
+        let s = field.generate_word_field_serialization("a_bit", &fields);
+
+        assert_eq!(s, "data[5].serialize_bit(self.a_bit, 7)");
+    }
+
+    #[test]
+    fn test_generate_word_field_serialization_field() {
+        let field = Field::new_bitfield("5[1..4]", Some("AnEnum")).unwrap();
+
+        let fields = Members::new();
+        let s = field.generate_word_field_serialization("a_field", &fields);
+
+        assert_eq!(s, "data[5].serialize_field(self.a_field as u8, 1, 4)");
+    }
+
+    #[test]
+    fn test_generate_word_u8_serialization() {
+        let field = Field::new_bitfield("5[]", None).unwrap();
+
+        let fields = Members::new();
+        let s = field.generate_word_field_serialization("a_u8", &fields);
+
+        assert_eq!(s, "data[5].serialize_word(self.a_u8)");
+    }
+
+    #[test]
+    fn test_generate_word_u16_serialization() {
+        let field = Field::new_bitfield("5[]..6[]", None).unwrap();
+
+        let fields = Members::new();
+        let s = field.generate_word_field_serialization("a_u16", &fields);
+
+        assert_eq!(s, "data[5..=6].serialize_word(self.a_u16)");
+    }
+
+    #[test]
+    fn test_generate_word_fixed_repeat_u8() {
+        let field = Field::new_bitfield("5[];10", None).unwrap();
+
+        let fields = Members::new();
+        let s = field.generate_word_field_serialization("a_repeat_u8", &fields);
+
+        assert_eq!(
+            s,
+            "data[5..=14].serialize_repeating_words(self.a_repeat_u8, 10)"
+        );
+    }
+
+    #[test]
+    fn test_generate_word_fixed_repeat_u32() {
+        let field = Field::new_bitfield("5[]..8[];10", None).unwrap();
+
+        let fields = Members::new();
+        let s = field.generate_word_field_serialization("a_repeat_u32", &fields);
+
+        assert_eq!(
+            s,
+            "data[5..=44].serialize_repeating_words(self.a_repeat_u32, 10)"
+        );
+    }
+
+    #[test]
+    fn test_generate_word_dependent_repeat_u8() {
+        let field = Field::new_bitfield("3[];(2[])<=10", None).unwrap();
+
+        let mut fields = Members::new();
+        let dependent_field = Field::new_bitfield("2[]", None).unwrap();
+        fields.add("count", dependent_field);
+        let s = field.generate_word_field_serialization("a_repeat_u32", &fields);
+
+        assert_eq!(
+            s,
+            "data[3..].serialize_repeating_words(self.a_repeat_u32, self.count as usize)"
+        );
+    }
+
+    #[test]
+    fn test_generate_word_variable_repeat_u8() {
+        let field = Field::new_bitfield("3[];<=10", None).unwrap();
+
+        let fields = Members::new();
+
+        let s = field.generate_word_field_serialization("a_repeat_u32", &fields);
+
+        assert_eq!(s, "let provider = self.a_repeat_u32");
+    }
+
+    // Test utilities
+    impl Field {
+        fn new_bitfield(bit_spec: &str, target_type: Option<&str>) -> Result<Field, String> {
+            // TODO proper error handling here. This requires that the error handling in the
+            // generator is completely overhauled.
+            let bit_spec = parse(bit_spec).map_err(|e| e.to_string())?;
+
+            let target_type: Option<TargetType> = match target_type {
+                Some(tt) => Some(TargetType::from(tt.to_string())),
+                None => None,
+            };
+
+            Ok(Field::BitField {
+                bit_spec,
+                target_type,
+                description: None,
+            })
+        }
     }
 }
