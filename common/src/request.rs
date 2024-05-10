@@ -51,6 +51,24 @@ impl RequestWord<i16> for [u8] {
     }
 }
 
+impl RequestWord<u32> for [u8] {
+    fn serialize_word(&mut self, source: u32) {
+        self[0] = source.to_le_bytes()[0];
+        self[1] = source.to_le_bytes()[1];
+        self[2] = source.to_le_bytes()[2];
+        self[3] = source.to_le_bytes()[3];
+    }
+}
+
+impl RequestWord<i32> for [u8] {
+    fn serialize_word(&mut self, source: i32) {
+        self[0] = source.to_le_bytes()[0];
+        self[1] = source.to_le_bytes()[1];
+        self[2] = source.to_le_bytes()[2];
+        self[3] = source.to_le_bytes()[3];
+    }
+}
+
 pub trait RequestArray<T> {
     // Usage : data[5..=10].serialize_repeating_words(self.a_repeating_u16, self.a_count.into());
     fn serialize_repeating_words(&mut self, source: T, number: usize);
@@ -134,6 +152,38 @@ mod tests {
             data,
             [0, 0, 22222u16.to_le_bytes()[0], 22222u16.to_le_bytes()[1]]
         );
+    }
+
+    #[test]
+    fn test_serialize_word_i16() {
+        let mut data = [0u8; 4];
+        let w: i16 = -222;
+        data[2..].serialize_word(w);
+
+        let mut expected = [0u8; 2];
+
+        expected[0] = (-222 as i16).to_le_bytes()[0];
+        expected[1] = (-222 as i16).to_le_bytes()[1];
+
+        assert_eq!(data, [0, 0, expected[0], expected[1]]);
+    }
+
+    #[test]
+    fn test_serialize_word_u32() {
+        let mut data = [0u8; 6];
+        let w: u32 = 2_123_967_295;
+        data[2..].serialize_word(w);
+
+        assert_eq!(data, [0, 0, 0x3F, 0x2B, 0x99, 0x7E]);
+    }
+
+    #[test]
+    fn test_serialize_word_i32() {
+        let mut data = [0u8; 6];
+        let w: i32 = -2_123_967_295;
+        data[2..].serialize_word(w);
+
+        assert_eq!(data, [0, 0, 0xC1, 0xD4, 0x66, 0x81]);
     }
 
     #[test]
