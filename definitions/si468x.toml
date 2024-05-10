@@ -132,7 +132,7 @@ description = "HOST_LOAD loads an image from HOST over command interface"
 arg1       = { bits = "0[0x00]" }
 arg2       = { bits = "1[0x00]" }
 arg3       = { bits = "2[0x00]" }
-image_data = { bits = "3[];4096" } # This is actually variable repeat with NO count word
+image_data = { bits = "3[];<=4096", type = "HostLoader" } # This is actually variable repeat with NO count word
 
 [commands.HOST_LOAD.response]
 header = { bits = "0[];4", struct = "header" } # Trying out a different bit lang expression here to see if it still works. 
