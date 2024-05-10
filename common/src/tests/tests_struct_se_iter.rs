@@ -22,15 +22,15 @@ struct TestStruct {
 }
 
 impl SerializeVariable for TestStruct {
-    // Should go as trait in common
-    fn serialize<const N: usize>(&self) -> (usize, [u8; N], impl Iterator<Item = u8>) {
+    fn serialize<const N: usize>(&self) -> (usize, [u8; N], Option<impl Iterator<Item = u8>>) {
         let mut data = [0u8; N];
 
         data[0].serialize_bit(self.a_bit, 7);
         //data[1..=1].serialize_word(self.a_u8);  //TODO this does not work for u8
         data[1] = self.a_u8;
+        let provider = self.a_reader;
 
-        (2, data, self.a_reader)
+        (2, data, Some(provider))
     }
 }
 
@@ -85,6 +85,7 @@ fn test_serialize() {
 
     let mut serial_data_unspecified_len: [u8; 5] = [0; 5];
     reader
+        .unwrap()
         .into_iter()
         .enumerate()
         .for_each(|v| serial_data_unspecified_len[v.0] = v.1);
@@ -102,13 +103,14 @@ struct ExtTestStruct {
 }
 
 impl SerializeVariable for ExtTestStruct {
-    fn serialize<const N: usize>(&self) -> (usize, [u8; N], impl Iterator<Item = u8>) {
+    fn serialize<const N: usize>(&self) -> (usize, [u8; N], Option<impl Iterator<Item = u8>>) {
         let mut data = [0u8; N];
 
         data[0].serialize_bit(self.a_bit, 7);
         data[1..=2].serialize_word(self.a_u16);
+        let provider = self.a_reader;
 
-        (3, data, self.a_reader)
+        (3, data, Some(provider))
     }
 }
 
@@ -190,7 +192,7 @@ fn test_serialise_with_complexer_data() {
     ];
 
     let mut actual = [0u8; 20];
-    for byte in reader.enumerate() {
+    for byte in reader.unwrap().enumerate() {
         actual[byte.0] = byte.1
     }
 

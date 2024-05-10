@@ -18,6 +18,6 @@ pub trait SerializeVariable {
     ///   what is actually valid.
     /// - An array containing the serialized bytes for the above. Note that
     ///   the array can be larger then the actual number of serialized bytes.
-    /// - An iterator that can be used to loop though the rest of the data.
-    fn serialize<const LEN: usize>(&self) -> (usize, [u8; LEN], impl Iterator<Item = u8>);
+    /// - An optional iterator that can be used to loop though the rest of the data.
+    fn serialize<const LEN: usize>(&self) -> (usize, [u8; LEN], Option<impl Iterator<Item = u8>>);
 }

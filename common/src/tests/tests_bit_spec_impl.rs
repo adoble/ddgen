@@ -278,7 +278,7 @@ fn deserialize_word_repeat() {
                     bit_range: BitRange::WholeWord,
                 },
             end: None,
-            repeat: WordRepeat::Fixed(r),
+            repeat: WordRepeat::Fixed { number: r },
         } => (w, r),
         _ => {
             assert!(false, "Unexpected bit spec found");
@@ -320,7 +320,7 @@ fn deserialize_word_variable_repeat() {
                 },
             end: None,
             repeat:
-                WordRepeat::Variable {
+                WordRepeat::Dependent {
                     word:
                         Word {
                             index: count_index,
@@ -384,7 +384,7 @@ fn deserialize_word_range_u16_repeat() {
                     index: v,
                     bit_range: BitRange::WholeWord,
                 }),
-            repeat: WordRepeat::Fixed(r),
+            repeat: WordRepeat::Fixed { number: r },
         } => (w, v, r),
         _ => {
             assert!(false, "Unexpected bit spec found");
@@ -440,7 +440,7 @@ fn deserialize_word_range_u16_variable_repeat() {
                     bit_range: BitRange::WholeWord,
                 }),
             repeat:
-                WordRepeat::Variable {
+                WordRepeat::Dependent {
                     word:
                         Word {
                             index: counter_word,
