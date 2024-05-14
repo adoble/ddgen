@@ -75,6 +75,9 @@ impl Command {
 
             $(for name in common_structures.keys() => use crate::$(name.to_lowercase())::$(name.to_case(Case::UpperCamel));)
 
+            $(for name in self.providers() => use crate::$(name.to_case(Case::Snake))::$(name.to_case(Case::UpperCamel));)
+
+
             $['\n']
             #[derive(Debug, PartialEq)]$['\r']
             pub struct $(&request_struct_name) {$['\r']
@@ -105,5 +108,16 @@ impl Command {
         output_file(file, tokens)?;
 
         Ok(())
+    }
+
+    pub fn providers(&self) -> impl Iterator<Item = String> {
+        let providers: Vec<String> = self
+            .request
+            .fields()
+            .into_iter()
+            .filter_map(|f| f.provider())
+            .map(String::from)
+            .collect();
+        providers.into_iter()
     }
 }

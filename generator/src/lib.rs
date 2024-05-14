@@ -18,6 +18,7 @@ mod error_reporting;
 mod field;
 mod members;
 mod output;
+mod providers;
 
 // TODO move this to another file as for the other serde structs.
 #[derive(Deserialize, Debug)]

@@ -16,6 +16,7 @@ use crate::command::Command;
 use crate::common_structure::CommonStructure;
 use crate::doc_comment::DocComment;
 use crate::output::output_file;
+use crate::providers::Providers;
 use crate::Enumeration;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -52,7 +53,7 @@ pub struct Definition {
     pub(crate) commands: HashMap<String, Command>,
 
     // Note: Using default here rather than Option as the default - an empty hash map -
-    // make the logic easier.
+    // makes the logic easier.
     #[serde(rename = "struct", default)]
     //pub(crate) common_structures: Option<HashMap<String, CommonStructure>>,  See line 86
     pub(crate) common_structures: HashMap<String, CommonStructure>,
@@ -143,20 +144,16 @@ impl Definition {
 
         self.generate_commands(source_path, &self.common_structures)?;
 
-        // let _tokens = rust::Tokens::new();
-
-        // self.generate_register_block(source_path)?;
-        // for register in self.registers.iter() {
-        //     register.1.generate_register(register.0, source_path)?;
-        // }
-
         self.generate_types_file(source_path)?;
+
+        let providers = Providers::from_definition(&self);
+        providers.generate(source_path)?;
 
         // if let Some(test_code_path) = tests_path {
         //     self.generate_tests(out_path, test_code_path)?;
         // }
 
-        self.generate_lib(source_path, tests_path.is_some())?;
+        self.generate_lib(source_path, &providers, tests_path.is_some())?;
 
         Ok(())
     }
@@ -183,11 +180,16 @@ impl Definition {
         Ok(source_path_buf)
     }
 
-    fn generate_lib(&self, out_path: &Path, _tests: bool) -> anyhow::Result<()> {
+    fn generate_lib(
+        &self,
+        out_path: &Path,
+        providers: &Providers,
+        _tests: bool,
+    ) -> anyhow::Result<()> {
         println!("Generating lib");
         // Create a file for the lib file
         let lib_path: PathBuf = [out_path, Path::new("lib.rs")].iter().collect();
-        let file = File::create(lib_path).with_context(|| "Cannot crate  lib file")?;
+        let file = File::create(lib_path).with_context(|| "Cannot create  lib file")?;
 
         let mut tokens = rust::Tokens::new();
 
@@ -213,6 +215,9 @@ impl Definition {
            mod request;
            mod response;
            mod bits;
+
+           $(DocComment::from_string("Providers").as_string())
+           $(for name in providers.provider_names() join(;$['\r'])=>  pub mod $(name.to_case(Case::Snake)) );
 
         //     $(if tests => $['\n']  #[cfg(test)] $['\n'] mod tests;)
 

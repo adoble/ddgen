@@ -18,7 +18,7 @@ fn generate_simple() {
     let generated_dir: PathBuf = [temp_dir.path(), Path::new("generated")].iter().collect();
     fs::create_dir_all(&generated_dir).unwrap();
 
-    generate::generate(&generated_dir, &None, definition);
+    generate::generate(&generated_dir, false, &None, definition);
 
     // Read the generated command file and compare
     let gen_file_path: PathBuf = [
@@ -48,7 +48,7 @@ fn generate_bits_fields_types() {
     let generated_dir: PathBuf = [temp_dir.path(), Path::new("generated")].iter().collect();
     fs::create_dir_all(&generated_dir).unwrap();
 
-    generate::generate(&generated_dir, &None, definition);
+    generate::generate(&generated_dir, false, &None, definition);
 
     // Read the generated command file and compare
     let gen_file_path: PathBuf = [

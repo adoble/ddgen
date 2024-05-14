@@ -180,12 +180,6 @@ where
     Ok(Some(target_type))
 }
 
-// enum FunctionType {
-//     Enumeration(String, String), // parameter name, parameter type
-//     SingleBit,
-//     Value(String), // parameter_name
-// }
-
 impl Field {
     pub fn generate_struct_member(&self, tokens: &mut Tokens<Rust>, name: &str) {
         match self {
@@ -582,6 +576,22 @@ impl Field {
             Field::BitField { bit_spec, .. } => bit_spec,
         }
     }
+
+    /// If the field has a provider type than return the name of it.
+    pub fn provider(&self) -> Option<&str> {
+        match self {
+            Field::BitField {
+                bit_spec:
+                    BitSpec {
+                        repeat: Repeat::Variable { .. },
+                        ..
+                    },
+                target_type: Some(TargetType::TypeName(provider_name)),
+                ..
+            } => Some(provider_name),
+            _ => None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -833,6 +843,32 @@ mod tests {
         let s = field.generate_word_field_serialization("a_repeat_u32", &fields);
 
         assert_eq!(s, "let provider = self.a_repeat_u32");
+    }
+    #[test]
+    fn test_provider() {
+        let field = Field::new_bitfield("3[];<=10", Some("a_provider")).unwrap();
+
+        let provider = field.provider();
+
+        assert_eq!(provider, Some("a_provider"));
+
+        let field = Field::new_bitfield("3[3..5]", Some("an_enum")).unwrap();
+
+        let provider = field.provider();
+
+        assert_eq!(provider, None);
+
+        let field = Field::new_bitfield("3];5", None).unwrap();
+
+        let provider = field.provider();
+
+        assert_eq!(provider, None);
+
+        let field = Field::new_bitfield("3];<5", None).unwrap();
+
+        let provider = field.provider();
+
+        assert_eq!(provider, None);
     }
 
     // Test utilities
