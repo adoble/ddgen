@@ -1,6 +1,5 @@
   # TODO
-  [ ] Add a cli option so that provider struct skeketons are generated.
-  [ ] This `data[1..=1].serialize_word(self.a_u8);` does work compile 
+   [ ] This `data[1..=1].serialize_word(self.a_u8);` does work compile 
   [ ] This incorrect bit spec compiles `"3[];(2[])10"`
   [ ] Ensure that all types are handled in serailize and deserialize ( a lot of impl fors)
   [ ] Add some more integration tests
