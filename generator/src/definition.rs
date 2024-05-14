@@ -147,7 +147,7 @@ impl Definition {
 
         self.generate_types_file(source_path)?;
 
-        let providers = Providers::from_definition(&self);
+        let providers = Providers::from_definition(self);
         if gen_providers {
             providers.generate(source_path)?;
         }
@@ -219,8 +219,11 @@ impl Definition {
            mod response;
            mod bits;
 
-           $(DocComment::from_string("Providers").as_string())
-           $(for name in providers.provider_names() join(;$['\r'])=>  pub mod $(name.to_case(Case::Snake)) );
+           $(if providers.len() > 0 {
+            $(DocComment::from_string("Providers").as_string())
+            $(for name in providers.provider_names() join(;$['\r'])=>  pub mod $(name.to_case(Case::Snake)));
+          })
+
 
         //     $(if tests => $['\n']  #[cfg(test)] $['\n'] mod tests;)
 

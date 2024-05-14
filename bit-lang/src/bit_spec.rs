@@ -218,17 +218,17 @@ impl BitSpec {
 
     pub fn suggested_word_type(&self) -> String {
         // First cover the special case of a literal. Handling this
-        // first reduces the compexisty of the match statements.
-        match self {
-            BitSpec {
-                start:
-                    Word {
-                        bit_range: BitRange::Literal(_),
-                        ..
-                    },
-                ..
-            } => return "u8".to_string(),
-            _ => (),
+        // first reduces the complexity of the match statements.
+        if let BitSpec {
+            start:
+                Word {
+                    bit_range: BitRange::Literal(_),
+                    ..
+                },
+            ..
+        } = self
+        {
+            return "u8".to_string();
         };
 
         // Now cover the rest of the cases

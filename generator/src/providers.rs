@@ -28,6 +28,10 @@ impl Providers {
         self.0.iter().map(|s| s.as_str())
     }
 
+    pub(crate) fn len(&self) -> usize {
+        self.0.len()
+    }
+
     pub(crate) fn generate(&self, out_path: &Path) -> anyhow::Result<()> {
         println!("Generating providers ...");
 

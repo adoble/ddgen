@@ -114,7 +114,6 @@ impl Command {
         let providers: Vec<String> = self
             .request
             .fields()
-            .into_iter()
             .filter_map(|f| f.provider())
             .map(String::from)
             .collect();

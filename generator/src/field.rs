@@ -519,7 +519,7 @@ impl Field {
                         bit_range: BitRange::Literal(literal),
                     },
                 ..
-            } => format!("{literal}"),
+            } => literal.to_string(), //format!("{literal}"),
             _ => format!("todo!(\"{name}\")"),
         }
     }
