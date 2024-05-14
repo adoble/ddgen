@@ -122,6 +122,7 @@ impl Definition {
     pub fn generate_code(
         &self,
         out_path: &Path,
+        gen_providers: bool,
         tests_path: &Option<PathBuf>,
     ) -> anyhow::Result<()> {
         println!(
@@ -147,7 +148,9 @@ impl Definition {
         self.generate_types_file(source_path)?;
 
         let providers = Providers::from_definition(&self);
-        providers.generate(source_path)?;
+        if gen_providers {
+            providers.generate(source_path)?;
+        }
 
         // if let Some(test_code_path) = tests_path {
         //     self.generate_tests(out_path, test_code_path)?;

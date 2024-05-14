@@ -26,6 +26,11 @@ struct Cli {
     #[arg(short, long)]
     name: Option<String>,
 
+    /// Specify if skeleton provider structs should be generated.
+    /// Warning: This overwrites any previous modifications.
+    #[clap(long, short, action)]
+    providers: bool,
+
     /// Path to test code.
     /// This will be copied into the generated project structure
     #[arg(long, short)]
@@ -55,5 +60,10 @@ fn main() {
 
     file.read_to_string(&mut toml_specification).unwrap();
 
-    generate::generate(&args.out_path, &args.tests, toml_specification.as_str());
+    generate::generate(
+        &args.out_path,
+        args.providers,
+        &args.tests,
+        toml_specification.as_str(),
+    );
 }

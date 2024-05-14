@@ -14,6 +14,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     match &args[..] {
         ["gen", _] => gen(args[1]),
+        ["gen", "providers", _] => gen_with_providers(args[2]),
         //["gen", "tests", _] => gen_with_tests(args[2]),
 
         // ["test", "host"] => test_host(),
@@ -35,6 +36,22 @@ fn gen(definition: &str) -> Result<(), anyhow::Error> {
 
     // Generate the driver for the specified definition file under <root>/generated/<device name>
     cmd!("cargo run --bin ddgen --   ./definitions/{definition}.toml ./generated").run()?;
+
+    // Need to add the generated project to the workspace members
+    // ASSUMING that the device name and the definition name are the same
+    //let member = format!("generated/{definition}");
+    //add_workspace_member(&member)?;
+
+    Ok(())
+}
+
+fn gen_with_providers(definition: &str) -> Result<(), anyhow::Error> {
+    let _p = xshell::pushd(root_dir())?;
+    println!("Generating for definition {}", definition);
+
+    // Generate the driver for the specified definition file under <root>/generated/<device name>
+    cmd!("cargo run --bin ddgen --   ./definitions/{definition}.toml ./generated  --providers")
+        .run()?;
 
     // Need to add the generated project to the workspace members
     // ASSUMING that the device name and the definition name are the same
