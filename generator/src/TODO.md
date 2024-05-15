@@ -2,6 +2,7 @@
      
   [ ] Ensure that all types are handled in serailize and deserialize ( a lot of impl fors)
   [ ] Add some more integration tests
+  [ ] Need some way to automatically initialise dummy fields 
   [ ] Instead of returning  an array, could not the serialize function return the size and an iterator (or just an iterator)? Thsi makes the interface very simple. Need to see how this works with an SPI transmit  loop. 
   [ ] Common structures cannot be variable length. Also varabiable repeating arrays need to be at the end of 
     the data stream. All of these problems woudl go away if we had labeled fields and follows field syntax
