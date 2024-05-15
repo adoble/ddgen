@@ -1,6 +1,5 @@
   # TODO
-   
-  
+     
   [ ] Ensure that all types are handled in serailize and deserialize ( a lot of impl fors)
   [ ] Add some more integration tests
   [ ] Instead of returning  an array, could not the serialize function return the size and an iterator (or just an iterator)? Thsi makes the interface very simple. Need to see how this works with an SPI transmit  loop. 
