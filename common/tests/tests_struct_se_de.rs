@@ -1,10 +1,10 @@
-#![cfg(test)]
 
-use crate::deserialize::Deserialize;
-use crate::error::DeviceError;
-use crate::request::{RequestArray, RequestBit, RequestField, RequestWord};
-use crate::response::{ResponseArray, ResponseBit, ResponseField, ResponseWord};
-use crate::serialize::Serialize;
+
+use common::deserialize::Deserialize;
+use common::error::DeviceError;
+use common::request::{RequestArray, RequestBit, RequestField, RequestWord};
+use common::response::{ResponseArray, ResponseBit, ResponseField, ResponseWord};
+use common::serialize::Serialize;
 
 // An enum for testing
 #[derive(PartialEq, Debug, Copy, Clone)]

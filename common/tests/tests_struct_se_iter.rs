@@ -2,8 +2,8 @@
 
 use core::iter::Iterator;
 
-use crate::request::{RequestBit, RequestWord};
-use crate::serialize::Serialize;
+use common::request::{RequestBit, RequestWord};
+use common::serialize::Serialize;
 
 // A struct for testing request/serialization
 // Bit structure is:

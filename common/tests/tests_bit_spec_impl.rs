@@ -1,9 +1,8 @@
-#![cfg(test)]
-use crate::bits::Bits;
-//use super::*;
-use crate::response::{ResponseBit, ResponseField};
-use crate::{error::DeviceError, response::ResponseArray};
+use common::bits::Bits;
+
 use bit_lang::{BitRange, BitSpec, Repeat as WordRepeat, Word};
+use common::response::{ResponseBit, ResponseField};
+use common::{error::DeviceError, response::ResponseArray};
 
 // An enum for testing
 #[derive(PartialEq, PartialOrd, Debug, Clone, Copy, Default)]
