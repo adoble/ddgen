@@ -664,7 +664,7 @@ mod tests {
 
         field.generate_struct_member(&mut tokens, "a_bool");
 
-        assert_eq!(tokens.to_string().unwrap(), "a_bool: bool,");
+        assert_eq!(tokens.to_string().unwrap(), "pub a_bool: bool,");
     }
 
     #[test]
@@ -674,7 +674,7 @@ mod tests {
 
         field.generate_struct_member(&mut tokens, "a_bool");
 
-        assert_eq!(tokens.to_string().unwrap(), "a_bool: AnEnum,");
+        assert_eq!(tokens.to_string().unwrap(), "pub a_bool: AnEnum,");
     }
 
     #[test]
@@ -684,7 +684,7 @@ mod tests {
 
         field.generate_struct_member(&mut tokens, "a_u8");
 
-        assert_eq!(tokens.to_string().unwrap(), "a_u8: u8,");
+        assert_eq!(tokens.to_string().unwrap(), "pub a_u8: u8,");
     }
 
     #[test]
@@ -694,7 +694,7 @@ mod tests {
 
         field.generate_struct_member(&mut tokens, "a_u16");
 
-        assert_eq!(tokens.to_string().unwrap(), "a_u16: u16,");
+        assert_eq!(tokens.to_string().unwrap(), "pub a_u16: u16,");
     }
     #[test]
     fn test_generate_struct_member_u32() {
@@ -703,7 +703,7 @@ mod tests {
 
         field.generate_struct_member(&mut tokens, "a_u32");
 
-        assert_eq!(tokens.to_string().unwrap(), "a_u32: u32,");
+        assert_eq!(tokens.to_string().unwrap(), "pub a_u32: u32,");
     }
 
     #[test]
@@ -713,7 +713,7 @@ mod tests {
 
         field.generate_struct_member(&mut tokens, "a_repeat");
 
-        assert_eq!(tokens.to_string().unwrap(), "a_repeat: [u8; 10],");
+        assert_eq!(tokens.to_string().unwrap(), "pub a_repeat: [u8; 10],");
     }
 
     #[test]
@@ -723,7 +723,7 @@ mod tests {
 
         field.generate_struct_member(&mut tokens, "a_repeat");
 
-        assert_eq!(tokens.to_string().unwrap(), "a_repeat: [u16; 12],");
+        assert_eq!(tokens.to_string().unwrap(), "pub a_repeat: [u16; 12],");
     }
 
     #[test]
@@ -735,7 +735,7 @@ mod tests {
 
         assert_eq!(
             tokens.to_string().unwrap(),
-            "a_dependent_repeat: [u16; 11],"
+            "pub a_dependent_repeat: [u16; 11],"
         );
     }
 
@@ -749,7 +749,7 @@ mod tests {
 
         assert_eq!(
             tokens.to_string().unwrap(),
-            "a_variable_repeat: ProviderStruct,"
+            "pub a_variable_repeat: ProviderStruct,"
         );
     }
 
