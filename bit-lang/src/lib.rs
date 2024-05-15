@@ -200,6 +200,7 @@ pub use bit_spec::{BitRange, BitSpec, Repeat, Word};
 #[derive(Debug, PartialEq, Clone)]
 pub enum Error {
     ParseError,
+    IllFormed,
 }
 
 impl Display for Error {
@@ -210,9 +211,14 @@ impl Display for Error {
 
 /// Parse the bit-lang specification and return a BitSpec.
 pub fn parse(bit_spec_string: &str) -> Result<BitSpec, Error> {
-    let (_, bit_spec) = parser::bit_spec(bit_spec_string).map_err(|_| Error::ParseError)?;
+    let (remaining, bit_spec) = parser::bit_spec(bit_spec_string).map_err(|_| Error::ParseError)?;
 
-    Ok(bit_spec)
+    // All characters in the bit spec shoudl have been consumed
+    if remaining.is_empty() {
+        Ok(bit_spec)
+    } else {
+        Err(Error::IllFormed)
+    }
 }
 
 #[cfg(test)]
@@ -430,5 +436,17 @@ mod tests {
             bit_spec.start.bit_range,
             BitRange::Literal("0xBA".to_string())
         );
+    }
+
+    #[test]
+    fn test_nonsense() {
+        assert!(parse("abcd").is_err());
+    }
+
+    #[test]
+    fn test_ill_formed() {
+        // This incorrect bit spec should  give an error `"3[];(2[])10"`
+
+        assert!(parse("3[];(2[])10").is_err());
     }
 }
