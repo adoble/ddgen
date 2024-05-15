@@ -19,7 +19,7 @@ impl CommonStructure {
     ) {
         let struct_name = name.to_case(Case::UpperCamel);
         quote_in!(*tokens =>
-            #[derive(Debug, PartialEq, Copy, Clone)]
+            #[derive(Debug, PartialEq, Copy, Clone, Default)]
             pub struct $(struct_name.clone()) {
                 $(for (name, field) in self.0.iter() => $(ref toks {field.generate_struct_member(toks, name)}) )
             }

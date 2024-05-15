@@ -282,7 +282,7 @@ impl Definition {
                 let enum_identifier = &enumeration.0.to_case(Case::UpperCamel);
 
                 quote_in!(tokens =>
-                    #[derive(PartialEq, Debug, Copy, Clone)]
+                    #[derive(PartialEq, Debug, Copy, Clone, Default)]
                     pub enum $enum_identifier {
                         $(ref toks {self.generate_enum_items(toks, enumeration.1)})
                     }
@@ -308,15 +308,16 @@ impl Definition {
     }
 
     fn generate_enum_items(&self, tokens: &mut Tokens<Rust>, enumeration: &Enumeration) {
-        // struct Enumeration(HashMap<String, u8>);
-
+        let mut first_item = true;
         for item in enumeration.0.iter() {
             let name = item.0.to_case(Case::UpperCamel);
             let descriminate = item.1.to_string();
             quote_in!(*tokens =>
+                $(if first_item {#[default]})
                 $name = $descriminate,
                 $['\r']
             );
+            first_item = false;
         }
     }
 
