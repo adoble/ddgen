@@ -858,13 +858,13 @@ mod tests {
 
         assert_eq!(provider, None);
 
-        let field = Field::new_bitfield("3];5", None).unwrap();
+        let field = Field::new_bitfield("[3];5", None).unwrap();
 
         let provider = field.provider();
 
         assert_eq!(provider, None);
 
-        let field = Field::new_bitfield("3];<5", None).unwrap();
+        let field = Field::new_bitfield("[3];<5", None).unwrap();
 
         let provider = field.provider();
 
