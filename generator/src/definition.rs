@@ -212,12 +212,12 @@ impl Definition {
            $(for name in self.commands.keys() join(;$['\r'])=>  pub mod $(name.to_lowercase()) );
 
            pub mod error;
-           mod types;
-           mod deserialize;
-           mod serialize;
-           mod request;
-           mod response;
-           mod bits;
+           pub mod types;
+           pub mod deserialize;
+           pub mod serialize;
+           pub mod request;
+           pub mod response;
+           pub mod bits;
 
            $(if providers.len() > 0 {
             $(DocComment::from_string("Providers").as_string())

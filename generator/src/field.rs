@@ -199,7 +199,7 @@ impl Field {
                 let normalised_common_struct_name = common_structure_name.to_case(Case::UpperCamel);
 
                 quote_in!(*tokens =>
-                    $(name): $(normalised_common_struct_name),$['\r']
+                    pub $(name): $(normalised_common_struct_name),$['\r']
                 );
             }
             Field::BitField {
@@ -234,7 +234,7 @@ impl Field {
 
                 // Field name
                 quote_in!(*tokens =>
-                    $(name): $(type_string),$['\r']
+                    pub $(name): $(type_string),$['\r']
                 );
             }
         }
