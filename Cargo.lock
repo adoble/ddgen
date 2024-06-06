@@ -152,6 +152,8 @@ dependencies = [
  "clap",
  "convert_case",
  "crossterm",
+ "embedded-hal 1.0.0",
+ "embedded-hal-mock 0.11.1",
  "genco",
  "semver",
  "serde",
@@ -269,6 +271,20 @@ name = "embedded-hal-mock"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4dbaee0c6634ca12a70ea5a794a88971c4a9dd7058053c48e418b9dfa23d1ab0"
+dependencies = [
+ "embedded-hal 0.2.7",
+ "embedded-hal 1.0.0",
+ "embedded-hal-nb",
+ "embedded-time",
+ "nb 1.1.0",
+ "void",
+]
+
+[[package]]
+name = "embedded-hal-mock"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9a0f04f8886106faf281c47b6a0e4054a369baedaf63591fdb8da9761f3f379"
 dependencies = [
  "embedded-hal 0.2.7",
  "embedded-hal 1.0.0",
@@ -666,7 +682,7 @@ name = "si468x"
 version = "0.0.2"
 dependencies = [
  "embedded-hal 1.0.0",
- "embedded-hal-mock",
+ "embedded-hal-mock 0.10.0",
 ]
 
 [[package]]
@@ -675,7 +691,7 @@ version = "0.1.0"
 dependencies = [
  "defmt",
  "embedded-hal 1.0.0",
- "embedded-hal-mock",
+ "embedded-hal-mock 0.10.0",
  "embedded-hal-nb",
 ]
 
@@ -759,7 +775,7 @@ name = "test_device"
 version = "0.0.2"
 dependencies = [
  "embedded-hal 1.0.0",
- "embedded-hal-mock",
+ "embedded-hal-mock 0.10.0",
 ]
 
 [[package]]
