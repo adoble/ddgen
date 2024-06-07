@@ -6,15 +6,16 @@ pub trait Transmit<SPI, RESP>: Serialize + Command
 where
     SPI: SpiDevice,
 {
-    fn transmit<const REQ_LEN: usize, const RESP_LEN: usize>(
+    fn transmit<const REQ_MAX_LEN: usize, const RESP_MAX_LEN: usize>(
         &self,
         spi: &mut SPI,
-    ) -> Result<[u8; RESP_LEN], DeviceError> {
+    ) -> Result<[u8; RESP_MAX_LEN], DeviceError> {
         let opcode: [u8; 1] = [self.opcode()];
 
         //TODO provider
-        let (size, data, _provider) = self.serialize::<REQ_LEN>();
-        let mut response_buf = [0 as u8; RESP_LEN];
+        let (size, data, _provider) = self.serialize::<REQ_MAX_LEN>();
+
+        let mut response_buf = [0 as u8; RESP_MAX_LEN];
         spi.transaction(&mut [
             Operation::Write(&opcode),
             Operation::Write(&data[0..size]),
