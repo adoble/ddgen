@@ -1,9 +1,12 @@
+use common::transmit::Transmit;
 use common::DeviceError;
 use common::{
-    deserialize::Deserialize, request::RequestWord, response::ResponseBit, serialize::Serialize,
+    command::Command, deserialize::Deserialize, request::RequestWord, response::ResponseBit,
+    serialize::Serialize,
 };
 //use embedded_hal::digital::{InputPin, OutputPin, StatefulOutputPin};
-use embedded_hal::spi::{Operation, SpiDevice};
+//use embedded_hal::spi::{Operation, SpiDevice};
+use embedded_hal::spi::SpiDevice;
 
 use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
 // use embedded_hal_mock::eh1::{
@@ -13,15 +16,16 @@ use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction
 
 const SIMPLE_REQUEST_OPCODE: u8 = 0x09;
 
-pub trait Command {
-    fn opcode(&self) -> u8;
-}
+// pub trait Command {
+//     fn opcode(&self) -> u8;
+// }
 
 struct SimpleRequest {
     arg1: u8,
 }
 
 impl SimpleRequest {
+    // This needs to be generated
     pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<SimpleResponse, DeviceError> {
         let response_buf = self.transmit::<2, 1>(spi)?;
 
@@ -30,6 +34,8 @@ impl SimpleRequest {
         Ok(response)
     }
 }
+
+impl<SPI: SpiDevice> Transmit<SPI, SimpleResponse> for SimpleRequest {}
 
 impl Command for SimpleRequest {
     fn opcode(&self) -> u8 {
@@ -49,8 +55,6 @@ impl Serialize for SimpleRequest {
     }
 }
 
-impl<SPI: SpiDevice> Transmit<SPI, SimpleResponse> for SimpleRequest {}
-
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct SimpleResponse {
     status: bool,
@@ -64,30 +68,30 @@ impl Deserialize<SimpleResponse> for [u8] {
     }
 }
 
-pub trait Transmit<SPI, RESP>: Serialize + Command
-where
-    SPI: SpiDevice,
-{
-    fn transmit<const REQ_LEN: usize, const RESP_LEN: usize>(
-        &self,
-        spi: &mut SPI,
-    ) -> Result<[u8; RESP_LEN], DeviceError> {
-        let opcode: [u8; 1] = [self.opcode()];
+// pub trait Transmit<SPI, RESP>: Serialize + Command
+// where
+//     SPI: SpiDevice,
+// {
+//     fn transmit<const REQ_LEN: usize, const RESP_LEN: usize>(
+//         &self,
+//         spi: &mut SPI,
+//     ) -> Result<[u8; RESP_LEN], DeviceError> {
+//         let opcode: [u8; 1] = [self.opcode()];
 
-        //TODO provider
-        let (size, data, _provider) = self.serialize::<REQ_LEN>();
-        let mut response_buf = [0 as u8; RESP_LEN];
-        spi.transaction(&mut [
-            Operation::Write(&opcode),
-            Operation::Write(&data[0..size]),
-            Operation::Read(&mut response_buf),
-        ])
-        .map_err(|_| DeviceError::Transmit)?;
-        // why not .map_err(DeviceError::Transmit)?
+//         //TODO provider
+//         let (size, data, _provider) = self.serialize::<REQ_LEN>();
+//         let mut response_buf = [0 as u8; RESP_LEN];
+//         spi.transaction(&mut [
+//             Operation::Write(&opcode),
+//             Operation::Write(&data[0..size]),
+//             Operation::Read(&mut response_buf),
+//         ])
+//         .map_err(|_| DeviceError::Transmit)?;
+//         // why not .map_err(DeviceError::Transmit)?
 
-        Ok(response_buf)
-    }
-}
+//         Ok(response_buf)
+//     }
+// }
 
 #[test]
 fn test_simple_request() {
