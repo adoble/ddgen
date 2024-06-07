@@ -13,7 +13,12 @@ where
         let opcode: [u8; 1] = [self.opcode()];
 
         //TODO provider
-        let (size, data, _provider) = self.serialize::<REQ_MAX_LEN>();
+        let (mut size, mut data, provider) = self.serialize::<REQ_MAX_LEN>();
+
+        for provided_element in provider {
+            data[size] = provided_element;
+            size += 1;
+        }
 
         let mut response_buf = [0 as u8; RESP_MAX_LEN];
         spi.transaction(&mut [
