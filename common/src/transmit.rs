@@ -12,7 +12,6 @@ where
     ) -> Result<[u8; RESP_MAX_LEN], DeviceError> {
         let opcode: [u8; 1] = [self.opcode()];
 
-        //TODO provider
         let (mut size, mut data, provider) = self.serialize::<REQ_MAX_LEN>();
 
         for provided_element in provider {
@@ -30,5 +29,14 @@ where
         // why not .map_err(DeviceError::Transmit)?
 
         Ok(response_buf)
+    }
+
+    #[allow(unused)]
+    fn polled_transmit<const REQ_MAX_LEN: usize, const RESP_MAX_LEN: usize>(
+        &self,
+        spi: &mut SPI,
+        f: fn() -> bool,
+    ) -> Result<[u8; RESP_MAX_LEN], DeviceError> {
+        Ok([0; RESP_MAX_LEN])
     }
 }
