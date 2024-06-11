@@ -136,6 +136,7 @@ impl Deserialize<PolledResponse> for [u8] {
 }
 
 #[test]
+// Single poll
 fn test_polled_request_1() {
     let request = PolledRequest { arg1: 8 };
 
@@ -150,6 +151,51 @@ fn test_polled_request_1() {
         SpiTransaction::transaction_start(),
         SpiTransaction::write(0x10),
         SpiTransaction::write(8),
+        SpiTransaction::read_vec(vec![0b000_0001]),
+        SpiTransaction::transaction_end(),
+        SpiTransaction::transaction_start(),
+        SpiTransaction::read_vec(vec![0xAA]),
+        SpiTransaction::transaction_end(),
+    ];
+
+    // let cs_expectations = [
+    //     PinTransaction::set(PinState::Low),
+    //     PinTransaction::set(PinState::High),
+    // ];
+
+    let mut spi = SpiMock::new(&spi_expectations);
+
+    // let mut cs = PinMock::new(&cs_expectations);
+
+    let response: PolledResponse = request.send(&mut spi).unwrap();
+
+    assert_eq!(response, expected_response);
+
+    spi.done();
+}
+
+#[test]
+// Multiple polls
+fn test_polled_request_n() {
+    let request = PolledRequest { arg1: 8 };
+
+    let expected_response = PolledResponse {
+        status_header: StatusHeader { status: true },
+        some_data: 0xAA,
+    };
+
+    //let (size, data, _) = request.serialize::<2>();
+
+    let spi_expectations = [
+        SpiTransaction::transaction_start(),
+        SpiTransaction::write(0x10),
+        SpiTransaction::write(8),
+        SpiTransaction::read_vec(vec![0b000_0000]),
+        SpiTransaction::transaction_end(),
+        SpiTransaction::transaction_start(),
+        SpiTransaction::read_vec(vec![0b000_0000]),
+        SpiTransaction::transaction_end(),
+        SpiTransaction::transaction_start(),
         SpiTransaction::read_vec(vec![0b000_0001]),
         SpiTransaction::transaction_end(),
         SpiTransaction::transaction_start(),
