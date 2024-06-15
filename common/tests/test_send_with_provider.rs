@@ -48,9 +48,7 @@ impl Iterator for Provider {
 impl ProviderTestRequest {
     // This needs to be generated
     pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<ProviderTestResponse, DeviceError> {
-        let response_buf = self.transmit::<10, 1>(spi)?;
-
-        let response: ProviderTestResponse = response_buf.deserialize()?;
+        let response = self.transmit::<10, 1>(spi)?;
 
         Ok(response)
     }
@@ -82,14 +80,21 @@ struct ProviderTestResponse {
     status: bool,
 }
 
-impl Deserialize<ProviderTestResponse> for [u8] {
-    fn deserialize(&self) -> Result<ProviderTestResponse, common::DeviceError> {
-        let status = self[0].deserialize_bit(0);
+// impl Deserialize<ProviderTestResponse> for [u8] {
+//     fn deserialize(&self) -> Result<ProviderTestResponse, common::DeviceError> {
+//         let status = self[0].deserialize_bit(0);
 
-        Ok(ProviderTestResponse { status })
+//         Ok(ProviderTestResponse { status })
+//     }
+// }
+
+impl Deserialize<Self> for ProviderTestResponse {
+    fn deserialize(buf: &[u8]) -> Result<ProviderTestResponse, common::DeviceError> {
+        let status = buf[0].deserialize_bit(0);
+
+        Ok(Self { status })
     }
 }
-
 #[test]
 fn test_provider_request() {
     let request = ProviderTestRequest {

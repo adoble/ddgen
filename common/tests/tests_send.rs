@@ -21,11 +21,10 @@ struct SimpleRequest {
 }
 
 impl SimpleRequest {
-    // This needs to be generated
+    // This needs to be generated as we need to corrected specifiy the sizes
+    // of the request and response.
     pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<SimpleResponse, DeviceError> {
-        let response_buf = self.transmit::<2, 1>(spi)?;
-
-        let response: SimpleResponse = response_buf.deserialize()?;
+        let response = self.transmit::<2, 1>(spi)?;
 
         Ok(response)
     }
@@ -56,14 +55,20 @@ struct SimpleResponse {
     status: bool,
 }
 
-impl Deserialize<SimpleResponse> for [u8] {
-    fn deserialize(&self) -> Result<SimpleResponse, common::DeviceError> {
-        let status = self[0].deserialize_bit(0);
+// impl Deserialize<SimpleResponse> for [u8] {
+//     fn deserialize(&self) -> Result<SimpleResponse, common::DeviceError> {
+//         let status = self[0].deserialize_bit(0);
 
-        Ok(SimpleResponse { status })
+//         Ok(SimpleResponse { status })
+//     }
+// }
+impl Deserialize<Self> for SimpleResponse {
+    fn deserialize(buf: &[u8]) -> Result<SimpleResponse, common::DeviceError> {
+        let status = buf[0].deserialize_bit(0);
+
+        Ok(Self { status })
     }
 }
-
 #[test]
 fn test_simple_request() {
     let request = SimpleRequest { arg1: 8 };

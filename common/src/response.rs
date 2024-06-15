@@ -1,6 +1,5 @@
 // TODO make the word size generic
 
-//use serde::Deserialize;
 use crate::bits::Bits;
 
 pub trait ResponseBit {
@@ -247,15 +246,25 @@ mod tests {
         c_u16: u16,
     }
 
-    impl Deserialize<TestCommonStruct> for [u8] {
-        fn deserialize(&self) -> Result<TestCommonStruct, DeviceError> {
-            Ok(TestCommonStruct {
-                c_bool: self[0].deserialize_bit(1),
-                c_test_field: self[0].deserialize_field(3, 5).try_into()?,
-                c_u16: self[1..=2].deserialize_word(),
+    impl Deserialize<Self> for TestCommonStruct {
+        fn deserialize(buf: &[u8]) -> Result<TestCommonStruct, DeviceError> {
+            Ok(Self {
+                c_bool: buf[0].deserialize_bit(1),
+                c_test_field: buf[0].deserialize_field(3, 5).try_into()?,
+                c_u16: buf[1..=2].deserialize_word(),
             })
         }
     }
+
+    // impl Deserialize for [u8] {
+    //     fn deserialize(&self) -> Result<TestCommonStruct, DeviceError> {
+    //         Ok(TestCommonStruct {
+    //             c_bool: self[0].deserialize_bit(1),
+    //             c_test_field: self[0].deserialize_field(3, 5).try_into()?,
+    //             c_u16: self[1..=2].deserialize_word(),
+    //         })
+    //     }
+    // }
 
     #[allow(dead_code)]
     #[derive(PartialEq, Debug, Copy, Clone)]
@@ -289,7 +298,7 @@ mod tests {
             c_u16: 45678,
         };
 
-        let actual_struct: TestCommonStruct = source_data[0..3].deserialize().unwrap();
+        let actual_struct = TestCommonStruct::deserialize(&source_data[0..3]).unwrap();
 
         assert_eq!(actual_struct, expected_struct);
     }

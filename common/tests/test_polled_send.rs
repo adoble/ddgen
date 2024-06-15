@@ -1,10 +1,10 @@
 use common::response::ResponseWord;
 use common::transmit::Transmit;
+use common::DeviceError;
 use common::{
     command::Command, deserialize::Deserialize, request::RequestBit, request::RequestWord,
     response::ResponseBit, serialize::Serialize,
 };
-use common::{response, DeviceError};
 //use embedded_hal::digital::{InputPin, OutputPin, StatefulOutputPin};
 //use embedded_hal::spi::{Operation, SpiDevice};
 use embedded_hal::spi::{Operation, SpiDevice};
@@ -52,8 +52,7 @@ impl PolledRequest {
         .map_err(|_| DeviceError::Transmit)?;
 
         loop {
-            let header: StatusHeader = response_buf[0..STATUS_HEADER_LEN]
-                .deserialize()
+            let header = StatusHeader::deserialize(&response_buf[0..STATUS_HEADER_LEN])
                 .map_err(|_| DeviceError::Receive)?;
 
             // TODO Timeout and delay between iterations
@@ -67,7 +66,7 @@ impl PolledRequest {
             }
         }
 
-        Ok(response_buf.deserialize()?)
+        Ok(PolledResponse::deserialize(&response_buf)?)
     }
 }
 
@@ -115,20 +114,20 @@ impl Serialize for StatusHeader {
     }
 }
 
-impl Deserialize<StatusHeader> for [u8] {
-    fn deserialize(&self) -> Result<StatusHeader, DeviceError> {
-        let status = self[0].deserialize_bit(0);
+impl Deserialize<Self> for StatusHeader {
+    fn deserialize(buf: &[u8]) -> Result<StatusHeader, DeviceError> {
+        let status = buf[0].deserialize_bit(0);
 
-        Ok(StatusHeader { status })
+        Ok(Self { status })
     }
 }
 
-impl Deserialize<PolledResponse> for [u8] {
-    fn deserialize(&self) -> Result<PolledResponse, common::DeviceError> {
-        let status_header = self[0..=0].deserialize()?;
-        let some_data = self[1].deserialize_word();
+impl Deserialize<Self> for PolledResponse {
+    fn deserialize(buf: &[u8]) -> Result<PolledResponse, common::DeviceError> {
+        let status_header = StatusHeader::deserialize(&buf[0..=0])?;
+        let some_data = buf[1].deserialize_word();
 
-        Ok(PolledResponse {
+        Ok(Self {
             status_header,
             some_data,
         })
