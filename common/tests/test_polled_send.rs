@@ -1,5 +1,5 @@
 use common::response::ResponseWord;
-use common::transmit::Transmit;
+use common::transmit::PolledTransmit;
 use common::DeviceError;
 use common::{
     command::Command, deserialize::Deserialize, request::RequestBit, request::RequestWord,
@@ -7,7 +7,7 @@ use common::{
 };
 //use embedded_hal::digital::{InputPin, OutputPin, StatefulOutputPin};
 //use embedded_hal::spi::{Operation, SpiDevice};
-use embedded_hal::spi::{Operation, SpiDevice};
+use embedded_hal::spi::SpiDevice;
 
 use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
 // use embedded_hal_mock::eh1::{
@@ -22,55 +22,66 @@ struct PolledRequest {
 }
 
 impl PolledRequest {
-    // This needs to be generated and made more general
     pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<PolledResponse, DeviceError> {
-        // For the si468x need to read in the first 4 bytes each time and see if the CTS bit is set.
-        // How to generalise this?
-        // Could make the status part a header, but this then gives the header concept new semantics.
+        let f = |h: StatusHeader| h.status;
+        let response = self.polled_transmit::<2, 2, StatusHeader, 1>(spi, f)?;
 
-        let opcode: [u8; 1] = [self.opcode()];
-
-        const REQ_MAX_LEN: usize = 1;
-
-        let (mut size, mut data, provider) = self.serialize::<REQ_MAX_LEN>();
-        for provided_element in provider {
-            data[size] = provided_element;
-            size += 1;
-        }
-
-        const RESP_MAX_LEN: usize = 2;
-        let mut response_buf = [0 as u8; RESP_MAX_LEN];
-
-        const STATUS_HEADER_LEN: usize = 1;
-
-        // Read the first header
-        spi.transaction(&mut [
-            Operation::Write(&opcode),
-            Operation::Write(&data[0..size]),
-            Operation::Read(&mut response_buf[0..STATUS_HEADER_LEN]),
-        ])
-        .map_err(|_| DeviceError::Transmit)?;
-
-        loop {
-            let header = StatusHeader::deserialize(&response_buf[0..STATUS_HEADER_LEN])
-                .map_err(|_| DeviceError::Receive)?;
-
-            // TODO Timeout and delay between iterations
-            if header.status {
-                spi.transaction(&mut [Operation::Read(&mut response_buf[STATUS_HEADER_LEN..])])
-                    .map_err(|_| DeviceError::Transmit)?;
-                break;
-            } else {
-                spi.transaction(&mut [Operation::Read(&mut response_buf[0..STATUS_HEADER_LEN])])
-                    .map_err(|_| DeviceError::Receive)?;
-            }
-        }
-
-        Ok(PolledResponse::deserialize(&response_buf)?)
+        Ok(response)
     }
+
+    // // This needs to be generated and made more general
+    // pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<PolledResponse, DeviceError> {
+    //     // For the si468x need to read in the first 4 bytes each time and see if the CTS bit is set.
+    //     // How to generalise this?
+    //     // Could make the status part a header, but this then gives the header concept new semantics.
+
+    //     let opcode: [u8; 1] = [self.opcode()];
+
+    //     const REQ_MAX_LEN: usize = 1;
+
+    //     let (mut size, mut data, provider) = self.serialize::<REQ_MAX_LEN>();
+    //     for provided_element in provider {
+    //         data[size] = provided_element;
+    //         size += 1;
+    //     }
+
+    //     const RESP_MAX_LEN: usize = 2;
+    //     let mut response_buf = [0 as u8; RESP_MAX_LEN];
+
+    //     const STATUS_HEADER_LEN: usize = 1;
+
+    //     // Read the first header
+    //     spi.transaction(&mut [
+    //         Operation::Write(&opcode),
+    //         Operation::Write(&data[0..size]),
+    //         Operation::Read(&mut response_buf[0..STATUS_HEADER_LEN]),
+    //     ])
+    //     .map_err(|_| DeviceError::Transmit)?;
+
+    //     loop {
+    //         let header = StatusHeader::deserialize(&response_buf[0..STATUS_HEADER_LEN])
+    //             .map_err(|_| DeviceError::Receive)?;
+
+    //             let header = StatusHeader::deserialize(&response_buf[0..STATUS_HEADER_LEN])
+    //             .map_err(|_| DeviceError::Receive)?;
+
+    //         // TODO timeouts
+
+    //         if header.status {
+    //             spi.transaction(&mut [Operation::Read(&mut response_buf[STATUS_HEADER_LEN..])])
+    //                 .map_err(|_| DeviceError::Transmit)?;
+    //             break;
+    //         } else {
+    //             spi.transaction(&mut [Operation::Read(&mut response_buf[0..STATUS_HEADER_LEN])])
+    //                 .map_err(|_| DeviceError::Receive)?;
+    //         }
+    //     }
+
+    //     Ok(PolledResponse::deserialize(&response_buf)?)
+    // }
 }
 
-impl<SPI: SpiDevice> Transmit<SPI, PolledResponse> for PolledRequest {}
+impl<SPI: SpiDevice> PolledTransmit<SPI, PolledResponse> for PolledRequest {}
 
 impl Command for PolledRequest {
     fn opcode(&self) -> u8 {

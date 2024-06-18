@@ -34,13 +34,60 @@ where
 
         Ok(response)
     }
+}
 
-    #[allow(unused)]
-    fn polled_transmit<const REQ_MAX_LEN: usize, const RESP_MAX_LEN: usize>(
+pub trait PolledTransmit<SPI, RESP>: Serialize + Command
+where
+    SPI: SpiDevice,
+    RESP: Deserialize<RESP>,
+{
+    fn polled_transmit<
+        const REQ_MAX_LEN: usize,
+        const RESP_MAX_LEN: usize,
+        HEADER: Deserialize<HEADER>,
+        const STATUS_HEADER_LEN: usize,
+    >(
         &self,
         spi: &mut SPI,
-        f: fn() -> bool,
-    ) -> Result<[u8; RESP_MAX_LEN], DeviceError> {
-        Ok([0; RESP_MAX_LEN])
+        //status_header: HEADER,
+        status_fn: fn(HEADER) -> bool,
+    ) -> Result<RESP, DeviceError> {
+        let opcode: [u8; 1] = [self.opcode()];
+
+        let (mut size, mut data, provider) = self.serialize::<REQ_MAX_LEN>();
+        // TODO Should the followng code be added to the serialize function? Signature
+        // would then be (size, data) = self.serialize::<REQ_MAX_LEN>()
+        for provided_element in provider {
+            data[size] = provided_element;
+            size += 1;
+        }
+
+        let mut response_buf = [0 as u8; RESP_MAX_LEN];
+
+        // Read the first header
+        spi.transaction(&mut [
+            Operation::Write(&opcode),
+            Operation::Write(&data[0..size]),
+            Operation::Read(&mut response_buf[0..STATUS_HEADER_LEN]),
+        ])
+        .map_err(|_| DeviceError::Transmit)?;
+
+        loop {
+            let header = HEADER::deserialize(&response_buf[0..STATUS_HEADER_LEN])
+                .map_err(|_| DeviceError::Receive)?;
+
+            if status_fn(header) {
+                // Read in the rest of the response
+                spi.transaction(&mut [Operation::Read(&mut response_buf[STATUS_HEADER_LEN..])])
+                    .map_err(|_| DeviceError::Transmit)?;
+                break;
+            } else {
+                // Repeat the read
+                spi.transaction(&mut [Operation::Read(&mut response_buf[0..STATUS_HEADER_LEN])])
+                    .map_err(|_| DeviceError::Receive)?;
+            }
+        }
+
+        Ok(RESP::deserialize(&response_buf)?)
     }
 }
