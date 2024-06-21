@@ -9,6 +9,7 @@ use serde::Deserialize;
 
 use crate::common_structure::CommonStructure;
 use crate::doc_comment::DocComment;
+use crate::flow_control::FlowControl;
 use crate::members::Members;
 use crate::output::output_file;
 
@@ -22,8 +23,9 @@ pub struct Command {
 
     description: Option<String>,
 
-    // request: HashMap<String, Field>,
-    // response: HashMap<String, Field>,
+    #[serde(default)]
+    flow_control: FlowControl,
+
     request: Members,
     response: Members,
 }
@@ -65,13 +67,17 @@ impl Command {
 
             $(generated_doc_comment)$['\n']
 
+            use embedded_hal::spi::SpiDevice;
 
+            use crate::command::Command;
             use crate::deserialize::Deserialize;
             use crate::error::DeviceError;
             use crate::request::{RequestArray, RequestBit, RequestField, RequestWord, RequestStruct};
             use crate::response::{ResponseArray, ResponseBit, ResponseField, ResponseWord};
             use crate::serialize::Serialize;
             use crate::types::*;
+
+            use crate::transmit::Transmit;
 
             $(for name in common_structures.keys() => use crate::$(name.to_lowercase())::$(name.to_case(Case::UpperCamel));)
 
@@ -86,6 +92,7 @@ impl Command {
             $['\n']
             $(ref toks => self.request.generate_serializations(toks, &request_struct_name,  common_structures))$['\r']
 
+
             $['\n']
             #[derive(Debug, PartialEq)]$['\r']
             pub struct $(&response_struct_name) {$['\r']
@@ -95,8 +102,14 @@ impl Command {
             $(ref toks => self.response.generate_deserializations(toks, &response_struct_name))$['\r']
             $['\n']
 
-            pub fn opcode() -> u8 {
-                $(format!("0x{:X}", self.opcode))
+            $(ref toks => self.generate_send(toks, &request_struct_name, &response_struct_name, &common_structures))$['\r']
+
+            impl<SPI: SpiDevice> Transmit<SPI, $(name.to_case(Case::UpperCamel))Response> for $(name.to_case(Case::UpperCamel))Request {}
+
+            impl Command for $(name.to_case(Case::UpperCamel))Request {
+                fn opcode(&self) -> u8 {
+                    $(format!("0x{:X}", self.opcode))
+                }
             }
 
 
@@ -108,6 +121,104 @@ impl Command {
         output_file(file, tokens)?;
 
         Ok(())
+    }
+
+    //$(ref toks => self.generate_send(toks, &response_struct_name))$['\r']
+    pub fn generate_send(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        request_name: &str,
+        response_name: &str,
+        common_structures: &HashMap<String, CommonStructure>,
+    ) {
+        let cased_request_name = request_name.to_case(Case::UpperCamel);
+        let cased_response_name = response_name.to_case(Case::UpperCamel);
+
+        match &self.flow_control {
+            FlowControl::Direct => self.generate_direct_send(
+                tokens,
+                &cased_request_name,
+                &cased_response_name,
+                common_structures,
+            ),
+            FlowControl::Polled { on, condition } => self.generate_polled_send(
+                tokens,
+                &cased_request_name,
+                &cased_response_name,
+                common_structures,
+                on,
+                condition,
+            ),
+        };
+
+        // quote_in!(*tokens =>
+        //     impl $(cased_request_name.clone()) {
+        //         // This needs to be generated as we need to corrected specifiy the sizes
+        //         // of the request and response.
+        //         pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<$(cased_response_name), DeviceError> {
+        //             const REQUEST_BUF_LEN: usize = $(self.request.buffer_size(common_structures));
+        //             const RESPONSE_BUF_LEN: usize = $(self.response.buffer_size(common_structures));
+
+        //             let response = self.transmit::<REQUEST_BUF_LEN, RESPONSE_BUF_LEN>(spi)?;
+        //             Ok(response)
+        //         }
+        //     }
+        // );
+    }
+
+    // Generate the send funtion for a DIRECT flow control
+    fn generate_direct_send(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        cased_request_name: &str,
+        cased_response_name: &str,
+        common_structures: &HashMap<String, CommonStructure>,
+    ) {
+        quote_in!(*tokens =>
+            impl $(cased_request_name) {
+                // This needs to be generated as we need to corrected specifiy the sizes
+                // of the request and response.
+                pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<$(cased_response_name), DeviceError> {
+                    const REQUEST_BUF_LEN: usize = $(self.request.buffer_size(common_structures));
+                    const RESPONSE_BUF_LEN: usize = $(self.response.buffer_size(common_structures));
+
+                    let response = self.transmit::<REQUEST_BUF_LEN, RESPONSE_BUF_LEN>(spi)?;
+                    Ok(response)
+                }
+            }
+        )
+    }
+
+    // Generate the send function for a POLLED flow control.
+    fn generate_polled_send(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        cased_request_name: &str,
+        cased_response_name: &str,
+        common_structures: &HashMap<String, CommonStructure>,
+        on: &str,
+        condition: &str,
+    ) {
+        let header_structure = common_structures.get(on).unwrap(); //TODO Error handling
+        let header_structure_buf_size = header_structure.buffer_size();
+        let cased_header_structure_name = on.to_case(Case::UpperCamel);
+        let request_buf_size = self.request.buffer_size(common_structures);
+        let response_buf_size = self.response.buffer_size(common_structures);
+
+        quote_in!(*tokens =>
+            impl $cased_request_name {
+            pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<$cased_response_name, DeviceError> {
+                let f = | h: $(cased_header_structure_name.clone())  | h.$condition;
+
+                const REQUEST_BUF_LEN: usize = $request_buf_size;
+                const RESPONSE_BUF_LEN: usize = $response_buf_size;
+                const STATUS_HEADER_LEN: usize = $header_structure_buf_size;
+
+                let response = self.polled_transmit::<REQUEST_BUF_LEN, RESPONSE_BUF_LEN, $cased_header_structure_name, STATUS_HEADER_LEN>(spi, f)?;
+
+                Ok(response)
+            }
+        })
     }
 
     pub fn providers(&self) -> impl Iterator<Item = String> {
