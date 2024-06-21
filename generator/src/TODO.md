@@ -1,5 +1,5 @@
   # TODO
-  [ ] Merge the code for the two tranmit traits    
+   
   [ ] Ensure that all types are handled in serailize and deserialize ( a lot of impl fors)
   [ ] Add some more integration tests
   [ ] Need some way to automatically initialise dummy fields 

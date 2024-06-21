@@ -34,13 +34,7 @@ where
 
         Ok(response)
     }
-}
 
-pub trait PolledTransmit<SPI, RESP>: Serialize + Command
-where
-    SPI: SpiDevice,
-    RESP: Deserialize<RESP>,
-{
     fn polled_transmit<
         const REQ_MAX_LEN: usize,
         const RESP_MAX_LEN: usize,

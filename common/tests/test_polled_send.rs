@@ -1,5 +1,5 @@
 use common::response::ResponseWord;
-use common::transmit::PolledTransmit;
+use common::transmit::Transmit;
 use common::DeviceError;
 use common::{
     command::Command, deserialize::Deserialize, request::RequestBit, request::RequestWord,
@@ -81,7 +81,7 @@ impl PolledRequest {
     // }
 }
 
-impl<SPI: SpiDevice> PolledTransmit<SPI, PolledResponse> for PolledRequest {}
+impl<SPI: SpiDevice> Transmit<SPI, PolledResponse> for PolledRequest {}
 
 impl Command for PolledRequest {
     fn opcode(&self) -> u8 {
