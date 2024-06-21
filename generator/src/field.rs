@@ -282,7 +282,9 @@ impl Field {
             Field::Structure {
                 common_structure_name,
                 ..
-            } => self.generate_header_field_deserialization(common_structure_name),
+            } => self.generate_header_field_deserialization(
+                common_structure_name.to_case(Case::UpperCamel).as_str(),
+            ),
         };
 
         quote_in!(*tokens =>
@@ -430,7 +432,7 @@ impl Field {
                 end: None,
                 repeat: Repeat::None,
                 //} => format!("data[{index}].serialize_bit(self.{name}, {bit_position});"),
-            } => format!("self[{index}].deserialize_bit({bit_position})"),
+            } => format!("buf[{index}].deserialize_bit({bit_position})"),
             BitSpec {
                 start:
                     Word {
@@ -440,7 +442,7 @@ impl Field {
                 end: None,
                 repeat: Repeat::None,
             } => {
-                format!("self[{index}].deserialize_field({start_bit}, {end_bit}).try_into()?")
+                format!("buf[{index}].deserialize_field({start_bit}, {end_bit}).try_into()?")
             }
             BitSpec {
                 start:
@@ -450,7 +452,7 @@ impl Field {
                     },
                 end: None,
                 repeat: Repeat::None,
-            } => format!("self[{index}].deserialize_word()"),
+            } => format!("buf[{index}].deserialize_word()"),
             BitSpec {
                 start:
                     Word {
@@ -463,7 +465,7 @@ impl Field {
                         bit_range: BitRange::WholeWord,
                     }),
                 repeat: Repeat::None,
-            } => format!("self[{start_index}..={end_index}].deserialize_word()"),
+            } => format!("buf[{start_index}..={end_index}].deserialize_word()"),
 
             BitSpec {
                 start:
@@ -475,7 +477,7 @@ impl Field {
                 repeat: Repeat::Fixed { number },
                 ..
             } => {
-                format!("self[{start_index}..].deserialize_repeating_words({number})")
+                format!("buf[{start_index}..].deserialize_repeating_words({number})")
             }
             BitSpec {
                 start:
@@ -503,7 +505,7 @@ impl Field {
                 {
                     format!(
                         //"self[{start_index}..].deserialize_repeating_words(self[{}].deserialize_word() as usize)",
-                        "self[{start_index}..].deserialize_repeating_words({} as usize)",
+                        "buf[{start_index}..].deserialize_repeating_words({} as usize)",
                         //repeat_word.index
                         count_symbol_name
                     )
@@ -556,8 +558,6 @@ impl Field {
     }
 
     fn generate_header_field_deserialization(&self, common_structure_name: &str) -> String {
-        // data.deserialize().unwrap()
-
         let bit_spec = self.bit_spec();
 
         let WordRange::Fixed(start, end) = bit_spec.word_range() else {
@@ -567,7 +567,8 @@ impl Field {
             );
         };
 
-        format!("self[{start}..{end}].deserialize().unwrap()")
+        //format!("buf[{start}..{end}].deserialize().unwrap()")
+        format!("{common_structure_name}::deserialize(&buf[{start}..={end}])?;")
     }
 
     fn bit_spec(&self) -> &BitSpec {

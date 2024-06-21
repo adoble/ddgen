@@ -89,13 +89,13 @@ impl Members {
         sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
 
         quote_in!(*tokens=>
-           impl Deserialize<$(struct_name)> for [u8] {
+           impl Deserialize<Self> for $(struct_name) {
 
-               fn deserialize(&self) -> Result<$(struct_name), DeviceError> { $['\r']
+               fn deserialize(buf: &[u8]) -> Result<$(struct_name), DeviceError> { $['\r']
 
                     $(for (name, field) in &sorted_members => let $(*name) = $(ref toks {field.generate_field_deserialization(toks,  name, self)}) ) $['\r']
 
-                    Ok($(struct_name) {$['\r']
+                    Ok(Self {$['\r']
                         $(for (name, _) in &sorted_members => $(*name),$['\r'])
                     })$['\r']
 

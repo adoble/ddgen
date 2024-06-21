@@ -32,7 +32,10 @@ error_nr         = { bits = "3[0]" }
 
 
 [commands.GET_SYS_STATE]
-opcode = 0x09
+opcode       = 0x09
+flow_control = { type = "polled", on = "header", condition = "cts" }
+
+
 # The sizes of the requests and the reponses are soley determined for the fields and their bit specifications
 # This can be derived from max "word" value
 description = """GET_SYS_STATE reports basic system state information such as which mode is active; FM, DAB, etc. The

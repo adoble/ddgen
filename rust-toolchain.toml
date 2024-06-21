@@ -1,4 +1,4 @@
-# The genarator does not correctly format the code unless it has been
+# The generator does not correctly format the code unless it has been
 # built with the nightly toolchain. This ensures that this happens. 
 [toolchain]
 channel = "nightly"

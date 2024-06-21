@@ -218,6 +218,8 @@ impl Definition {
            pub mod request;
            pub mod response;
            pub mod bits;
+           pub mod command;
+           pub mod transmit;
 
            $(if providers.len() > 0 {
             $(DocComment::from_string("Providers").as_string())
@@ -382,7 +384,7 @@ impl Definition {
 
         // Need to use include_str!() so as to bind the common files to the binary
         // as resources. However, include_str!() only accepts str literals so have to
-        // initialise the hashmap in this akward way.
+        // initialise the hashmap in this awkward way.
         let common_resources = HashMap::from([
             ("bits.rs", include_str!("../../common/src/bits.rs")),
             (
@@ -396,6 +398,8 @@ impl Definition {
                 "serialize.rs",
                 include_str!("../../common/src/serialize.rs"),
             ),
+            ("transmit.rs", include_str!("../../common/src/transmit.rs")),
+            ("command.rs", include_str!("../../common/src/command.rs")),
         ]);
 
         for (file_name, code_resource) in &common_resources {

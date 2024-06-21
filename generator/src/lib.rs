@@ -16,6 +16,7 @@ mod definition;
 mod doc_comment;
 mod error_reporting;
 mod field;
+mod flow_control;
 mod members;
 mod output;
 mod providers;
