@@ -40,7 +40,8 @@ impl Members {
     pub fn generate_serializations(
         &self,
         tokens: &mut Tokens<Rust>,
-        struct_name: &str,
+        // request_struct_name: &RequestStructName,
+        struct_name: impl FormatInto<Rust> + Clone,
         common_structures: &CommonStructures,
     ) {
         let mut sorted_members: Vec<_> = self.to_vec();
@@ -82,14 +83,19 @@ impl Members {
         format!("{fixed_size}{variable_size_expression}")
     }
 
-    pub fn generate_deserializations(&self, tokens: &mut Tokens<Rust>, struct_name: &str) {
+    pub fn generate_deserializations(
+        &self,
+        tokens: &mut Tokens<Rust>,
+        // response_struct_name: &ResponseStructName,
+        struct_name: impl FormatInto<Rust> + Clone,
+    ) {
         let mut sorted_members: Vec<_> = self.to_vec();
 
         // Sort by fields, not by the name
         sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
 
         quote_in!(*tokens=>
-           impl Deserialize<Self> for $(struct_name) {
+           impl Deserialize<Self> for $(struct_name.clone()) {
 
                fn deserialize(buf: &[u8]) -> Result<$(struct_name), DeviceError> { $['\r']
 

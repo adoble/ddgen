@@ -4,6 +4,7 @@ use std::path::Path;
 
 use anyhow::Context;
 use convert_case::{Case, Casing};
+//use convert_case::{Case, Casing};
 use genco::prelude::*;
 use serde::Deserialize;
 
@@ -11,6 +12,7 @@ use crate::common_structure::CommonStructure;
 use crate::doc_comment::DocComment;
 use crate::flow_control::FlowControl;
 use crate::members::Members;
+use crate::naming::{CommandName, RequestStructName, ResponseStructName};
 use crate::output::output_file;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -33,13 +35,13 @@ pub struct Command {
 impl Command {
     pub fn generate_command(
         &self,
-        name: &str,
+        command_name: &CommandName,
         common_structures: &HashMap<String, CommonStructure>,
         out_path: &Path,
     ) -> anyhow::Result<()> {
-        println!("Generating command file for {name}");
+        println!("Generating command file for {command_name}");
 
-        let command_file_name = format!("{}.rs", name.to_lowercase());
+        let command_file_name = format!("{}.rs", command_name.to_file_name());
         let target_path = out_path.join(command_file_name.clone());
 
         let file = File::create(target_path)
@@ -47,10 +49,15 @@ impl Command {
 
         let mut tokens = rust::Tokens::new();
 
-        let request_struct_name = format!("{}Request", name.to_case(Case::UpperCamel));
-        let response_struct_name = format!("{}Response", name.to_case(Case::UpperCamel));
+        // let command_name = CommandName::from(command_name);
+        let request_struct_name = RequestStructName::from(command_name);
+        let response_struct_name = ResponseStructName::from(command_name);
 
-        let command_doc_comment = DocComment::from_string(&format!("Command {}", name)).as_string();
+        // let request_struct_name = format!("{}Request", name.to_case(Case::UpperCamel));
+        // let response_struct_name = format!("{}Response", name.to_case(Case::UpperCamel));
+
+        let command_doc_comment =
+            DocComment::from_string(&format!("Command {}", command_name)).as_string();
         let description_doc_comment =
             DocComment::from_string(self.description.as_ref().unwrap_or(&String::new()))
                 .as_string();
@@ -86,7 +93,7 @@ impl Command {
 
             $['\n']
             #[derive(Debug, PartialEq)]$['\r']
-            pub struct $(&request_struct_name) {$['\r']
+            pub struct $(request_struct_name.clone()) {$['\r']
                 $(ref toks => self.request.generate_members(toks))$['\r']
             }
             $['\n']
@@ -95,18 +102,19 @@ impl Command {
 
             $['\n']
             #[derive(Debug, PartialEq)]$['\r']
-            pub struct $(&response_struct_name) {$['\r']
+            pub struct $(response_struct_name.clone()) {$['\r']
                 $(ref toks => self.response.generate_members(toks))$['\r']
             }
             $['\n']
-            $(ref toks => self.response.generate_deserializations(toks, &response_struct_name))$['\r']
+            $(ref toks => self.response.generate_deserializations(toks, response_struct_name.clone()))$['\r']
             $['\n']
 
             $(ref toks => self.generate_send(toks, &request_struct_name, &response_struct_name, &common_structures))$['\r']
 
-            impl<SPI: SpiDevice> Transmit<SPI, $(name.to_case(Case::UpperCamel))Response> for $(name.to_case(Case::UpperCamel))Request {}
+            //impl<SPI: SpiDevice> Transmit<SPI, $(command_name.to_case(Case::UpperCamel))Response> for $(command_name.to_case(Case::UpperCamel))Request {}
+            impl<SPI: SpiDevice> Transmit<SPI, $(response_struct_name)> for $(request_struct_name.clone()) {}
 
-            impl Command for $(name.to_case(Case::UpperCamel))Request {
+            impl Command for $request_struct_name  {
                 fn opcode(&self) -> u8 {
                     $(format!("0x{:X}", self.opcode))
                 }
@@ -127,24 +135,21 @@ impl Command {
     pub fn generate_send(
         &self,
         tokens: &mut Tokens<Rust>,
-        request_name: &str,
-        response_name: &str,
+        request_name: &RequestStructName,
+        response_name: &ResponseStructName,
         common_structures: &HashMap<String, CommonStructure>,
     ) {
-        let cased_request_name = request_name.to_case(Case::UpperCamel);
-        let cased_response_name = response_name.to_case(Case::UpperCamel);
+        // let cased_request_name = request_name.to_case(Case::UpperCamel);
+        // let cased_response_name = response_name.to_case(Case::UpperCamel);
 
         match &self.flow_control {
-            FlowControl::Direct => self.generate_direct_send(
-                tokens,
-                &cased_request_name,
-                &cased_response_name,
-                common_structures,
-            ),
+            FlowControl::Direct => {
+                self.generate_direct_send(tokens, request_name, response_name, common_structures)
+            }
             FlowControl::Polled { on, condition } => self.generate_polled_send(
                 tokens,
-                &cased_request_name,
-                &cased_response_name,
+                request_name,
+                response_name,
                 common_structures,
                 on,
                 condition,
@@ -170,15 +175,15 @@ impl Command {
     fn generate_direct_send(
         &self,
         tokens: &mut Tokens<Rust>,
-        cased_request_name: &str,
-        cased_response_name: &str,
+        request_name: &RequestStructName,
+        response_name: &ResponseStructName,
         common_structures: &HashMap<String, CommonStructure>,
     ) {
         quote_in!(*tokens =>
-            impl $(cased_request_name) {
+            impl $(request_name) {
                 // This needs to be generated as we need to corrected specifiy the sizes
                 // of the request and response.
-                pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<$(cased_response_name), DeviceError> {
+                pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<$(response_name), DeviceError> {
                     const REQUEST_BUF_LEN: usize = $(self.request.buffer_size(common_structures));
                     const RESPONSE_BUF_LEN: usize = $(self.response.buffer_size(common_structures));
 
@@ -193,8 +198,8 @@ impl Command {
     fn generate_polled_send(
         &self,
         tokens: &mut Tokens<Rust>,
-        cased_request_name: &str,
-        cased_response_name: &str,
+        request_name: &RequestStructName,
+        response_name: &ResponseStructName,
         common_structures: &HashMap<String, CommonStructure>,
         on: &str,
         condition: &str,
@@ -206,8 +211,8 @@ impl Command {
         let response_buf_size = self.response.buffer_size(common_structures);
 
         quote_in!(*tokens =>
-            impl $cased_request_name {
-            pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<$cased_response_name, DeviceError> {
+            impl $request_name {
+            pub fn send<SPI: SpiDevice>(&self, spi: &mut SPI) -> Result<$response_name, DeviceError> {
                 let f = | h: $(cased_header_structure_name.clone())  | h.$condition;
 
                 const REQUEST_BUF_LEN: usize = $request_buf_size;

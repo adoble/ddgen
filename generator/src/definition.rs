@@ -15,6 +15,7 @@ use crate::cargo_gen;
 use crate::command::Command;
 use crate::common_structure::CommonStructure;
 use crate::doc_comment::DocComment;
+use crate::naming::{CommandName, CommonStructureName};
 use crate::output::output_file;
 use crate::providers::Providers;
 use crate::Enumeration;
@@ -244,7 +245,11 @@ impl Definition {
         common_structures: &HashMap<String, CommonStructure>,
     ) -> anyhow::Result<()> {
         for (command_name, command) in &self.commands {
-            command.generate_command(command_name, common_structures, out_path)?;
+            command.generate_command(
+                &CommandName::from(command_name.to_string()),
+                common_structures,
+                out_path,
+            )?;
         }
 
         Ok(())
@@ -341,8 +346,12 @@ impl Definition {
     ) -> anyhow::Result<()> {
         println!("Generate common structure files ...");
         for (name, structure) in common_structures {
-            let name = name.to_case(Case::Lower);
-            let file_name = format!("{name}.rs");
+            // let name = name.to_case(Case::Lower);
+            // let file_name = format!("{name}.rs");
+
+            let common_structure_name = CommonStructureName::from(name.to_string());
+            let file_name = common_structure_name.to_file_name();
+
             let path: PathBuf = [source_path, Path::new(&file_name)].iter().collect();
             let file = File::create(path).with_context(|| format!("Cannot open {file_name}"))?;
 
@@ -365,7 +374,7 @@ impl Definition {
 
                 use crate::types::*;
 
-                $(ref toks {structure.generate(toks, name, common_structures)})
+                $(ref toks {structure.generate(toks, &common_structure_name, common_structures)})
 
                 //$(ref toks {structure.generate_serializations(toks, name)})
 

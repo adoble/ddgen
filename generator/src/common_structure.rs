@@ -1,9 +1,9 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 
-use convert_case::{Case, Casing};
 use genco::prelude::*;
 
+use crate::naming::CommonStructureName;
 use crate::{field::Field, members::Members};
 
 #[derive(Deserialize, Debug)]
@@ -14,19 +14,19 @@ impl CommonStructure {
     pub fn generate(
         &self,
         tokens: &mut Tokens<Rust>,
-        name: String,
+        struct_name: &CommonStructureName,
         common_structures: &HashMap<String, CommonStructure>,
     ) {
-        let struct_name = name.to_case(Case::UpperCamel);
+        //let struct_name = name.to_case(Case::UpperCamel);
         quote_in!(*tokens =>
             #[derive(Debug, PartialEq, Copy, Clone, Default)]
             pub struct $(struct_name.clone()) {
                 $(for (name, field) in self.0.iter() => $(ref toks {field.generate_struct_member(toks, name)}) )
             }
 
-            $(ref toks => self.0.generate_serializations(toks, &struct_name, common_structures))$['\r']
+            $(ref toks => self.0.generate_serializations(toks, struct_name.clone(), common_structures))$['\r']
 
-            $(ref toks => self.0.generate_deserializations(toks, &struct_name))$['\r']
+            $(ref toks => self.0.generate_deserializations(toks, struct_name))$['\r']
         );
     }
 

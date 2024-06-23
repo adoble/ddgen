@@ -1,12 +1,6 @@
   # TODO
 
-  [ ] The naming of structures is a mess! Try an use the `new type` pattern for these, e.g.:
-
-       ```rust 
-       let req_struct_name = RequestStructureName::from("get_sys_state");
-       
-       $(req_struct_name.get())
-       ```
+ 
 
   [ ] Ensure that all types are handled in serialize and deserialize ( a lot of impl fors)
 
