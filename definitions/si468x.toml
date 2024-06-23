@@ -90,6 +90,7 @@ high_side = 2
 
 [commands.DAB_SET_FREQ_LIST]
 opcode = 0xB8
+flow_control = { type = "polled", on = "header", condition = "cts" }
 description = """DAB_SET_FREQ_LIST command sets the DAB frequency table. The frequencies are in units of 1 kHz. The table
 can be populated with a single entry or a regional list (for example 5 or 6 entries]. It is recommended to make the
 list regional to increase scanning speed. The command is complete when the CTS bit (and optional interrupt) is
@@ -105,8 +106,9 @@ frequencies        = { bits = "3[]..4[];(0[])<=48", type = "u16" }
 header = { bits = "0[]..3[]", struct = "header" }
 
 [commands.POWER_UP]
-opcode      = 0x01
-description = """The POWER_UP initiates the boot process to move the device from power down to power up mode. """
+opcode       = 0x01
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = """The POWER_UP initiates the boot process to move the device from power down to power up mode. """
 
 [commands.POWER_UP.request]
 ibias_run      = { bits = "12[0..6]", description = "TAL IBIAS current at runtime, after the XTAL oscillator has stabilized" }
@@ -129,8 +131,9 @@ oscillator_off_differential_buffer = 3
 
 
 [commands.HOST_LOAD]
-opcode      = 0x04
-description = "HOST_LOAD loads an image from HOST over command interface"
+opcode       = 0x04
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = "HOST_LOAD loads an image from HOST over command interface"
 
 [commands.HOST_LOAD.request]
 arg1       = { bits = "0[0x00]" }
@@ -142,8 +145,9 @@ image_data = { bits = "3[];<=4096", type = "HostImageDataLoader" } # This is act
 header = { bits = "0[];4", struct = "header" } # Trying out a different bit lang expression here to see if it still works. 
 
 [commands.FLASH_LOAD]
-opcode      = 0x05
-description = "FLASH_LOAD loads the firmware image from an externally attached SPI flash over the secondary SPI bus."
+opcode       = 0x05
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = "FLASH_LOAD loads the firmware image from an externally attached SPI flash over the secondary SPI bus."
 
 [commands.FLASH_LOAD.request]
 arg1                = { bits = "0[0x00]" }
