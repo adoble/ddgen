@@ -70,6 +70,7 @@ app_running        = 3
 
 [commands.DAB_TUNE_FREQ]
 opcode = 0xB0
+flow_control = { type = "polled", on = "header", condition = "cts" }
 description = """DAB_TUNE_FREQ sets the DAB Receiver to tune to a frequency between 168.16 MHz and 239.20 MHz defined
 by the table through DAB_SET_FREQ_LIST."""
 
