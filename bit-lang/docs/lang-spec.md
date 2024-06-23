@@ -1,4 +1,4 @@
-```text
+
 # Language specification
 
 ## Single bits
@@ -115,6 +115,5 @@ Alternativly one could another condition to mean the same thing:
 
     3[];(2[])<=48
 
-```
 
 
