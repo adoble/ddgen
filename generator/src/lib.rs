@@ -18,6 +18,7 @@ mod error_reporting;
 mod field;
 mod flow_control;
 mod members;
+mod naming;
 mod output;
 mod providers;
 
