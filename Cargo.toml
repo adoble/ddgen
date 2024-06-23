@@ -6,6 +6,5 @@ members = [
     "examples/si468x-pac",
     "sandbox",
     "generated/test_device",
-    "generated/si468x",
 ]
 resolver = "2"

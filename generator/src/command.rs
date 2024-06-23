@@ -41,7 +41,7 @@ impl Command {
     ) -> anyhow::Result<()> {
         println!("Generating command file for {command_name}");
 
-        let command_file_name = format!("{}.rs", command_name.to_file_name());
+        let command_file_name = format!("{}", command_name.to_file_name());
         let target_path = out_path.join(command_file_name.clone());
 
         let file = File::create(target_path)
