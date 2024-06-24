@@ -209,8 +209,7 @@ _padding           = { bits = "10[];13" }
 # LOAD_INIT      X
 # BOOT           X
 # GET_PART_INFO  X
-# READ_OFFSET
-# GET_FUNC_INFO
+# GET_FUNC_INFO 
 # SET_PROPERTY
 # FM_TUNE_FREQ
 # FM_SEEK_START
@@ -229,3 +228,4 @@ _padding           = { bits = "10[];13" }
 # DAB_GET_AUDIO_INFO
 # DAB_GET_SUBCHAN_INFO
 # DAB_GET_SERVICE_INFO
+# READ_OFFSET
