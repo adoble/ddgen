@@ -687,6 +687,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "si468x"
+version = "0.0.2"
+dependencies = [
+ "embedded-hal 1.0.0",
+ "embedded-hal-mock 0.10.0",
+]
+
+[[package]]
 name = "si468x-pac"
 version = "0.1.0"
 dependencies = [
