@@ -7,7 +7,7 @@ pub struct ResponseStructName(String);
 
 impl From<&CommandName> for ResponseStructName {
     fn from(command_name: &CommandName) -> Self {
-        let name = format!("{}Response", command_name.to_string());
+        let name = format!("{}Response", command_name);
         ResponseStructName(name)
     }
 }

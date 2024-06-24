@@ -8,7 +8,7 @@ pub struct RequestStructName(String);
 
 impl From<&CommandName> for RequestStructName {
     fn from(command_name: &CommandName) -> Self {
-        let name = format!("{}Request", command_name.to_string());
+        let name = format!("{}Request", command_name);
         RequestStructName(name)
     }
 }

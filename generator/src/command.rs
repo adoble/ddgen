@@ -41,7 +41,7 @@ impl Command {
     ) -> anyhow::Result<()> {
         println!("Generating command file for {command_name}");
 
-        let command_file_name = format!("{}", command_name.to_file_name());
+        let command_file_name = command_name.to_file_name();
         let target_path = out_path.join(command_file_name.clone());
 
         let file = File::create(target_path)
@@ -111,7 +111,7 @@ impl Command {
             $(ref toks => self.response.generate_deserializations(toks, response_struct_name.clone()))$['\r']
             $['\n']
 
-            $(ref toks => self.generate_send(toks, &request_struct_name, &response_struct_name, &common_structures))$['\r']
+            $(ref toks => self.generate_send(toks, &request_struct_name, &response_struct_name, common_structures))$['\r']
 
             //impl<SPI: SpiDevice> Transmit<SPI, $(command_name.to_case(Case::UpperCamel))Response> for $(command_name.to_case(Case::UpperCamel))Request {}
             impl<SPI: SpiDevice> Transmit<SPI, $(response_struct_name)> for $(request_struct_name.clone()) {}
