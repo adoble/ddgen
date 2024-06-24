@@ -19,7 +19,7 @@ where
             data[size] = provided_element;
             size += 1;
         }
-        let mut response_buf = [0 as u8; RESP_MAX_LEN];
+        let mut response_buf = [0_u8; RESP_MAX_LEN];
 
         spi.transaction(&mut [
             Operation::Write(&opcode),
@@ -56,7 +56,7 @@ where
             size += 1;
         }
 
-        let mut response_buf = [0 as u8; RESP_MAX_LEN];
+        let mut response_buf = [0_u8; RESP_MAX_LEN];
 
         // Read the first header
         spi.transaction(&mut [
@@ -82,6 +82,6 @@ where
             }
         }
 
-        Ok(RESP::deserialize(&response_buf)?)
+        RESP::deserialize(&response_buf)
     }
 }

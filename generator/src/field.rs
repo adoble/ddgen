@@ -568,7 +568,7 @@ impl Field {
         };
 
         //format!("buf[{start}..{end}].deserialize().unwrap()")
-        format!("{common_structure_name}::deserialize(&buf[{start}..={end}])?;")
+        format!("{common_structure_name}::deserialize(&buf[{start}..={end}])?")
     }
 
     fn bit_spec(&self) -> &BitSpec {

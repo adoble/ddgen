@@ -68,6 +68,7 @@ impl Command {
         // DEBUG
         quote_in!(tokens =>
             #![allow(unused_imports)]$['\n']
+            #![allow(clippy::unnecessary_cast)]$['\n']
             $(command_doc_comment)$['\r']
 
             $(description_doc_comment)$['\r']
@@ -79,6 +80,7 @@ impl Command {
             use crate::command::Command;
             use crate::deserialize::Deserialize;
             use crate::error::DeviceError;
+
             use crate::request::{RequestArray, RequestBit, RequestField, RequestWord, RequestStruct};
             use crate::response::{ResponseArray, ResponseBit, ResponseField, ResponseWord};
             use crate::serialize::Serialize;

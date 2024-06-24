@@ -368,7 +368,9 @@ impl Definition {
 
                 use crate::deserialize::Deserialize;
                 use crate::error::DeviceError;
+                #[allow(unused_imports)]
                 use crate::request::{RequestArray, RequestBit, RequestField, RequestWord};
+                #[allow(unused_imports)]
                 use crate::response::{ResponseArray, ResponseBit, ResponseField, ResponseWord};
                 use crate::serialize::Serialize;
 
