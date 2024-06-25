@@ -185,8 +185,6 @@ arg1 = { bits = "0[0x00]" }
 [commands.BOOT.response]
 header = { bits = "0[];4", struct = "header" }
 
-#-------------------
-
 [commands.GET_PART_INFO]
 opcode       = 0x08
 flow_control = { type = "polled", on = "header", condition = "cts" }
@@ -201,6 +199,35 @@ chip_mask_revision = { bits = "4[]" }
 rom_id             = { bits = "5[]" }
 part_number        = { bits = "8[]..9[]" }
 _padding           = { bits = "10[];13" }
+
+#-------------------
+[commands.GET_FUNC_INFO]
+opcode = 0x12
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description = """GET_FUNC_INFO returns the function revision number for currently loaded firmware (FMHD, AM etc.) as opposed
+to GET_PART_INFO command that provides the revision number for the combo firmware. For example,
+GET_PART_INFO would return A0B is the firmware revision while GET_FUNC_INFO would return 1.0.4 for FM
+function revision if the currently running firmware function is FM."""
+
+[commands.GET_FUNC_INFO.request]
+arg1 = { bits = "0[0x00]" }
+
+[commands.GET_FUNC_INFO.response]
+header                = { bits = "0[];4", struct = "header" }
+major_revision_number = { bits = "4[]", description = "First part of 1.2.3" }
+minor_revision_number = { bits = "5[]", description = "Second part of 1.2.3" }
+build_revision_number = { bits = "6[]", description = "Third part of 1.2.3" }
+no_svn                = { bits = "7[7]", description = "If set the build was created with no SVN info." }
+location              = { bits = "7[4..5]", type = "image_build_location", description = "The location from which the image was built." }
+mixed_revisions       = { bits = "7[1]", description = "If set, the image was built from mixed revisions." }
+local_modifications   = { bits = "7[0]", description = "If set, the image has local modifications." }
+svn_id                = { bits = "8[]..11[]", description = "SVN ID for which the image was built." }
+
+
+[enum.image_build_location]
+tag    = 0
+branch = 1
+trunk  = 2
 
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
