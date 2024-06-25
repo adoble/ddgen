@@ -53,6 +53,18 @@ impl ResponseWord<i16> for [u8] {
     }
 }
 
+impl ResponseWord<u32> for [u8] {
+    fn deserialize_word(&self) -> u32 {
+        u32::from_le_bytes([self[0], self[1], self[2], self[4]])
+    }
+}
+
+impl ResponseWord<i32> for [u8] {
+    fn deserialize_word(&self) -> i32 {
+        i32::from_le_bytes([self[0], self[1], self[2], self[4]])
+    }
+}
+
 pub trait ResponseArray<T> {
     //  a_repeating_u8: data[0..=1].deserialize_repeating_word(2),
     // self is the u8 stream
