@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 use genco::prelude::*;
 
+use crate::members::Members;
 use crate::naming::CommonStructureName;
-use crate::{field::Field, members::Members};
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -47,34 +47,72 @@ impl CommonStructure {
 
     /// Calculates the size in bytes required to hold a common structure.
     /// Common structures cannot contain other common structures
-    #[allow(dead_code)]
     pub fn buffer_size(&self) -> usize {
-        let mut positions: HashMap<usize, usize> = HashMap::new();
-        for f in self.0.fields() {
-            // Implementing this with a hashmap as more than one bit spec can reference the
-            // same position in the buffer. The key is the position and the value is the size.
-            match f {
-                Field::BitField {
-                    bit_spec: bit_range,
-                    ..
-                } => {
-                    positions
-                        .entry(bit_range.start.index)
-                        .or_insert_with(|| bit_range.max_size());
-                }
-                Field::Structure {
-                    common_structure_name,
-                    ..
-                } => {
-                    println!(
-                        "A common structure cannot contain  another common structure ({})!",
-                        common_structure_name
-                    );
-                    // TODO either make this impossible or provide better error handling!
-                }
-            }
-        }
+        let empty_common_structures = HashMap::<String, CommonStructure>::new();
+        self.0.buffer_size(&empty_common_structures)
+    }
+}
 
-        positions.values().sum::<usize>()
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::field::Field;
+    use bit_lang::parse;
+
+    #[test]
+    fn test_buffer_size_simple() {
+        let field_a = Field::BitField {
+            bit_spec: parse("0[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+        let field_b = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+        let field_c = Field::BitField {
+            bit_spec: parse("2[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let mut members = Members::new();
+
+        members.add("a", field_a);
+        members.add("b", field_b);
+        members.add("c", field_c);
+
+        let common_structure = CommonStructure(members);
+
+        let buf_size = common_structure.buffer_size();
+
+        assert_eq!(3, buf_size);
+    }
+
+    #[test]
+    fn test_buffer_size_discontinuous() {
+        let field_a = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let field_c = Field::BitField {
+            bit_spec: parse("3[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let mut members = Members::new();
+
+        members.add("a", field_a);
+        members.add("c", field_c);
+
+        let common_structure = CommonStructure(members);
+
+        let buf_size = common_structure.buffer_size();
+
+        assert_eq!(4, buf_size);
     }
 }

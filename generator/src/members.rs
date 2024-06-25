@@ -115,20 +115,19 @@ impl Members {
     /// Calculates the max size in bytes of a set of members. This is required
     /// so that the buffers for the structures can be sized to cater for
     /// largest size.
-    #[allow(dead_code)]
+    ///
     pub fn buffer_size(&self, common_structures: &HashMap<String, CommonStructure>) -> usize {
-        let mut positions: HashMap<usize, usize> = HashMap::new();
+        let mut buffer_size = 0;
         for f in self.fields() {
-            // Implementing this with a hashmap as more than one bit spec can reference the
-            // same position in the buffer. The key is the position and the value is the size.
             match f {
                 Field::BitField {
                     bit_spec: bit_range,
                     ..
                 } => {
-                    positions
-                        .entry(bit_range.start.index)
-                        .or_insert_with(|| bit_range.max_size());
+                    let max_pos = bit_range.start.index + bit_range.max_size() - 1;
+                    if max_pos >= buffer_size {
+                        buffer_size = max_pos + 1;
+                    }
                 }
                 Field::Structure {
                     common_structure_name,
@@ -136,14 +135,15 @@ impl Members {
                     ..
                 } => {
                     let common_structure = common_structures.get(common_structure_name).unwrap();
-                    positions
-                        .entry(bit_spec.start.index)
-                        .or_insert_with(|| common_structure.buffer_size());
+                    let max_pos = bit_spec.start.index + common_structure.buffer_size() - 1;
+                    if max_pos >= buffer_size {
+                        buffer_size = max_pos + 1;
+                    }
                 }
             }
         }
 
-        positions.values().sum::<usize>()
+        buffer_size
     }
 
     pub fn to_vec(&self) -> Vec<(&String, &Field)> {
@@ -258,5 +258,95 @@ mod tests {
             members.find_field_by_bitspec(&bit_spec1),
             Some(("a_u16", &expected_field))
         );
+    }
+
+    #[test]
+    fn test_buffer_size_simple() {
+        let field_a = Field::BitField {
+            bit_spec: parse("0[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+        let field_b = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+        let field_c = Field::BitField {
+            bit_spec: parse("2[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let mut members = Members::new();
+
+        members.add("a", field_a);
+        members.add("b", field_b);
+        members.add("c", field_c);
+
+        let empty_common_structures = HashMap::<String, CommonStructure>::new();
+
+        let buf_size = members.buffer_size(&empty_common_structures);
+
+        assert_eq!(3, buf_size);
+    }
+
+    #[test]
+    fn test_buffer_size_discontinuous() {
+        let field_a = Field::BitField {
+            bit_spec: parse("0[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let field_c = Field::BitField {
+            bit_spec: parse("3[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let mut members = Members::new();
+
+        members.add("a", field_a);
+        members.add("c", field_c);
+
+        let empty_common_structures = HashMap::<String, CommonStructure>::new();
+
+        let buf_size = members.buffer_size(&empty_common_structures);
+
+        assert_eq!(4, buf_size);
+    }
+
+    #[test]
+    fn test_buffer_size_overlapping() {
+        let field_a = Field::BitField {
+            bit_spec: parse("0[0..4]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let field_b = Field::BitField {
+            bit_spec: parse("0[5..7]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let field_c = Field::BitField {
+            bit_spec: parse("1[]").unwrap(),
+            target_type: None,
+            description: None,
+        };
+
+        let mut members = Members::new();
+
+        members.add("a", field_a);
+        members.add("b", field_b);
+        members.add("c", field_c);
+
+        let empty_common_structures = HashMap::<String, CommonStructure>::new();
+
+        let buf_size = members.buffer_size(&empty_common_structures);
+
+        assert_eq!(2, buf_size);
     }
 }
