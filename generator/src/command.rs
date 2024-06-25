@@ -208,7 +208,7 @@ impl Command {
     ) {
         let header_structure = common_structures.get(on).unwrap(); //TODO Error handling
         let header_structure_buf_size = header_structure.buffer_size();
-        let cased_header_structure_name = on.to_case(Case::UpperCamel);
+        let cased_header_structure_name = on.to_case(Case::UpperCamel); // TOO this should be replaced with naming module functions
         let request_buf_size = self.request.buffer_size(common_structures);
         let response_buf_size = self.response.buffer_size(common_structures);
 
