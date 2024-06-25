@@ -200,7 +200,6 @@ rom_id             = { bits = "5[]" }
 part_number        = { bits = "8[]..9[]" }
 _padding           = { bits = "10[];13" }
 
-#-------------------
 [commands.GET_FUNC_INFO]
 opcode = 0x12
 flow_control = { type = "polled", on = "header", condition = "cts" }
@@ -229,6 +228,21 @@ tag    = 0
 branch = 1
 trunk  = 2
 
+#-------------------
+[commands.SET_PROPERTY]
+opcode       = 0x13
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = """SET_PROPERTY sets the value of a property"""
+
+[commands.SET_PROPERTY.request]
+arg1        = { bits = "0[0x00]" }
+property_id = { bits = "1[]..2[]", description = "ID of the property to set." }
+data        = { bits = "3[]..4[]", type = "i16", description = "Value for the written property." }
+
+[commands.SET_PROPERTY.response]
+header = { bits = "0[];4", struct = "header" }
+
+
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
 # HOST_LOAD      X
@@ -236,7 +250,7 @@ trunk  = 2
 # LOAD_INIT      X
 # BOOT           X
 # GET_PART_INFO  X
-# GET_FUNC_INFO 
+# GET_FUNC_INFO  X
 # SET_PROPERTY
 # FM_TUNE_FREQ
 # FM_SEEK_START
