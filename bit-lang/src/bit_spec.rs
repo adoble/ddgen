@@ -62,7 +62,10 @@ pub enum Repeat {
     Fixed { number: usize },
     /// A variable number of repetitions determined by
     /// (dependent on ) another word and limited
-    Dependent { word: Word, limit: usize },
+    Dependent {
+        bit_spec: Box<BitSpec>,
+        limit: usize,
+    },
     /// A variable number of repetitions. Each element is provided
     /// by a `provider` which needs to implement the
     /// `Iterator` trait and is determined elsewhere.
@@ -89,7 +92,7 @@ impl fmt::Display for Repeat {
         match self {
             Repeat::None => write!(f, ""),
             Repeat::Fixed { number } => write!(f, "{number}"),
-            Repeat::Dependent { word, limit } => write!(f, "({word})<={limit}"),
+            Repeat::Dependent { bit_spec, limit } => write!(f, "({bit_spec})<={limit}"),
             Repeat::Variable { limit, .. } => write!(f, "<={limit}"),
         }
     }
@@ -105,7 +108,7 @@ pub enum WordRange {
     /// ```
     /// The word range is 3 to 4, but this span needs to be multiplied by
     /// the number in `1[]`.
-    Dependent(usize, usize, Word),
+    Dependent(usize, usize, BitSpec),
     // A variable number of repeats. All that is is know is the limit.
     Variable(usize),
 }
@@ -156,10 +159,10 @@ impl BitSpec {
 
     /// Determine how many bytes this bit spec would need. It returns an
     /// optional tuple with the fixed size of the element and an
-    /// optional Word showing where the multiplier is located.
-    /// If the size cannot be determoined (e.g. the bit spec is a
+    /// optional BitSpec showing where the multiplier is located.
+    /// If the size cannot be determined (e.g. the bit spec is a
     /// variabvle repeat) the `None` is returned
-    pub fn size(&self) -> Option<(usize, Option<Word>)> {
+    pub fn size(&self) -> Option<(usize, Option<BitSpec>)> {
         match self {
             BitSpec {
                 start: _,
@@ -184,13 +187,13 @@ impl BitSpec {
             BitSpec {
                 start: _,
                 end: None,
-                repeat: Repeat::Dependent { word, .. },
-            } => Some((1, Some(word.clone()))),
+                repeat: Repeat::Dependent { bit_spec, .. },
+            } => Some((1, Some((**bit_spec).clone()))),
             BitSpec {
                 start,
                 end: Some(end),
-                repeat: Repeat::Dependent { word, .. },
-            } => Some((end.index - start.index + 1, Some(word.clone()))),
+                repeat: Repeat::Dependent { bit_spec, .. },
+            } => Some((end.index - start.index + 1, Some((**bit_spec).clone()))),
             BitSpec {
                 repeat: Repeat::Variable { .. },
                 ..
@@ -207,7 +210,9 @@ impl BitSpec {
             Repeat::Fixed { number } => {
                 WordRange::Fixed(start, start + ((end - start + 1) * number) - 1)
             }
-            Repeat::Dependent { word, .. } => WordRange::Dependent(start, end, word.clone()),
+            Repeat::Dependent { bit_spec, .. } => {
+                WordRange::Dependent(start, end, (**bit_spec).clone())
+            }
             Repeat::Variable { limit } => WordRange::Variable(*limit),
             Repeat::None => WordRange::Fixed(start, end),
         }
@@ -459,19 +464,21 @@ mod tests {
 
         let repeat = Repeat::Dependent {
             limit: 5,
-            word: Word {
-                index: 5,
-                bit_range: BitRange::WholeWord,
-            },
+            bit_spec: Box::new(parse("5[]").unwrap()),
+            // word: Word {
+            //     index: 5,
+            //     bit_range: BitRange::WholeWord,
+            // },
         };
         assert_eq!(repeat.max_repeats(), 5);
 
         let repeat = Repeat::Dependent {
             limit: 6,
-            word: Word {
-                index: 5,
-                bit_range: BitRange::WholeWord,
-            },
+            bit_spec: Box::new(parse("5[]").unwrap()),
+            // word: Word {
+            //     index: 5,
+            //     bit_range: BitRange::WholeWord,
+            // },
         };
         assert_eq!(repeat.max_repeats(), 6);
 
@@ -538,10 +545,11 @@ mod tests {
                 }),
                 repeat: Repeat::Dependent {
                     limit: 10,
-                    word: Word {
-                        index: 3,
-                        bit_range: BitRange::WholeWord
-                    }
+                    bit_spec: Box::new(parse("3[]").unwrap()),
+                    // word: Word {
+                    //     index: 3,
+                    //     bit_range: BitRange::WholeWord
+                    // }
                 }
             }
             .to_string(),
@@ -670,14 +678,17 @@ mod tests {
     fn test_size_with_dependent_repeating_word() {
         let bit_spec = parse("3[];(1[])<=4").unwrap();
         let size = bit_spec.size().unwrap();
+
+        let expected_bit_spec = parse("1[]").unwrap();
         assert_eq!(
             size,
             (
                 1,
-                Some(Word {
-                    index: 1,
-                    bit_range: BitRange::WholeWord,
-                }),
+                Some(expected_bit_spec),
+                // Some(Word {
+                //     index: 1,
+                //     bit_range: BitRange::WholeWord,
+                // }),
             )
         );
     }
@@ -695,14 +706,17 @@ mod tests {
     fn test_size_with_variable_repeating_word_range() {
         let bit_spec = parse("3[]..6[];(1[])<=4").unwrap();
         let size = bit_spec.size().unwrap();
+
+        let expected_bit_spec = parse("1[]").unwrap();
         assert_eq!(
             size,
             (
                 4,
-                Some(Word {
-                    index: 1,
-                    bit_range: BitRange::WholeWord,
-                }),
+                Some(expected_bit_spec),
+                // Some(Word {
+                //     index: 1,
+                //     bit_range: BitRange::WholeWord,
+                // }),
             )
         );
     }
@@ -768,14 +782,16 @@ mod tests {
             panic!("Word range is not variable")
         };
 
+        let expected_dependent_bit_spec = parse("5[]").unwrap();
         assert_eq!(start, 6);
         assert_eq!(end, 6);
         assert_eq!(
             repeat_word,
-            Word {
-                index: 5,
-                bit_range: BitRange::WholeWord
-            }
+            expected_dependent_bit_spec,
+            // Word {
+            //     index: 5,
+            //     bit_range: BitRange::WholeWord
+            // }
         );
     }
 }

@@ -13,9 +13,6 @@ use nom::{
     IResult,
 };
 
-
-
-
 // Parse functions follow ...
 
 fn index(input: &str) -> IResult<&str, u16> {
@@ -111,16 +108,24 @@ fn fixed_repeat(input: &str) -> IResult<&str, Repeat> {
 }
 
 // variable_word = "(" word ")";
-fn dependent_word(input: &str) -> IResult<&str, Word> {
+// fn dependent_word(input: &str) -> IResult<&str, Word> {
+//     // TODO see if  we can also use take_until() to solve ambiguity
+//     let (remaining, word) = delimited(char('('), word, char(')'))(input)?;
+//     Ok((remaining, word))
+// }
+
+// <variable> ::= "(" (<bit_spec> | <symbol>) ")"
+// <symbol> currently not supported
+fn dependent_bit_spec(input: &str) -> IResult<&str, BitSpec> {
     // TODO see if  we can also use take_until() to solve ambiguity
-    let (remaining, word) = delimited(char('('), word, char(')'))(input)?;
-    Ok((remaining, word))
+    let (remaining, bit_spec) = delimited(char('('), bit_spec, char(')'))(input)?;
+    Ok((remaining, bit_spec))
 }
 
 // variable_repeat = variable_word condition limit;
 fn dependent_repeat(input: &str) -> IResult<&str, Repeat> {
-    let (remaining, (word, condition, limit)) =
-        tuple((dependent_word, condition, u16_parser))(input)?;
+    let (remaining, (bit_spec, condition, limit)) =
+        tuple((dependent_bit_spec, condition, u16_parser))(input)?;
 
     let adjusted_limit = match condition {
         Condition::Lte => limit,
@@ -129,7 +134,8 @@ fn dependent_repeat(input: &str) -> IResult<&str, Repeat> {
     Ok((
         remaining,
         Repeat::Dependent {
-            word,
+            bit_spec: Box::new(bit_spec),
+            //word,
             limit: adjusted_limit.into(),
         },
     ))
@@ -333,7 +339,7 @@ mod tests {
     }
 
     #[test]
-    fn test_repeat() {
+    fn test_repeat_fixed() {
         let data = ";12";
         let (_, r) = repeat(data).unwrap();
         assert_eq!(r, Repeat::Fixed { number: 12 });
@@ -341,33 +347,100 @@ mod tests {
         let data = ";6";
         let (_, r) = repeat(data).unwrap();
         assert_eq!(r, Repeat::Fixed { number: 6 });
+    }
 
+    #[test]
+    fn test_repeat_dependent_simple() {
         let data = ";(4[])<49";
         let (_, r) = repeat(data).unwrap();
-        let word = Word {
-            index: 4,
-            bit_range: BitRange::WholeWord,
+        let expected_dependent_bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: None,
+            repeat: Repeat::None,
         };
 
-        let expected = Repeat::Dependent { word, limit: 48 };
+        let expected = Repeat::Dependent {
+            bit_spec: Box::new(expected_dependent_bit_spec),
+            limit: 48,
+        };
         assert_eq!(r, expected);
+    }
 
+    #[test]
+    fn test_repeat_dependent_no_limit_error() {
         let data = ";(4[])";
         assert!(repeat(data).is_err());
     }
 
     #[test]
-    fn test_repeat_to_string() {
+    fn test_repeat_dependent_explicit_range() {
+        let data = ";(4[]..5[])<49";
+        let (_, r) = repeat(data).unwrap();
+        let expected_dependent_bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: Some(Word {
+                index: 5,
+                bit_range: BitRange::WholeWord,
+            }),
+            repeat: Repeat::None,
+        };
+
+        let expected = Repeat::Dependent {
+            bit_spec: Box::new(expected_dependent_bit_spec),
+            limit: 48,
+        };
+        assert_eq!(r, expected);
+    }
+
+    #[test]
+    fn test_repeat_dependent_limited_range() {
+        let data = ";(4[];2)<49";
+        let (_, r) = repeat(data).unwrap();
+        let expected_dependent_bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: None,
+            repeat: Repeat::Fixed { number: 2 },
+        };
+
+        let expected = Repeat::Dependent {
+            bit_spec: Box::new(expected_dependent_bit_spec),
+            limit: 48,
+        };
+        assert_eq!(r, expected);
+    }
+
+    #[test]
+    fn test_fixed_repeat_to_string_() {
         assert_eq!(Repeat::Fixed { number: 12 }.to_string(), "12");
+    }
 
+    #[test]
+    fn test_no_repeat_to_string() {
         assert_eq!(Repeat::None.to_string(), "");
+    }
 
+    #[test]
+    fn test_single_word_dependent_repeat_to_string() {
+        let expected_dependent_bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
         assert_eq!(
             Repeat::Dependent {
-                word: Word {
-                    index: 4,
-                    bit_range: BitRange::WholeWord,
-                },
+                bit_spec: Box::new(expected_dependent_bit_spec),
                 limit: 48
             }
             .to_string(),
@@ -376,27 +449,89 @@ mod tests {
     }
 
     #[test]
+    fn test_word_range_dependent_repeat_to_string_1() {
+        let expected_dependent_bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: Some(Word {
+                index: 5,
+                bit_range: BitRange::WholeWord,
+            }),
+            repeat: Repeat::None,
+        };
+        assert_eq!(
+            Repeat::Dependent {
+                bit_spec: Box::new(expected_dependent_bit_spec),
+                limit: 48
+            }
+            .to_string(),
+            "(4[]..5[])<=48"
+        );
+    }
+
+    #[test]
+    fn test_word_range_dependent_repeat_to_string_2() {
+        let expected_dependent_bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: None,
+            repeat: Repeat::Fixed { number: 2 },
+        };
+        assert_eq!(
+            Repeat::Dependent {
+                bit_spec: Box::new(expected_dependent_bit_spec),
+                limit: 48
+            }
+            .to_string(),
+            "(4[];2)<=48"
+        );
+    }
+
+    #[test]
     fn test_dependent_repeat() {
         let data = "(4[])<=48";
         let (_, r) = dependent_repeat(data).unwrap();
-        let word = Word {
-            index: 4,
-            bit_range: BitRange::WholeWord,
+
+        let dependent_bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::WholeWord,
+            },
+            end: None,
+            repeat: Repeat::None,
         };
 
-        let expected = Repeat::Dependent { word, limit: 48 };
-        assert_eq!(r, expected);
-
-        let data = "(4[0..7])<49";
-        let (_, r) = dependent_repeat(data).unwrap();
-        let word = Word {
-            index: 4,
-            bit_range: BitRange::Range(0, 7),
+        let expected = Repeat::Dependent {
+            bit_spec: Box::new(dependent_bit_spec),
+            limit: 48,
         };
-
-        let expected = Repeat::Dependent { word, limit: 48 };
         assert_eq!(r, expected);
     }
+
+    #[test]
+    fn test_dependent_repeat_with_bit_range() {
+        let data = "(4[0..7])<49";
+        let (_, r) = dependent_repeat(data).unwrap();
+        let expected_bit_spec = BitSpec {
+            start: Word {
+                index: 4,
+                bit_range: BitRange::Range(0, 7),
+            },
+            end: None,
+            repeat: Repeat::None,
+        };
+
+        let expected = Repeat::Dependent {
+            bit_spec: Box::new(expected_bit_spec),
+            limit: 48,
+        };
+        assert_eq!(r, expected);
+    }
+
     #[test]
     fn test_fixed_repeat() {
         let data = "48";
@@ -516,11 +651,16 @@ mod tests {
 
         let data = "4[]..7[];(3[])<49";
         let (_, r) = bit_spec(data).unwrap();
+
         let repeat = Repeat::Dependent {
-            word: Word {
-                index: 3,
-                bit_range: BitRange::WholeWord,
-            },
+            bit_spec: Box::new(BitSpec {
+                start: Word {
+                    index: 3,
+                    bit_range: BitRange::WholeWord,
+                },
+                end: None,
+                repeat: Repeat::None,
+            }),
             limit: 48,
         };
         let expected = BitSpec {

@@ -369,7 +369,8 @@ impl Field {
 
                 repeat:
                     Repeat::Dependent {
-                        word: repeat_word, ..
+                        bit_spec: repeat_bit_spec, // word: repeat_word,
+                        ..
                     },
                 ..
             } => {
@@ -378,14 +379,13 @@ impl Field {
                 // This excludes repeat words that are, for instance, a u16 that using two words.
                 // What follows is a workaround, but ultimately the parser
                 //  should recognise full bit specs for variable repeat words.
-                let repeat_bit_spec = BitSpec {
-                    start: repeat_word.clone(),
-                    end: None,
-                    repeat: Repeat::None,
-                };
+                // let repeat_bit_spec = BitSpec {
+                //     start: repeat_word.clone(),
+                //     end: None,
+                //     repeat: Repeat::None,
+                // };
                 // let count_symbol_name = symbol_table.get(&repeat_bit_spec);
-                if let Some((count_symbol_name, _)) =
-                    members.find_field_by_bitspec(&repeat_bit_spec)
+                if let Some((count_symbol_name, _)) = members.find_field_by_bitspec(repeat_bit_spec)
                 {
                     format!(
                         "data[{start_index}..].serialize_repeating_words(self.{}, self.{} as usize)",
@@ -488,7 +488,9 @@ impl Field {
 
                 repeat:
                     Repeat::Dependent {
-                        word: repeat_word, ..
+                        bit_spec: repeat_bit_spec,
+                        //word: repeat_word,
+                        ..
                     },
                 ..
             } => {
@@ -501,7 +503,8 @@ impl Field {
                 // TODO do we need the symbol_table?
 
                 if let Some((count_symbol_name, _)) =
-                    members.find_field_by_bitspec(&BitSpec::from_word(repeat_word))
+                    // members.find_field_by_bitspec(&BitSpec::from_word(repeat_word))
+                    members.find_field_by_bitspec(repeat_bit_spec)
                 {
                     format!(
                         //"self[{start_index}..].deserialize_repeating_words(self[{}].deserialize_word() as usize)",
@@ -568,7 +571,7 @@ impl Field {
         };
 
         //format!("buf[{start}..{end}].deserialize().unwrap()")
-        format!("{common_structure_name}::deserialize(&buf[{start}..={end}])?")
+        format!("{common_structure_name}::deserialize(&buf[{start}..={end}])?;")
     }
 
     fn bit_spec(&self) -> &BitSpec {

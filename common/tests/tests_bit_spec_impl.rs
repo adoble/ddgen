@@ -318,16 +318,8 @@ fn deserialize_word_variable_repeat() {
                     bit_range: BitRange::WholeWord,
                 },
             end: None,
-            repeat:
-                WordRepeat::Dependent {
-                    word:
-                        Word {
-                            index: count_index,
-                            bit_range: BitRange::WholeWord,
-                        },
-                    limit,
-                },
-        } => (w, count_index, limit),
+            repeat: WordRepeat::Dependent { bit_spec, limit },
+        } => (w, bit_spec.start.index, limit),
         _ => {
             assert!(false, "Unexpected bit spec found");
             return;
@@ -426,7 +418,7 @@ fn deserialize_word_range_u16_variable_repeat() {
     data[7] = expected[2].to_le_bytes()[0];
     data[8] = expected[2].to_le_bytes()[1];
 
-    let (w, v, counter_word, limit) = match spec {
+    let (w, v, counter_bit_spec, limit) = match spec {
         BitSpec {
             start:
                 Word {
@@ -440,14 +432,10 @@ fn deserialize_word_range_u16_variable_repeat() {
                 }),
             repeat:
                 WordRepeat::Dependent {
-                    word:
-                        Word {
-                            index: counter_word,
-                            bit_range: BitRange::WholeWord,
-                        },
+                    bit_spec: counter_bit_spec,
                     limit,
                 },
-        } => (w, v, counter_word, limit),
+        } => (w, v, counter_bit_spec, limit),
         _ => {
             assert!(false, "Unexpected bit spec found");
             return;
@@ -456,11 +444,12 @@ fn deserialize_word_range_u16_variable_repeat() {
 
     assert_eq!(w, 3);
     assert_eq!(v, 4);
-    assert_eq!(counter_word, 2);
+    assert_eq!(*counter_bit_spec, bit_lang::parse("2[]").unwrap());
     assert_eq!(limit, 5);
 
-    //"3[]..4[];(2[])<=5"
-    let repeats = data[counter_word] as usize;
+    //"3[]..4[];(2[])<=5" . The following code assumes that the repeat dependendancy
+    //  (counter) is a single word
+    let repeats = data[counter_bit_spec.start.index] as usize;
     let d: [u16; 5] = data[w..(w + (repeats * 2))].deserialize_repeating_words(repeats);
 
     assert_eq!(d, expected);

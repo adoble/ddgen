@@ -186,7 +186,7 @@ impl Members {
                 Some(word) => Some((s.0, word)),
                 None => None,
             })
-            .map(|s| (s.0, BitSpec::from_word(&s.1)))
+            .map(|s| (s.0, s.1))
             .map(|s| (s.0, self.find_field_by_bitspec(&s.1).unwrap()))
             .map(|s| (s.0, s.1 .0.to_string()))
             //.map(|s| format!(" + ({} * self.{} as usize)", s.0, s.1))

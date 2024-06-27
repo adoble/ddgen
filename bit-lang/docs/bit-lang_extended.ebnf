@@ -40,7 +40,8 @@
 /*<word> ::=  <fully_qualified_word> | (<index>)? "[" <literal> "]"*/   
 
 
-<variable> ::= "(" (<word> | <symbol>) ")"  
+/*<variable> ::= "(" (<word> | <symbol>) ")" */  
+<variable> ::= "(" (<bit_spec> | <symbol>) ")"  
 
 <follows_index> ::= "(>" <symbol> ")"
 
@@ -50,11 +51,11 @@
 
 <condition> ::=  "<" | "<="  
 
-<dependent_repeat> ::=  <variable> <condition> <limit>  /* Change from variable_repeat  to dependent_repeat */
+<dependent_repeat> ::=  <variable> <condition> <limit>  
 
 <variable_repeat> ::=  <condition> <number>
 
-<repeat> ::=  <fixed_repeat>  | <dependent_repeat> | variable_repeat
+<repeat> ::=  <fixed_repeat>  | <dependent_repeat> | <variable_repeat>
 
 <literal> ::= <hex_literal> | <binary_literal>
 

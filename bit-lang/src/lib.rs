@@ -289,7 +289,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bit_spec_with_repeat() {
+    fn test_bit_spec_with_fixed_repeat() {
         let data = "3[4..7]..6[0..5];48";
 
         let bit_spec = parse(data).unwrap();
@@ -306,14 +306,21 @@ mod tests {
             repeat: Repeat::Fixed { number: 48 },
         };
         assert_eq!(bit_spec, expected);
+    }
 
+    #[test]
+    fn test_bit_spec_with_dependent_word_repeat() {
         let data = "4[]..7[];(3[])<49";
         let bit_spec = parse(data).unwrap();
         let expected_repeat = Repeat::Dependent {
-            word: Word {
-                index: 3,
-                bit_range: BitRange::WholeWord,
-            },
+            bit_spec: Box::new(BitSpec {
+                start: Word {
+                    index: 3,
+                    bit_range: BitRange::WholeWord,
+                },
+                end: None,
+                repeat: Repeat::None,
+            }),
             limit: 48,
         };
         let expected = BitSpec {
@@ -329,6 +336,7 @@ mod tests {
         };
         assert_eq!(bit_spec, expected);
     }
+
     #[test]
     fn test_bit_spec() {
         let data = "3[4..7]..6[0..5]";
