@@ -1,6 +1,17 @@
   # TODO
 
- 
+  [ ] Error: Trying to give a single bit an enum results in incorrectly generated code. E.g
+
+      
+        selector = {bits = "0[7], type = "selector_type"}
+        [enum.selector_type]
+        audio = 0
+        data = 1
+      
+      
+  There is a workaround. Use: 
+
+        selector = {bits = "0[7..7], type = "selector_type"}
 
   [ ] Ensure that all types are handled in serialize and deserialize ( a lot of impl fors)
 

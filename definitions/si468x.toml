@@ -249,7 +249,7 @@ flow_control = { type = "polled", on = "header", condition = "cts" }
 description  = """GET_DIGITAL_SERVICE_LIST gets a service list of the ensemble."""
 
 [commands.DAB_GET_DIGITAL_SERVICE_LIST.request]
-service_type = { bits = "0[0..1]", type = "service_type", description = "ets the type of service list to retrieve." }
+service_type = { bits = "0[0..1]", type = "service_type", description = "Sets the type of service list to retrieve." }
 
 [commands.DAB_GET_DIGITAL_SERVICE_LIST.response]
 header       = { bits = "0[];4", struct = "header" }
@@ -264,6 +264,26 @@ hd_audio_info = 2
 hd_data_info  = 3
 
 #-------------
+
+[commands.START_DIGITAL_SERVICE]
+opcode = 0x81
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description = """START_DIGITAL_SERVICE starts an audio or data service. This command is used for HD audio and data
+services."""
+
+[commands.START_DIGITAL_SERVICE.request]
+service_type = { bits = "0[0..0]", type = "service_selector", description = "Sets the type of service to start for HD applications." }
+arg2         = { bits = "1[0x00]" }
+arg3         = { bits = "2[0x00]" }
+service_id   = { bits = "3[]..6[]", description = "The service's Service Number (HD)." }
+comp_id      = { bits = "7[]..10[]", description = "The service's Port/Program Number (HD)" }
+
+[commands.START_DIGITAL_SERVICE.response]
+header = { bits = "0[];4", struct = "header" }
+
+[enum.service_selector]
+audio = 0
+data  = 1
 
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
