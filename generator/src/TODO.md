@@ -1,5 +1,13 @@
   # TODO
 
+  [ ] Error: Putting an enum on a whole word does not work, e.g this fails:
+
+         service_mode         = { bits = "4[]", type = "service_mode" }
+
+  Workaround is:
+
+          service_mode         = { bits = "4[0..7]", type = "service_mode" }
+
   [ ] Error: Trying to give a single bit an enum results in incorrectly generated code. E.g
 
       

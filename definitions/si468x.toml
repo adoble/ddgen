@@ -404,7 +404,6 @@ local_time = 0
 utc        = 1
 
 
-#-------------
 [commands.DAB_GET_AUDIO_INFO]
 opcode       = 0xBD
 flow_control = { type = "polled", on = "header", condition = "cts" }
@@ -431,6 +430,52 @@ mono         = 1
 stereo       = 2
 joint_stereo = 3
 
+#-------------
+[commands.DAB_GET_SUBCHAN_INFO]
+opcode       = 0xBE
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = "Gets information about the sub-channel (service mode, protection, subchannel bps)."
+
+[commands.DAB_GET_SUBCHAN_INFO.request]
+dummy        = { bits = "0[0x00];3" }
+service_id   = { bits = "3[]..6[]" }
+component_id = { bits = "7[]..10[]" }
+
+[commands.DAB_GET_SUBCHAN_INFO.response]
+header                = { bits = "0[];4", struct = "header" }
+service_mode          = { bits = "4[0..7]", type = "service_mode" }
+protection_info       = { bits = "5[0..7]", type = "protection_profile", description = "Protection profile of the sub-channel." }
+sub_channel_bit_rate  = { bits = "6[]..7[]", description = "Sub-channel bit rate (kpbs)." }
+number_capacity_units = { bits = "8[]..9[]", description = "Number of Capacity units assigned to this service component." }
+capacity_unit_address = { bits = "10[]..11[]", description = "CU starting address of this subchannel within the CIF" }
+
+[enum.service_mode]
+audio_stream_service    = 0
+data_stream_service     = 1
+fidc_service            = 2
+msc_data_packet_service = 3
+dab_plus                = 4
+dab                     = 5
+fic_service             = 6
+xpad_data               = 7
+no_media                = 8
+
+[enum.protection_profile]
+UEP_mode_level_1   = 1
+UEP_mode_level_2   = 2
+UEP_mode_level_3   = 3
+UEP_mode_level_4   = 4
+UEP_mode_level_5   = 5
+EEP_mode_level_A_1 = 6
+EEP_mode_level_A_2 = 7
+EEP_mode_level_A_3 = 8
+EEP_mode_level_A_4 = 9
+EEP_mode_level_B_1 = 10
+EEP_mode_level_B_2 = 11
+EEP_mode_level_B_3 = 12
+EEP_mode_level_B_4 = 13
+
+
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
 # HOST_LOAD      X
@@ -450,7 +495,7 @@ joint_stereo = 3
 # DAB_SET_FREQ_LIST X
 # GET_TIME  X
 # DAB_GET_AUDIO_INFO    X
-# DAB_GET_SUBCHAN_INFO
+# DAB_GET_SUBCHAN_INFO  X
 # DAB_GET_SERVICE_INFO
 # READ_OFFSET
 # FM_TUNE_FREQ
