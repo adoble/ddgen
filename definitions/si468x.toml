@@ -301,7 +301,6 @@ comp_id      = { bits = "7[]..10[]", description = "The service's Port/Program N
 [commands.STOP_DIGITAL_SERVICE.response]
 header = { bits = "0[];4", struct = "header" }
 
-#-------------
 
 [commands.DAB_DIGRAD_STATUS]
 opcode = 0xB2
@@ -332,7 +331,7 @@ ensemble_acquired                              = { bits = "5[2]", description = 
 received_signal_strength_indicator_valid       = { bits = "5[0]", description = "When set to 1, the RSSI is at or above the valid threshold." }
 received_signal_strength_indicator             = { bits = "6[]", type = "i8", description = "Received signal strength indicator. Range: -128-63" }
 signal_noise_ratio                             = { bits = "7[]", description = "SNR in dB." }
-fast_information_chanell_quality               = { bits = "8[]", description = "Indicates the current estimate of the ensembles FIC quality. Range 0 - 100." }
+fast_information_channel_quality               = { bits = "8[]", description = "Indicates the current estimate of the ensembles FIC quality. Range 0 - 100." }
 cnr                                            = { bits = "9[]", description = "CUrrent estimate of CNR in dB. Range 0 - 54." }
 fast_information_block_error_count             = { bits = "10[]..11[]", description = "Number of fast information blocks received with errors." }
 tuned_frequency                                = { bits = "12[]..15[]", description = "Currently tuned frequency in kHz." }
@@ -344,6 +343,43 @@ fast_dect                                      = { bits = "22[]", description = 
 [enum.audio_mute]
 unmuted = 0
 muted   = 1
+
+
+[commands.DAB_GET_EVENT_STATUS]
+opcode       = 0xB3
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = "Gets information about the various events related to the DAB radio"
+
+[commands.DAB_GET_EVENT_STATUS.request]
+event_ack = { bits = "0[0]", description = "Clears all pending digital radion event interrupts." }
+
+[commands.DAB_GET_EVENT_STATUS.response]
+header                           = { bits = "0[];4", struct = "header" }
+ensemble_reconfiguration_event   = { bits = "4[7]", description = "Ensemble reconfiguration event. RECFGINT bit." }
+ensemble_reconfiguration_warning = { bits = "4[6]", description = "Ensemble reconfiguration warning. RECFGWRNINT bit" }
+announcement_interrupt           = { bits = "4[3]", description = "New announcement info interrupt." }
+frequency_infomation_interrupt   = { bits = "4[1]", description = "Indicates that new frequency infomation is available." }
+service_list_interrupt           = { bits = "4[0]", description = "Indicates that a new digital service list is available." }
+freqency_information_available   = { bits = "5[1]", description = "Indicates that frequency information is available." }
+service_list_available           = { bits = "5[0]" }
+service_list_version             = { bits = "6[]..7[]", description = "Current version of the digital service list." }
+
+#-------------
+[commands.DAB_GET_ENSEMBLE_INFO]
+opcode       = 0xB4
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = "gets information about the current ensemble such as the ensemble ID and label."
+
+[commands.DAB_GET_ENSEMBLE_INFO.request]
+arg1 = { bits = "0[0x00]" }
+
+[commands.DAB_GET_ENSEMBLE_INFO.response]
+header = { bits = "0[];4", struct = "header" }
+
+eid                               = { bits = "4[]..5[]", description = "Ensemble ID EID." }
+label                             = { bits = "6[];16", description = "Ensemble label characters." }
+ensemble_extended_country_code    = { bits = "22[]", description = "Ensemble ECC." }
+component_label_abbreviation_mask = { bits = "24[]..25[]", description = "Indicates which characters in the label are used to create the abbreviated label" }
 
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
@@ -359,8 +395,8 @@ muted   = 1
 # GET_DIGITAL_SERVICE_DATA  X
 # DAB_TUNE_FREQ X
 # DAB_DIGRAD_STATUS X
-# DAB_GET_EVENT_STATUS
-# DAB_GET_ENSEMBLE_INFO
+# DAB_GET_EVENT_STATUS  X
+# DAB_GET_ENSEMBLE_INFO X
 # DAB_SET_FREQ_LIST
 # DAB_GET_ENSEMBLE_INFO
 # GET_TIME
