@@ -263,7 +263,6 @@ data_service  = 1
 hd_audio_info = 2
 hd_data_info  = 3
 
-#-------------
 
 [commands.START_DIGITAL_SERVICE]
 opcode = 0x81
@@ -284,6 +283,22 @@ header = { bits = "0[];4", struct = "header" }
 [enum.service_selector]
 audio = 0
 data  = 1
+
+#-------------
+[commands.STOP_DIGITAL_SERVICE]
+opcode       = 0x82
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = """START_DIGITAL_SERVICE stops an audio or data service."""
+
+[commands.STOP_DIGITAL_SERVICE.request]
+service_type = { bits = "0[0..0]", type = "service_selector", description = "Sets the type of service to start for HD applications." }
+arg2         = { bits = "1[0x00]" }
+arg3         = { bits = "2[0x00]" }
+service_id   = { bits = "3[]..6[]", description = "The service's Service Number (HD)." }
+comp_id      = { bits = "7[]..10[]", description = "The service's Port/Program Number (HD)" }
+
+[commands.STOP_DIGITAL_SERVICE.response]
+header = { bits = "0[];4", struct = "header" }
 
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
