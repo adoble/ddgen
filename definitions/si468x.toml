@@ -382,8 +382,6 @@ ensemble_extended_country_code    = { bits = "22[]", description = "Ensemble ECC
 component_label_abbreviation_mask = { bits = "24[]..25[]", description = "Indicates which characters in the label are used to create the abbreviated label" }
 
 
-#-------------
-
 [commands.GET_TIME]
 opcode       = 0xBC
 flow_control = { type = "polled", on = "header", condition = "cts" }
@@ -406,6 +404,33 @@ local_time = 0
 utc        = 1
 
 
+#-------------
+[commands.DAB_GET_AUDIO_INFO]
+opcode       = 0xBD
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = "Gets information about the current audio service (decoder bps, audio mode)"
+
+[commands.DAB_GET_AUDIO_INFO.request]
+dummy = { bits = "0[0x00]" }
+
+[commands.DAB_GET_AUDIO_INFO.response]
+header            = { bits = "0[];4", struct = "header" }
+audio_bit_rate    = { bits = "4[]..5[]", description = "Audio bit rate of the current audio service (kbps)." }
+audio_sample_rate = { bits = "6[]..7[]", description = "Sample rate of the current audio service (Hz)." }
+
+audio_ps_flag = { bits = "8[3]", description = "PS usage. Only for DAB+" }
+audio_sbr_flag = { bits = "8[2]", description = "Spectral Band Replication. Only for DAB+" }
+audio_mode = { bits = "8[0..1]", type = "audio_mode" }
+audio_drc_gain = { bits = "9[]", description = """The transmitter specified dynamic range control (DRC) gain of the current audio
+service. The range of this field is from 0 to 63, representing 0 to 15.75dB in increment of 0.25dB.""" }
+
+
+[enum.audio_mode]
+dual         = 0
+mono         = 1
+stereo       = 2
+joint_stereo = 3
+
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
 # HOST_LOAD      X
@@ -424,7 +449,7 @@ utc        = 1
 # DAB_GET_ENSEMBLE_INFO X
 # DAB_SET_FREQ_LIST X
 # GET_TIME  X
-# DAB_GET_AUDIO_INFO
+# DAB_GET_AUDIO_INFO    X
 # DAB_GET_SUBCHAN_INFO
 # DAB_GET_SERVICE_INFO
 # READ_OFFSET
