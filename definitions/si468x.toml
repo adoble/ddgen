@@ -228,7 +228,7 @@ tag    = 0
 branch = 1
 trunk  = 2
 
-#-------------------
+
 [commands.SET_PROPERTY]
 opcode       = 0x13
 flow_control = { type = "polled", on = "header", condition = "cts" }
@@ -243,6 +243,28 @@ data        = { bits = "3[]..4[]", type = "i16", description = "Value for the wr
 header = { bits = "0[];4", struct = "header" }
 
 
+[commands.DAB_GET_DIGITAL_SERVICE_LIST]
+opcode       = 0x80
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = """GET_DIGITAL_SERVICE_LIST gets a service list of the ensemble."""
+
+[commands.DAB_GET_DIGITAL_SERVICE_LIST.request]
+service_type = { bits = "0[0..1]", type = "service_type", description = "ets the type of service list to retrieve." }
+
+[commands.DAB_GET_DIGITAL_SERVICE_LIST.response]
+header       = { bits = "0[];4", struct = "header" }
+service_size = { bits = "4[]..5[]", description = "The size of the service list in bytes." }
+data         = { bits = "6[]..7[];(4[]..5[])<=2047", description = "A max of 2047 bytes of service information" }
+
+
+[enum.service_type]
+audio_service = 0
+data_service  = 1
+hd_audio_info = 2
+hd_data_info  = 3
+
+#-------------
+
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
 # HOST_LOAD      X
@@ -251,12 +273,8 @@ header = { bits = "0[];4", struct = "header" }
 # BOOT           X
 # GET_PART_INFO  X
 # GET_FUNC_INFO  X
-# SET_PROPERTY
-# FM_TUNE_FREQ
-# FM_SEEK_START
-# FM_RSQ_STATUS
-# FM_RDS_STATUS
-# DAB_GET_DIGITAL_SERVICE_LIST
+# SET_PROPERTY   X
+# DAB_GET_DIGITAL_SERVICE_LIST X
 # DAB_START_DIGITAL_SERVICE
 # GET_DIGITAL_SERVICE_DATA
 # DAB_TUNE_FREQ
@@ -270,3 +288,7 @@ header = { bits = "0[];4", struct = "header" }
 # DAB_GET_SUBCHAN_INFO
 # DAB_GET_SERVICE_INFO
 # READ_OFFSET
+# FM_TUNE_FREQ
+# FM_SEEK_START
+# FM_RSQ_STATUS
+# FM_RDS_STATUS
