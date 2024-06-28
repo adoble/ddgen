@@ -75,9 +75,10 @@ description = """DAB_TUNE_FREQ sets the DAB Receiver to tune to a frequency betw
 by the table through DAB_SET_FREQ_LIST."""
 
 [commands.DAB_TUNE_FREQ.request]
-injection           = { bits = "0[0..1]", type = "injection" }
-freq_index          = { bits = "1[]" }                         # Uses all 8 bits
-antenna_capacitance = { bits = "3[]..4[]" }                    # 16 bit value range 0-128. Bits not specified so use whole word
+injection = { bits = "0[0..1]", type = "injection" }
+freq_index = { bits = "1[]", description = "Frequency index for the tuned frequency." }
+antenna_capacitance = { bits = "3[]..4[]", description = """Antenna tuning capacitor value in 250 fF units (31.75 pF Max). Range: 0-128.
+0 : Automatically determines the cap setting.""" }
 
 [commands.DAB_TUNE_FREQ.response]
 header = { bits = "0[]..3[]", struct = "header" }
@@ -284,7 +285,7 @@ header = { bits = "0[];4", struct = "header" }
 audio = 0
 data  = 1
 
-#-------------
+
 [commands.STOP_DIGITAL_SERVICE]
 opcode       = 0x82
 flow_control = { type = "polled", on = "header", condition = "cts" }
@@ -300,6 +301,50 @@ comp_id      = { bits = "7[]..10[]", description = "The service's Port/Program N
 [commands.STOP_DIGITAL_SERVICE.response]
 header = { bits = "0[];4", struct = "header" }
 
+#-------------
+
+[commands.DAB_DIGRAD_STATUS]
+opcode = 0xB2
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description = """B_DIGRAD_STATUS returns status information about the digital radio and ensemble including a change in
+ensemble acquisition state, current estimates for ensemble's MSC (Main Service Channel) BER (bit error rate),
+FIC (Fast Information Channel) BER along with number of FIBs (Fast Information Block) that failed a CRC check
+and number of Reed-Solomon decoder errors (DAB+ and DMB only)"""
+
+[commands.DAB_DIGRAD_STATUS.request]
+digrad_ack = { bits = "0[3]", description = "Clears all pending digital radio interrupts." }
+at_tune = { bits = "0[2]", description = """Return the values as of DAB_VALID_RSSI_TIME after tune. Only the signal quality
+metric RSSI is affected by setting this bit.
+0 : Return the current status
+1 : Return the snapshot taken at DAB_VALID_RSSI_TIME""" }
+stc_ack = { bits = "0[0]", description = "Clears the STC interrupt status when set." }
+
+[commands.DAB_DIGRAD_STATUS.response]
+header                                         = { bits = "0[];4", struct = "header" }
+hard_mute_indicator                            = { bits = "4[4]", description = "Indicates that the audio had been muted. Possibly due to low signal" }
+fast_information_channel_decoder_err_indicator = { bits = "4[3]", description = "Indicates that the FIC decoder has unrecoverable errors. Possibly due to low signal" }
+ensemble_acquisition_state_change_indicator    = { bits = "4[2]", description = "ndicates a change in the ensemble acquisition state." }
+received_signal_strength_indicator_high        = { bits = "4[1]", description = "Indicates RSSI below DAB_DIGRAD_RSSI_LOW_THRESHOLD." }
+received_signal_strength_indicator_low         = { bits = "4[0]", description = "Indicates RSSI above DAB_DIGRAD_RSSI_HIGH_THRESHOLD" }
+hard_mute                                      = { bits = "5[4..4]", type = "audio_mute", description = "Sets the mute status the audio" }
+fast_information_channel_error                 = { bits = "5[3]", description = "When set to 1 the ensemble is experiencing FIC errors." }
+ensemble_acquired                              = { bits = "5[2]", description = "Set to 1 when ensemble acquired." }
+received_signal_strength_indicator_valid       = { bits = "5[0]", description = "When set to 1, the RSSI is at or above the valid threshold." }
+received_signal_strength_indicator             = { bits = "6[]", type = "i8", description = "Received signal strength indicator. Range: -128-63" }
+signal_noise_ratio                             = { bits = "7[]", description = "SNR in dB." }
+fast_information_chanell_quality               = { bits = "8[]", description = "Indicates the current estimate of the ensembles FIC quality. Range 0 - 100." }
+cnr                                            = { bits = "9[]", description = "CUrrent estimate of CNR in dB. Range 0 - 54." }
+fast_information_block_error_count             = { bits = "10[]..11[]", description = "Number of fast information blocks received with errors." }
+tuned_frequency                                = { bits = "12[]..15[]", description = "Currently tuned frequency in kHz." }
+fft_offset                                     = { bits = "17[]", description = "Indicates the frequency offset of the DQPSK tones of the OFDM signal relative to the center of the FFT bins of the digital demod" }
+read_antenna_capacitance                       = { bits = "18[]..19[]", description = "Antenna tuning capacitance value" }
+cu_level                                       = { bits = "20[]..21[]", description = "Number of currently decoded CUs" }
+fast_dect                                      = { bits = "22[]", description = "Returns the statistical metric for DAB fast detect. " }
+
+[enum.audio_mute]
+unmuted = 0
+muted   = 1
+
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
 # HOST_LOAD      X
@@ -310,10 +355,10 @@ header = { bits = "0[];4", struct = "header" }
 # GET_FUNC_INFO  X
 # SET_PROPERTY   X
 # DAB_GET_DIGITAL_SERVICE_LIST X
-# DAB_START_DIGITAL_SERVICE
-# GET_DIGITAL_SERVICE_DATA
-# DAB_TUNE_FREQ
-# DAB_DIGRAD_STATUS
+# DAB_START_DIGITAL_SERVICE X
+# GET_DIGITAL_SERVICE_DATA  X
+# DAB_TUNE_FREQ X
+# DAB_DIGRAD_STATUS X
 # DAB_GET_EVENT_STATUS
 # DAB_GET_ENSEMBLE_INFO
 # DAB_SET_FREQ_LIST
