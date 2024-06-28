@@ -364,7 +364,7 @@ freqency_information_available   = { bits = "5[1]", description = "Indicates tha
 service_list_available           = { bits = "5[0]" }
 service_list_version             = { bits = "6[]..7[]", description = "Current version of the digital service list." }
 
-#-------------
+
 [commands.DAB_GET_ENSEMBLE_INFO]
 opcode       = 0xB4
 flow_control = { type = "polled", on = "header", condition = "cts" }
@@ -380,6 +380,31 @@ eid                               = { bits = "4[]..5[]", description = "Ensemble
 label                             = { bits = "6[];16", description = "Ensemble label characters." }
 ensemble_extended_country_code    = { bits = "22[]", description = "Ensemble ECC." }
 component_label_abbreviation_mask = { bits = "24[]..25[]", description = "Indicates which characters in the label are used to create the abbreviated label" }
+
+
+#-------------
+
+[commands.GET_TIME]
+opcode       = 0xBC
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = "Gets the ensemble time adjusted for the local time offset"
+
+[commands.GET_TIME.request]
+time_type = { bits = "0[0..7]", type = "time_type" }
+
+[commands.GET_TIME.response]
+header  = { bits = "0[];4", struct = "header" }
+year    = { bits = "4[]..5[]" }
+months  = { bits = "6[]" }
+days    = { bits = "7[]" }
+hours   = { bits = "8[]" }
+minutes = { bits = "9[]" }
+seconds = { bits = "10[]" }
+
+[enum.time_type]
+local_time = 0
+utc        = 1
+
 
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
@@ -397,9 +422,8 @@ component_label_abbreviation_mask = { bits = "24[]..25[]", description = "Indica
 # DAB_DIGRAD_STATUS X
 # DAB_GET_EVENT_STATUS  X
 # DAB_GET_ENSEMBLE_INFO X
-# DAB_SET_FREQ_LIST
-# DAB_GET_ENSEMBLE_INFO
-# GET_TIME
+# DAB_SET_FREQ_LIST X
+# GET_TIME  X
 # DAB_GET_AUDIO_INFO
 # DAB_GET_SUBCHAN_INFO
 # DAB_GET_SERVICE_INFO
