@@ -1,5 +1,10 @@
   # TODO
 
+  [ ] Using 
+         dummy        = { bits = "0[0x00];3" }
+
+  does not work as it should
+
   [ ] Error: Putting an enum on a whole word does not work, e.g this fails:
 
          service_mode         = { bits = "4[]", type = "service_mode" }
