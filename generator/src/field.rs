@@ -275,9 +275,11 @@ impl Field {
         members: &Members,
     ) {
         let field_deserialize_code = match self {
-            Field::BitField { bit_spec, .. } => {
-                self.generate_word_field_deserialization(name, bit_spec, members)
-            }
+            Field::BitField {
+                bit_spec,
+                target_type,
+                ..
+            } => self.generate_word_field_deserialization(name, bit_spec, target_type, members),
 
             Field::Structure {
                 common_structure_name,
@@ -419,6 +421,7 @@ impl Field {
         &self,
         name: &str,
         bit_spec: &BitSpec,
+        target_type: &Option<TargetType>,
         //symbol_table: &HashMap<BitSpec, String>,
         members: &Members,
     ) -> String {
@@ -442,7 +445,11 @@ impl Field {
                 end: None,
                 repeat: Repeat::None,
             } => {
-                format!("buf[{index}].deserialize_field({start_bit}, {end_bit}).try_into()?")
+                let conversion = match target_type {
+                    Some(TargetType::U8) => "",
+                    _ => ".try_into()?",
+                };
+                format!("buf[{index}].deserialize_field({start_bit}, {end_bit}){conversion}")
             }
             BitSpec {
                 start:
