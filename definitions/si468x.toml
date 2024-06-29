@@ -326,9 +326,9 @@ ensemble_acquisition_state_change_indicator    = { bits = "4[2]", description = 
 received_signal_strength_indicator_high        = { bits = "4[1]", description = "Indicates RSSI below DAB_DIGRAD_RSSI_LOW_THRESHOLD." }
 received_signal_strength_indicator_low         = { bits = "4[0]", description = "Indicates RSSI above DAB_DIGRAD_RSSI_HIGH_THRESHOLD" }
 hard_mute                                      = { bits = "5[4..4]", type = "audio_mute", description = "Sets the mute status the audio" }
-fast_information_channel_error                 = { bits = "5[3]", description = "When set to 1 the ensemble is experiencing FIC errors." }
-ensemble_acquired                              = { bits = "5[2]", description = "Set to 1 when ensemble acquired." }
-received_signal_strength_indicator_valid       = { bits = "5[0]", description = "When set to 1, the RSSI is at or above the valid threshold." }
+fast_information_channel_error                 = { bits = "5[3]", description = "When set the ensemble is experiencing FIC errors." }
+ensemble_acquired                              = { bits = "5[2]", description = "Set to true when ensemble acquired." }
+received_signal_strength_indicator_valid       = { bits = "5[0]", description = "When set, the RSSI is at or above the valid threshold." }
 received_signal_strength_indicator             = { bits = "6[]", type = "i8", description = "Received signal strength indicator. Range: -128-63" }
 signal_noise_ratio                             = { bits = "7[]", description = "SNR in dB." }
 fast_information_channel_quality               = { bits = "8[]", description = "Indicates the current estimate of the ensembles FIC quality. Range 0 - 100." }
@@ -474,7 +474,6 @@ EEP_mode_level_B_2 = 11
 EEP_mode_level_B_3 = 12
 EEP_mode_level_B_4 = 13
 
-#------------- 
 [commands.DAB_GET_SERVICE_INFO]
 opcode       = 0xC0
 flow_control = { type = "polled", on = "header", condition = "cts" }
@@ -488,12 +487,12 @@ service_id = { bits = "3[]..6[]" }
 
 [commands.DAB_GET_SERVICE_INFO.response]
 header                          = { bits = "0[];4", struct = "header" }
-service_linking_info            = { bits = "4[6]", description = "Set to 1 if service linking info is available for this service." }
-service_program_type            = { bits = "4[1..5]" }
+service_linking_info            = { bits = "4[6]", description = "Set to true if service linking info is available for this service." }
+service_program_type            = { bits = "4[1..5]", type = "service_program_type" }
 pd_flag                         = { bits = "4[0..0]", type = "service_selector" }
 local                           = { bits = "5[7..7]", type = "local", description = "Service is available over the entire or part of the ensemble service area." }
 ca_id                           = { bits = "5[4..6]", type = "ca_identifier", description = "Access control used." }
-number_components               = { bits = "5[0..3]", description = "Number of components in this service." }
+number_components               = { bits = "5[0..3]", type = "u8", description = "Number of components in this service." }
 si_char_set                     = { bits = "6[0..3]", type = "char_set", description = "Indicates char set" }
 service_extended_country_code   = { bits = "7[]" }
 label                           = { bits = "8[];16", description = "Service label characters" }
@@ -515,6 +514,55 @@ ebu_latin = 0
 utf_16_be = 6
 utf_8     = 15
 
+# See See ETSI TS 101 756, table 12
+[enum.service_program_type]
+no_programme_type    = 0
+news                 = 1
+current_affairs      = 2
+information          = 3
+sport                = 4
+education            = 5
+drama                = 6
+culture              = 7
+science              = 8
+varied               = 9
+pop_music            = 10
+rock_music           = 11
+easy_listening       = 12
+light_classical      = 13
+serious_classical    = 14
+other_music          = 15
+weather_meteorology  = 16
+finance_business     = 17
+childrens_programmes = 18
+social_affairs       = 19
+religion             = 20
+phone_in             = 21
+travel               = 22
+leisure              = 23
+jazz_music           = 24
+country_music        = 25
+national_music       = 26
+oldies_music         = 27
+folk_music           = 28
+documentary          = 29
+
+
+[commands.READ_OFFSET]
+opcode = 0x10
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description = """Used for applications that cannot read the entire response buffer. This type of application can
+use this command to read the response buffer in segments"""
+
+[commands.READ_OFFSET.request]
+dummy  = { bits = "0[0x00]" }
+offset = { bits = "1[]..2[]" }
+
+[commands.READ_OFFSET.response]
+header = { bits = "0[];4", struct = "header" }
+data   = { bits = "4[]" }
+
+
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
 # HOST_LOAD      X
@@ -535,9 +583,5 @@ utf_8     = 15
 # GET_TIME  X
 # DAB_GET_AUDIO_INFO    X
 # DAB_GET_SUBCHAN_INFO  X
-# DAB_GET_SERVICE_INFO
-# READ_OFFSET
-# FM_TUNE_FREQ
-# FM_SEEK_START
-# FM_RSQ_STATUS
-# FM_RDS_STATUS
+# DAB_GET_SERVICE_INFO  X
+# READ_OFFSET   X
