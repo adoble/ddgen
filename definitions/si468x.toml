@@ -430,7 +430,6 @@ mono         = 1
 stereo       = 2
 joint_stereo = 3
 
-#-------------
 [commands.DAB_GET_SUBCHAN_INFO]
 opcode       = 0xBE
 flow_control = { type = "polled", on = "header", condition = "cts" }
@@ -475,6 +474,46 @@ EEP_mode_level_B_2 = 11
 EEP_mode_level_B_3 = 12
 EEP_mode_level_B_4 = 13
 
+#------------- 
+[commands.DAB_GET_SERVICE_INFO]
+opcode       = 0xC0
+flow_control = { type = "polled", on = "header", condition = "cts" }
+description  = "Gets information about a service"
+
+[commands.DAB_GET_SERVICE_INFO.request]
+dummy1     = { bits = "0[0x00]" }
+dummy2     = { bits = "1[0x00]" }
+dummy3     = { bits = "2[0x00]" }
+service_id = { bits = "3[]..6[]" }
+
+[commands.DAB_GET_SERVICE_INFO.response]
+header                          = { bits = "0[];4", struct = "header" }
+service_linking_info            = { bits = "4[6]", description = "Set to 1 if service linking info is available for this service." }
+service_program_type            = { bits = "4[1..5]" }
+pd_flag                         = { bits = "4[0..0]", type = "service_selector" }
+local                           = { bits = "5[7..7]", type = "local", description = "Service is available over the entire or part of the ensemble service area." }
+ca_id                           = { bits = "5[4..6]", type = "ca_identifier", description = "Access control used." }
+number_components               = { bits = "5[0..3]", description = "Number of components in this service." }
+si_char_set                     = { bits = "6[0..3]", type = "char_set", description = "Indicates char set" }
+service_extended_country_code   = { bits = "7[]" }
+label                           = { bits = "8[];16", description = "Service label characters" }
+service_label_abbreviation_mask = { bits = "24[]..25[]", description = "Used to indicate which characters in the label are used to create the abbreviated label." }
+
+
+[enum.local]
+over_entire_ensemble = 0
+over_part_ensemble   = 1
+
+# See ETSI TS 102 367 Clause 5.1
+[enum.ca_identifier]
+no_access_control   = 0
+component_scrambled = 7
+
+# See ETSI TS 101 756, clause 5.3
+[enum.char_set]
+ebu_latin = 0
+utf_16_be = 6
+utf_8     = 15
 
 # Commands used in the DABShield C++ driver
 # POWER_UP       X
