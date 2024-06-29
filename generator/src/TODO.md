@@ -1,5 +1,6 @@
   # TODO
 
+ [ ] In enums the default should be the one with the lowest ordinal number
   [ ] Using 
          dummy        = { bits = "0[0x00];3" }
 
