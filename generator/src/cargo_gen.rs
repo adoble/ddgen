@@ -5,6 +5,8 @@ use serde::Serialize;
 struct CargoToml {
     package: Package,
     dependencies: Dependencies,
+    #[serde(rename = "dev-dependencies")]
+    dev_dependencies: DevDependencies,
 }
 
 #[derive(Serialize)]
@@ -18,6 +20,11 @@ struct Package {
 struct Dependencies {
     #[serde(rename = "embedded-hal")]
     embedded_hal: Dependency,
+}
+
+#[derive(Serialize)]
+#[serde(rename = "dev-dependencies")]
+struct DevDependencies {
     #[serde(rename = "embedded-hal-mock")]
     embedded_hal_mock: Dependency,
 }
@@ -47,12 +54,16 @@ pub fn generate(name: &str, version: &semver::Version) -> String {
     };
     let dependencies = Dependencies {
         embedded_hal: embedded_hal_dependency,
+    };
+
+    let dev_dependencies = DevDependencies {
         embedded_hal_mock: embedded_hal_mock_dependency,
     };
 
     let cargo_toml = CargoToml {
         package,
         dependencies,
+        dev_dependencies,
     };
 
     toml::to_string(&cargo_toml).expect("Unable to generate Cargo.toml")
