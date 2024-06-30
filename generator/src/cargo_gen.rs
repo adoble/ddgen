@@ -42,7 +42,7 @@ pub fn generate(name: &str, version: &semver::Version) -> String {
     };
 
     let embedded_hal_mock_dependency = Dependency {
-        version: semver::Version::parse("0.10.0").unwrap(),
+        version: semver::Version::parse("0.11.1").unwrap(),
         features: Some(vec!["eh1".to_string()]),
     };
     let dependencies = Dependencies {
