@@ -270,6 +270,14 @@ impl BitSpec {
         }
         .to_string()
     }
+
+    pub fn literal_value(&self) -> Option<String> {
+        if let BitRange::Literal(value) = &self.start.bit_range {
+            Some(value.clone())
+        } else {
+            None
+        }
+    }
 }
 
 impl fmt::Display for BitSpec {
@@ -793,5 +801,17 @@ mod tests {
             //     bit_range: BitRange::WholeWord
             // }
         );
+    }
+
+    #[test]
+    fn test_literal_value() {
+        let bit_spec = parse("3[]").unwrap();
+        assert_eq!(None, bit_spec.literal_value());
+
+        let bit_spec = parse("3[]..5[]").unwrap();
+        assert_eq!(None, bit_spec.literal_value());
+
+        let bit_spec = parse("3[0x0010]").unwrap();
+        assert_eq!(Some("0x0010".to_string()), bit_spec.literal_value());
     }
 }
