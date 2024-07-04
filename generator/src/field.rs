@@ -581,6 +581,62 @@ impl Field {
         format!("{common_structure_name}::deserialize(&buf[{start}..={end}])?")
     }
 
+    pub fn generate_field_default(&self, name: &String) -> String {
+        // Extract the variables needed to generated the defualts. This approach makes the next match statement
+        // more concise without a plethora of nested fields.
+        let (name, bit_range, repeat) = match self {
+            Field::Structure {
+                common_structure_name,
+                ..
+            } => (common_structure_name, None, None),
+            Field::BitField { bit_spec, .. } => (
+                name,
+                Some(bit_spec.start.bit_range.clone()),
+                Some(bit_spec.repeat.clone()),
+            ),
+        };
+
+        match (name, bit_range, repeat) {
+            (name, None, None) => format!("{name}: Default::default(),"),
+            (name, Some(BitRange::Literal(literal_value)), None) => {
+                format!("{name}: {literal_value},")
+            }
+            (name, _, Some(Repeat::Fixed { number })) => format!("{name}: [0; {number}],"),
+            (name, _, Some(Repeat::Variable { limit })) => format!("{name}: [0; {limit}],"),
+            (name, _, Some(Repeat::Dependent { limit, .. })) => format!("{name}: [0; {limit}],"),
+
+            _ => format!("{name}: Default::default(),"),
+        }
+
+        // match self {
+        //     Field::Structure {
+        //         common_structure_name,
+        //         ..
+        //     } => format!("{common_structure_name}: Default::default(),"),
+
+        //     Field::BitField {
+        //         bit_spec:
+        //             BitSpec {
+        //                 start:
+        //                     Word {
+        //                         bit_range: BitRange::Literal(literal_value),
+        //                         ..
+        //                     },
+        //                 ..
+        //             },
+        //         ..
+        //     } => format!("{name}: {literal_value},"),
+        //     Field::BitField { bit_spec: BitSpec {  repeat: Repeat{} , ..}, ..}
+        //     Field::BitField { bit_spec, .. } => {
+        //         if let Some(literal_value) = bit_spec.literal_value() {
+        //             format!("{name}: {literal_value},")
+        //         } else {
+        //             format!("{name}: Default::default(),")
+        //         }
+        //     }
+        // }
+    }
+
     fn bit_spec(&self) -> &BitSpec {
         match self {
             Field::Structure { bit_spec, .. } => bit_spec,

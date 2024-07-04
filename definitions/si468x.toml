@@ -436,7 +436,10 @@ flow_control = { type = "polled", on = "header", condition = "cts" }
 description  = "Gets information about the sub-channel (service mode, protection, subchannel bps)."
 
 [commands.DAB_GET_SUBCHAN_INFO.request]
-dummy        = { bits = "0[0x00];3" }
+arg0 = { bits = "0[0x00]" }
+arg1 = { bits = "1[0x00]" }
+arg2 = { bits = "2[0x00]" }
+#dummy        = { bits = "0[0x00];3" }  # TODO need some way to specifiy dummies.
 service_id   = { bits = "3[]..6[]" }
 component_id = { bits = "7[]..10[]" }
 

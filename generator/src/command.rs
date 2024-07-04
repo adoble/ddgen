@@ -99,6 +99,8 @@ impl Command {
                 $(ref toks => self.request.generate_members(toks))$['\r']
             }
             $['\n']
+            $(ref toks => self.request.generate_defaults(toks, request_struct_name.clone() ))$['\r']
+            $['\n']
             $(ref toks => self.request.generate_serializations(toks, &request_struct_name,  common_structures))$['\r']
 
 

@@ -6,6 +6,7 @@ use std::collections::HashMap;
 
 use crate::common_structure::CommonStructure;
 use crate::field::Field;
+use crate::naming::RequestStructName;
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -35,6 +36,24 @@ impl Members {
         for (name, field) in sorted_members {
             field.generate_struct_member(tokens, name);
         }
+    }
+
+    pub fn generate_defaults(&self, tokens: &mut Tokens<Rust>, request_name: RequestStructName) {
+        let mut sorted_members = self.to_vec();
+
+        // Sort by fields, not by the name
+        sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
+
+        quote_in!(*tokens =>
+            impl Default for $request_name {
+                fn default() -> Self {
+                    Self {
+                        $(for (name, field) in sorted_members => $(field.generate_field_default(name))$['\r'] )
+                    }
+                }
+            }
+
+        );
     }
 
     pub fn generate_serializations(
