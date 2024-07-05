@@ -61,6 +61,12 @@ impl Providers {
                         todo!()
                     }
                 }
+
+                impl Default for $(provider.to_case(Case::UpperCamel)) {
+                    fn default() -> Self {
+                        Self {}
+                    }
+                }
             );
             output_file(provider_file, tokens)?;
         }
