@@ -30,6 +30,7 @@ pub enum Field {
         #[serde(deserialize_with = "from_type_spec")]
         #[serde(default)]
         target_type: Option<TargetType>,
+
         description: Option<String>,
     },
 }
@@ -86,10 +87,7 @@ pub enum TargetType {
     I32,
     I64,
     I128,
-    // The string is the name of the enumeration
-    // Enumeration(String),
-    // The string is the name of the provider
-    // Provider(String),
+    // The string is the name of the enumeration or provider
     TypeName(String),
 }
 
@@ -111,30 +109,6 @@ impl From<String> for TargetType {
         }
     }
 }
-
-// // Need a seperate Into::into as the conversion is not symetric and cannot
-// // be automatically handled by the compiler.
-// #[allow(clippy::from_over_into)]
-// impl Into<String> for TargetType {
-//     fn into(self) -> String {
-//         match self {
-//             TargetType::U8 => "u8".to_string(),
-//             TargetType::U16 => "u16".to_string(),
-//             TargetType::U32 => "u32".to_string(),
-//             TargetType::U64 => "u64".to_string(),
-//             TargetType::U128 => "u128".to_string(),
-//             TargetType::I8 => "i8".to_string(),
-//             TargetType::I16 => "i16".to_string(),
-//             TargetType::I32 => "i32".to_string(),
-//             TargetType::I64 => "i64".to_string(),
-//             TargetType::I128 => "i128".to_string(),
-//             // TODO this seems rather akward
-//             TargetType::TypeName(name) => name.to_string().to_case(Case::UpperCamel),
-//             // TargetType::Enumeration(name) => name.to_string().to_case(Case::UpperCamel),
-//             // TargetType::Provider(name) => name.to_string().to_case(Case::UpperCamel),
-//         }
-//     }
-// }
 
 impl fmt::Display for TargetType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -584,26 +558,41 @@ impl Field {
     pub fn generate_field_default(&self, name: &String) -> String {
         // Extract the variables needed to generated the defualts. This approach makes the next match statement
         // more concise without a plethora of nested fields.
-        let (name, bit_range, repeat) = match self {
+        let (name, bit_range, repeat, target_type) = match self {
             Field::Structure {
                 common_structure_name,
                 ..
-            } => (common_structure_name, None, None),
-            Field::BitField { bit_spec, .. } => (
+            } => (common_structure_name, None, Repeat::None, None),
+            Field::BitField {
+                bit_spec,
+                target_type,
+                ..
+            } => (
                 name,
                 Some(bit_spec.start.bit_range.clone()),
-                Some(bit_spec.repeat.clone()),
+                bit_spec.repeat.clone(),
+                (*target_type).clone(),
             ),
         };
 
-        match (name, bit_range, repeat) {
-            (name, None, None) => format!("{name}: Default::default(),"),
-            (name, Some(BitRange::Literal(literal_value)), None) => {
+        println!(
+            "{:?}",
+            (name, bit_range.clone(), repeat.clone(), target_type.clone())
+        );
+
+        match (name, bit_range, repeat, target_type) {
+            (name, None, Repeat::None, None) => format!("{name}: Default::default(),"),
+            (name, Some(BitRange::Literal(literal_value)), Repeat::None, None) => {
                 format!("{name}: {literal_value},")
             }
-            (name, _, Some(Repeat::Fixed { number })) => format!("{name}: [0; {number}],"),
-            (name, _, Some(Repeat::Variable { limit })) => format!("{name}: [0; {limit}],"),
-            (name, _, Some(Repeat::Dependent { limit, .. })) => format!("{name}: [0; {limit}],"),
+            (name, _, _, Some(TargetType::TypeName(_))) => {
+                format!("{name}: Default::default(),")
+            }
+            (name, _, Repeat::Fixed { number }, _) => format!("{name}: [0; {number}],"),
+            (name, _, Repeat::Variable { limit }, _) => format!("{name}: [0; {limit}],"),
+            (name, _, Repeat::Dependent { limit, .. }, _) => {
+                format!("{name}: [0; {limit}],")
+            }
 
             _ => format!("{name}: Default::default(),"),
         }
