@@ -30,6 +30,7 @@ struct Enumeration(HashMap<String, u8>);
 /// Generate the code
 pub fn generate(
     out_path: &Path,
+    project_name: &Option<String>,
     gen_providers: bool,
     tests_path: &Option<PathBuf>,
     toml_specification: &str,
@@ -39,7 +40,7 @@ pub fn generate(
     match parse_result {
         Ok(definition) => {
             definition
-                .generate_code(out_path, gen_providers, tests_path)
+                .generate_code(out_path, project_name, gen_providers, tests_path)
                 .expect("Unable to generate driver code");
             println!("{}", "Finished generation!".green());
         }

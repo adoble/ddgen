@@ -17,14 +17,14 @@ struct Cli {
     in_path: std::path::PathBuf,
 
     /// The path where the project is generated.
-    /// The project name if the device name in the
-    /// in the definitions file.
+    /// Default is to generate a project with the device name
+    /// in the definition toml file under this path
     out_path: std::path::PathBuf,
 
     /// Name of the generated project.
     /// Overrides the device name in the definitions file.
-    #[arg(short, long)]
-    name: Option<String>,
+    #[arg(short = 'n', long = "name")]
+    project_name: Option<String>,
 
     /// Specify if skeleton provider structs should be generated.
     /// Warning: This overwrites any previous modifications.
@@ -62,6 +62,7 @@ fn main() {
 
     generate::generate(
         &args.out_path,
+        &args.project_name,
         args.providers,
         &args.tests,
         toml_specification.as_str(),

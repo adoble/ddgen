@@ -123,6 +123,7 @@ impl Definition {
     pub fn generate_code(
         &self,
         out_path: &Path,
+        project_name: &Option<String>,
         gen_providers: bool,
         tests_path: &Option<PathBuf>,
     ) -> anyhow::Result<()> {
@@ -134,7 +135,7 @@ impl Definition {
 
         self.device.check_limitations()?;
 
-        let source_path_buf = self.generate_package_structure(out_path)?;
+        let source_path_buf = self.generate_package_structure(out_path, project_name)?;
         let source_path = &source_path_buf.as_path();
 
         self.generate_common(source_path)?;
@@ -162,9 +163,18 @@ impl Definition {
         Ok(())
     }
 
-    fn generate_package_structure(&self, out_path: &Path) -> anyhow::Result<PathBuf> {
+    fn generate_package_structure(
+        &self,
+        out_path: &Path,
+        project_name: &Option<String>,
+    ) -> anyhow::Result<PathBuf> {
         let mut source_path_buf = PathBuf::from(out_path);
-        source_path_buf.push(self.device.name.as_str().to_lowercase());
+
+        match project_name {
+            Some(name) => source_path_buf.push(name.as_str().to_lowercase()),
+            None => source_path_buf.push(self.device.name.as_str().to_lowercase()),
+        };
+
         source_path_buf.push("src");
 
         fs::create_dir_all(&source_path_buf)
