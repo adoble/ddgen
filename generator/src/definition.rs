@@ -140,9 +140,6 @@ impl Definition {
 
         self.generate_common(source_path)?;
 
-        // if let Some(common_structures) = &self.common_structures {
-        //     self.generate_common_structure_files(source_path, common_structures)?;
-        // }
         self.generate_common_structure_files(source_path, &self.common_structures)?;
 
         self.generate_commands(source_path, &self.common_structures)?;
@@ -153,10 +150,6 @@ impl Definition {
         if gen_providers {
             providers.generate(source_path)?;
         }
-
-        // if let Some(test_code_path) = tests_path {
-        //     self.generate_tests(out_path, test_code_path)?;
-        // }
 
         self.generate_lib(source_path, &providers, tests_path.is_some())?;
 
@@ -170,11 +163,12 @@ impl Definition {
     ) -> anyhow::Result<PathBuf> {
         let mut source_path_buf = PathBuf::from(out_path);
 
-        match project_name {
-            Some(name) => source_path_buf.push(name.as_str().to_lowercase()),
-            None => source_path_buf.push(self.device.name.as_str().to_lowercase()),
+        let package_name = match project_name {
+            Some(name) => name.as_str().to_lowercase(),
+            None => self.device.name.as_str().to_lowercase(),
         };
 
+        source_path_buf.push(package_name.clone());
         source_path_buf.push("src");
 
         fs::create_dir_all(&source_path_buf)
@@ -183,7 +177,7 @@ impl Definition {
         let package_root = source_path_buf.parent().unwrap();
 
         // Create a Cargo.toml file
-        let cargo_toml_str = cargo_gen::generate(self.device.name.as_str(), &self.version);
+        let cargo_toml_str = cargo_gen::generate(&package_name, &self.version);
         let mut cargo_toml_path: PathBuf = package_root.to_path_buf();
         cargo_toml_path.push("Cargo.toml");
 
