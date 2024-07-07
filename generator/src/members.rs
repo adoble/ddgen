@@ -45,6 +45,7 @@ impl Members {
         sorted_members.sort_by(|(_, field_a), (_, field_b)| field_a.cmp(field_b));
 
         quote_in!(*tokens =>
+            #[allow(clippy::derivable_impls)]
             impl Default for $request_name {
                 fn default() -> Self {
                     Self {
