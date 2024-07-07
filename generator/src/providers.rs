@@ -51,7 +51,7 @@ impl Providers {
                 $(description_doc_comment)
                 $(generated_doc_comment)
 
-                #[derive(Debug, PartialEq, Copy, Clone)]
+                #[derive(Debug, PartialEq, Copy, Clone, Default)]
                 pub struct $(provider.to_case(Case::UpperCamel)) {}
 
                 impl Iterator for $(provider.to_case(Case::UpperCamel)) {
@@ -62,11 +62,6 @@ impl Providers {
                     }
                 }
 
-                impl Default for $(provider.to_case(Case::UpperCamel)) {
-                    fn default() -> Self {
-                        Self {}
-                    }
-                }
             );
             output_file(provider_file, tokens)?;
         }
