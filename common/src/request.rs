@@ -74,6 +74,12 @@ pub trait RequestArray<T> {
     fn serialize_repeating_words(&mut self, source: T, number: usize);
 }
 
+impl<const SOURCE_LEN: usize> RequestArray<[u8; SOURCE_LEN]> for [u8] {
+    fn serialize_repeating_words(&mut self, source: [u8; SOURCE_LEN], number: usize) {
+        self.copy_from_slice(&source[0..number]);
+    }
+}
+
 impl<const SOURCE_LEN: usize> RequestArray<[u16; SOURCE_LEN]> for [u8] {
     fn serialize_repeating_words(&mut self, source: [u16; SOURCE_LEN], number: usize) {
         let mut target_position = 0;
@@ -86,9 +92,13 @@ impl<const SOURCE_LEN: usize> RequestArray<[u16; SOURCE_LEN]> for [u8] {
     }
 }
 
-impl<const SOURCE_LEN: usize> RequestArray<[u8; SOURCE_LEN]> for [u8] {
-    fn serialize_repeating_words(&mut self, source: [u8; SOURCE_LEN], number: usize) {
-        self.copy_from_slice(&source[0..number]);
+impl<const SOURCE_LEN: usize> RequestArray<[u32; SOURCE_LEN]> for [u8] {
+    fn serialize_repeating_words(&mut self, source: [u32; SOURCE_LEN], number: usize) {
+        for (i, source_value) in source.iter().enumerate().take(number) {
+            let target_position = i * 4;
+            self[target_position..(target_position + 4)]
+                .copy_from_slice(&source_value.to_le_bytes());
+        }
     }
 }
 
@@ -187,6 +197,18 @@ mod tests {
     }
 
     #[test]
+    fn test_u8_array() {
+        let source = [123u8, 33];
+
+        let mut serial_data = [0u8; 4];
+        serial_data[0..=1].serialize_repeating_words(source, 2);
+
+        let expected_data: [u8; 4] = [123, 33, 0, 0];
+
+        assert_eq!(serial_data, expected_data);
+    }
+
+    #[test]
     fn test_u16_array() {
         let source = [22222u16, 33333];
         let mut serial_data = [0u8; 7];
@@ -199,13 +221,13 @@ mod tests {
     }
 
     #[test]
-    fn test_u8_array() {
-        let source = [123u8, 33];
+    fn test_u32_array() {
+        let source = [0x12345678u32, 0xFEDCBA98];
+        let mut serial_data = [0u8; 10];
 
-        let mut serial_data = [0u8; 4];
-        serial_data[0..=1].serialize_repeating_words(source, 2);
+        serial_data[2..=9].serialize_repeating_words(source, 2);
 
-        let expected_data: [u8; 4] = [123, 33, 0, 0];
+        let expected_data: [u8; 10] = [0, 0, 0x78, 0x56, 0x34, 0x12, 0x98, 0xBA, 0xDC, 0xFE];
 
         assert_eq!(serial_data, expected_data);
     }
