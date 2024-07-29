@@ -15,7 +15,7 @@ use crate::cargo_gen;
 use crate::command::Command;
 use crate::common_structure::CommonStructure;
 use crate::doc_comment::DocComment;
-use crate::naming::{CommandName, CommonStructureName};
+use crate::naming::{CommandName, CommonStructureName, RequestStructName};
 use crate::output::output_file;
 use crate::providers::Providers;
 use crate::Enumeration;
@@ -204,9 +204,7 @@ impl Definition {
         quote_in!(tokens =>
            #![cfg_attr(not(test), no_std)]
 
-            //Reexports  TODO have this as a comment in the code
-
-
+           $(DocComment::from_string("Re-exports").as_string())
            pub use crate::types::*;
            pub use crate::error::DeviceError;
 
@@ -231,8 +229,21 @@ impl Definition {
             $(for name in providers.provider_names() join(;$['\r'])=>  pub mod $(name.to_case(Case::Snake)));
           })
 
+          pub fn create_request<R, F>(f: F) -> R
+            where
+                R: Default,
+                F: Fn(&mut R),
+          {
+                let mut request = R::default();
+                f(&mut request);
+                request
+          }
 
-        //     $(if tests => $['\n']  #[cfg(test)] $['\n'] mod tests;)
+          $(DocComment::from_string("Entry points").as_string())
+          $(for name in self.commands.keys() join($['\n'])=> $(ref toks {self.generate_entry_point(toks, name)}) )
+
+
+            //     $(if tests => $['\n']  #[cfg(test)] $['\n'] mod tests;)
 
         );
 
@@ -241,6 +252,20 @@ impl Definition {
         // // TODO update to include types/enumerations
 
         Ok(())
+    }
+
+    fn generate_entry_point(&self, tokens: &mut Tokens<Rust>, command_name: &str) {
+        let command_struct_name = CommandName::from(command_name);
+        let request_struct_name = RequestStructName::from(&command_struct_name);
+
+        quote_in!(*tokens =>
+            pub fn $(command_name.to_lowercase())<F>(f:F) ->  $(command_name.to_lowercase())::$(request_struct_name.clone())
+            where
+                F: Fn(&mut $(command_name.to_lowercase())::$(request_struct_name)),
+            {
+                create_request(f)
+            }
+        );
     }
 
     fn generate_commands(
