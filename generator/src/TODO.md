@@ -79,3 +79,6 @@
    [ ] Is access.rs required?
   
    [ ] A field is not always an enum, but a value with a limited range (e.g. 0-15). Need a way to specify the range.
+
+   [ ] Chunked transfer pattern. A lare amoiut of data is transfered in smaller chunks by repeataly calling a command. 
+        For instance the HOST_LOAD command for the si468x driver.
